@@ -41,6 +41,7 @@ Contents
 
    vision
    releases
+   api
 
 ******************
 Indices and tables
