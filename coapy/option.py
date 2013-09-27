@@ -28,9 +28,15 @@ from __future__ import division
 
 
 import coapy
+import struct
+import unicodedata
 
 
-class OptionRegistryConflict (coapy.InfrastructureError):
+class OptionError (coapy.InfrastructureError):
+    pass
+
+
+class OptionRegistryConflictError (OptionError):
     """Exception raised when option numbers collide.
 
     CoAPy requires that each subclass of :py:class:`UrOption` has a
@@ -41,7 +47,7 @@ class OptionRegistryConflict (coapy.InfrastructureError):
     pass
 
 
-class InvalidOptionType (coapy.InfrastructureError):
+class InvalidOptionTypeError (OptionError):
     """Exception raised when an option is incorrectly defined.
 
     Each subclass of :py:class:`UrOption` must override
@@ -52,6 +58,9 @@ class InvalidOptionType (coapy.InfrastructureError):
     pass
 
 
+class OptionValueLengthError (OptionError):
+    pass
+
 _OptionRegistry = {}
 
 
@@ -59,15 +68,15 @@ _OptionRegistry = {}
 # definitions are processed by Python.
 def _register_option(option_class):
     if not issubclass(option_class, UrOption):
-        raise InvalidOptionType(option_class)
+        raise InvalidOptionTypeError(option_class)
     if not isinstance(option_class.number, int):
-        raise InvalidOptionType(option_class)
+        raise InvalidOptionTypeError(option_class)
     if not ((0 <= option_class.number) and (option_class.number <= 65535)):
-        raise InvalidOptionType(option_class)
-    if not (option_class.format in (UrOption.empty, UrOption.opaque, UrOption.uint, UrOption.string)):
-        raise InvalidOptionType(option_class)
+        raise InvalidOptionTypeError(option_class)
+    if not isinstance(option_class.format, UrOption._OptionFormat):
+        raise InvalidOptionTypeError(option_class)
     if option_class.number in _OptionRegistry:
-        raise OptionRegistryConflict(option_class)
+        raise OptionRegistryConflictError(option_class)
     _OptionRegistry[option_class.number] = option_class
     return option_class
 
@@ -75,8 +84,8 @@ def _register_option(option_class):
 def find_option(number):
     """Look up an option by number.
 
-    Returns the subclass of :py:class:`UrOption` registered for
-    *number*, or ``None`` if no such option has been registered.
+    Returns the :py:class:`UrOption` subclass registered for *number*,
+    or ``None`` if no such option has been registered.
     """
     return _OptionRegistry.get(number, None)
 
@@ -87,7 +96,8 @@ def find_option(number):
 # * It ensures that each subclass of UrOption properly provides both a
 #   number and a format attribute;
 #
-# * It verifies that the values of these attributes are
+# * It verifies that the values of these attributes are consistent with
+#   the specification;
 #
 # * It rewrites the subclass so that those attributes are read-only in
 #   both class and instance forms;
@@ -95,12 +105,18 @@ def find_option(number):
 # * It registers each option class so that it can be looked up by
 #   number.
 #
+# The concepts in this approach derive from:
+# http://stackoverflow.com/questions/1735434/class-level-read-only-properties-in-python
 class _MetaUrOption(type):
 
     # This class must do its work before UrOption has been added to
     # the module namespace.  Once that's been done this will be a
     # reference to it.
     __UrOption = None
+
+    # The set of attributes in types that are to be made immutable if
+    # the type provides a non-None value for the attribute.
+    __ReadOnlyAttrs = ('number', 'repeatable', 'format')
 
     @classmethod
     def SetUrOption(cls, ur_option):
@@ -112,20 +128,23 @@ class _MetaUrOption(type):
         class UniqueUrOption (cls):
             pass
 
-        # Only subclasses of UrOption have non-None number and format
-        # values.  Make those attributes immutable at both the class
-        # and instance levels.
-        if (cls.__UrOption is not None):
-            for n in ('number', 'format'):
-                v = namespace.get(n, None)
-                mp = property(lambda self_or_cls, _v=v: _v)
-                namespace[n] = mp
-                setattr(UniqueUrOption, n, mp)
+        do_register = (cls.__UrOption is not None) and namespace.get('_RegisterOption', True)
 
-        # Create the subclass type, and register it if it's not
-        # UrOption.
+        # Only subclasses of UrOption have read-only attributes.  Make
+        # those attributes immutable at both the class and instance
+        # levels.
+        if (cls.__UrOption is not None):
+            for n in cls.__ReadOnlyAttrs:
+                v = namespace.get(n, None)
+                if (v is not None) and not isinstance(v, property):
+                    mp = property(lambda self_or_cls, _v=v: _v)
+                    namespace[n] = mp
+                    setattr(UniqueUrOption, n, mp)
+
+        # Create the subclass type, and register it if it's complete
+        # (and not UrOption).
         mcls = type.__new__(UniqueUrOption, name, bases, namespace)
-        if cls.__UrOption is not None:
+        if do_register:
             _register_option(mcls)
 
         return mcls
@@ -160,94 +179,265 @@ class UrOption (object):
     defined.
     """
 
+    repeatable = None
+    """A tuple ``(request, response)`` indicating allowed
+    cardinality of the option in requests and responses, respectively.
+
+    The value of *request* and *response* is ``True`` if the option
+    may appear multiple times in the corresponding message, ``False``
+    if it must appear only once, and ``None`` if it may not appear at
+    all.
+    """
+
     format = None
 
-    class empty (object):
-        pass
+    class _OptionFormat (object):
+        def _min_length(self):
+            return self.__min_length
+        min_length = property(_min_length)
 
-    class opaque (bytes):
-        pass
+        def _max_length(self):
+            return self.__max_length
+        max_length = property(_max_length)
 
-    class uint (int):
-        pass
+        def __init__(self, max_length, min_length):
+            self.__max_length = max_length
+            self.__min_length = min_length
 
-    class string (unicode):
-        pass
+        def to_packed(self, value):
+            if value is None:
+                raise ValueError(value)
+            pv = self._to_packed(value)
+            if (len(pv) < self.min_length) or (self.max_length < len(pv)):
+                raise OptionValueLengthError(value)
+            return pv
+
+        def from_packed(self, packed):
+            if not isinstance(packed, bytes):
+                raise ValueError(packed)
+            if (len(packed) < self.min_length) or (self.max_length < len(packed)):
+                raise OptionValueLengthError(packed)
+            return self._from_packed(packed)
+
+    class empty (_OptionFormat):
+        def __init__(self):
+            super(UrOption.empty, self).__init__(0, 0)
+
+        def to_packed(self, value):
+            if value is not None:
+                raise ValueError(value)
+            return b''
+
+        def from_packed(self, packed):
+            if packed != b'':
+                raise ValueError(packed)
+            return None
+
+    class opaque (_OptionFormat):
+        def __init__(self, max_length, min_length=0):
+            super(UrOption.opaque, self).__init__(max_length, min_length)
+
+        def _to_packed(self, value):
+            if not isinstance(value, bytes):
+                raise ValueError(value)
+            return value
+
+        def _from_packed(self, value):
+            if not isinstance(value, bytes):
+                raise ValueError(value)
+            return value
+
+        def convert_value(self, value):
+            if value is not None:
+                value = bytes(value)
+            return value
+
+    class uint (_OptionFormat):
+        def __init__(self, max_length, min_length=0):
+            super(UrOption.uint, self).__init__(max_length, min_length)
+
+        def _to_packed(self, value):
+            if not isinstance(value, int):
+                raise ValueError(value)
+            if 0 == value:
+                return b''
+            pv = struct.pack(str('!Q'), value)
+            for i in xrange(len(pv)):
+                if ord(pv[i]) != 0:
+                    break
+            return pv[i:]
+
+        def _from_packed(self, data):
+            if not isinstance(data, bytes):
+                raise ValueError(value)
+            value = 0
+            for i in xrange(len(data)):
+                value = (value * 256) + ord(data[i])
+            return value
+
+    class string (_OptionFormat):
+        def __init__(self, max_length, min_length=0):
+            super(UrOption.string, self).__init__(max_length, min_length)
+
+        def _to_packed(self, value):
+            if not isinstance(value, unicode):
+                raise ValueError(value)
+            rv = unicodedata.normalize('NFC', value).encode('utf-8')
+            return rv
+
+        def _from_packed(self, value):
+            if not isinstance(value, bytes):
+                raise ValueError(value)
+            rv = value.decode('utf-8')
+            return rv
+
+    def is_critical(self):
+        return (self.number & 1)
+
+    def is_unsafe(self):
+        return (self.number & 2)
+
+    def is_no_cache_key(self):
+        return (0x1c == (self.number & 0x1e))
+
+    def valid_in_request(self):
+        return self.repeatable[0] is not None
+
+    def valid_multiple_in_request(self):
+        return self.repeatable[0] is True
+
+    def valid_in_response(self):
+        return self.repeatable[1] is not None
+
+    def valid_multiple_in_response(self):
+        return self.repeatable[1] is True
+
+    def __init__(self, unpacked_value=None, packed_value=None):
+        super(UrOption, self).__init__()
+        if unpacked_value is not None:
+            self._set_value(unpacked_value)
+        elif packed_value is not None:
+            self.__value = self.format.from_packed(packed_value)
+        else:
+            self.__value = None
+
+    def _set_value(self, unpacked_value):
+        self.__value = self.format.from_packed(self.format.to_packed(unpacked_value))
+
+    def _get_value(self):
+        return self.__value
+
+    value = property(_get_value, _set_value)
 
 # Register the UrOption so subclasses can
 _MetaUrOption.SetUrOption(UrOption)
 
 
+class UnknownOption (UrOption):
+    _RegisterOption = False
+    repeatable = (True, True)
+    format = UrOption.opaque(1034)
+
+    def _get_number(self):
+        return self.__number
+    number = property(_get_number)
+
+    def __init__(self, number, unpacked_value=None, packed_value=None):
+        if not (isinstance(number, int) and (0 <= number) and (number <= 65535)):
+            raise ValueError('invalid option number')
+        option = find_option(number)
+        if option is not None:
+            raise ValueError('conflicting option number', option)
+        self.__number = number
+        super(UnknownOption, self).__init__(unpacked_value=unpacked_value,
+                                            packed_value=packed_value)
+
+
 class IfMatch (UrOption):
     number = 1
-    format = UrOption.opaque
+    repeatable = (True, None)
+    format = UrOption.opaque(8)
 
 
 class UriHost (UrOption):
     number = 3
-    format = UrOption.string
+    repeatable = (False, None)
+    format = UrOption.string(255, min_length=1)
 
 
 class ETag (UrOption):
     number = 4
-    format = UrOption.opaque
+    repeatable = (True, False)
+    format = UrOption.opaque(8, min_length=1)
 
 
 class IfNoneMatch (UrOption):
     number = 5
-    format = UrOption.empty
+    repeatable = (False, None)
+    format = UrOption.empty()
 
 
 class UriPort (UrOption):
     number = 7
-    format = UrOption.uint
+    repeatable = (False, None)
+    format = UrOption.uint(2)
 
 
 class LocationPath (UrOption):
     number = 8
-    format = UrOption.string
+    repeatable = (None, True)
+    format = UrOption.string(255)
 
 
 class UriPath (UrOption):
     number = 11
-    format = UrOption.string
+    repeatable = (True, None)
+    format = UrOption.string(255)
 
 
 class ContentFormat (UrOption):
     number = 12
-    format = UrOption.uint
+    repeatable = (False, False)
+    format = UrOption.uint(2)
 
 
 class MaxAge (UrOption):
     number = 14
-    format = UrOption.uint
+    repeatable = (None, False)
+    format = UrOption.uint(4)
 
 
 class UriQuery (UrOption):
     number = 15
-    format = UrOption.string
+    repeatable = (True, None)
+    format = UrOption.string(255)
 
 
 class Accept (UrOption):
     number = 17
-    format = UrOption.uint
+    repeatable = (False, None)
+    format = UrOption.uint(2)
 
 
 class LocationQuery (UrOption):
     number = 20
-    format = UrOption.string
+    repeatable = (None, True)
+    format = UrOption.string(255)
 
 
 class ProxyUri (UrOption):
     number = 35
-    format = UrOption.string
+    repeatable = (False, None)
+    format = UrOption.string(1034, min_length=1)
 
 
 class ProxyScheme (UrOption):
     number = 39
-    format = UrOption.string
+    repeatable = (False, None)
+    format = UrOption.string(255, min_length=1)
 
 
 class Size1 (UrOption):
     number = 60
-    format = UrOption.uint
+    repeatable = (False, False)
+    format = UrOption.uint(4)
