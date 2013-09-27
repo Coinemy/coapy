@@ -61,6 +61,27 @@ class InvalidOptionTypeError (OptionError):
 class OptionValueLengthError (OptionError):
     pass
 
+
+class OptionDecodeError (OptionError):
+    pass
+
+
+class UnrecognizedCriticalOptionError (OptionError):
+    pass
+
+
+class InvalidOptionError (OptionError):
+    pass
+
+
+class InvalidRequestOptionError (InvalidOptionError):
+    pass
+
+
+class InvalidResponseOptionError (InvalidOptionError):
+    pass
+
+
 _OptionRegistry = {}
 
 
@@ -285,6 +306,33 @@ class UrOption (object):
                 value = (value * 256) + ord(data[i])
             return value
 
+        def option_encoding(self, value):
+            if (not isinstance(value, int)) or (0 > value):
+                raise ValueError(value)
+            if value < 13:
+                ov = value
+                ovx = b''
+            elif value < 269:
+                ov = 13
+                ovx = self.to_packed(value - 13)
+                while len(ovx) < 1:
+                    ovx = b'\x00' + ovx
+            else:
+                ov = 14
+                ovx = self.to_packed(value - 269)
+                while len(ovx) < 2:
+                    ovx = b'\x00' + ovx
+            return (ov, ovx)
+
+        def option_decoding(self, ov, data):
+            if 15 <= ov:
+                raise ValueError(ov)
+            if 14 == ov:
+                return (269 + self.from_packed(data[:2]), data[2:])
+            if 13 == ov:
+                return (13 + self.from_packed(data[:1]), data[1:])
+            return (ov, data)
+
     class string (_OptionFormat):
         def __init__(self, max_length, min_length=0):
             super(UrOption.string, self).__init__(max_length, min_length)
@@ -339,9 +387,69 @@ class UrOption (object):
 
     value = property(_get_value, _set_value)
 
+    def packed_value(self):
+        return self.format.to_packed(self.value)
+
+
 # Register the UrOption so subclasses can
 _MetaUrOption.SetUrOption(UrOption)
 
+_uint2 = UrOption.uint(0, 2)
+
+def encode_options(options, is_request):
+    last_number = 0
+    packed = []
+    options = sorted(options, key=lambda _o: _o.number)
+    for opt in options:
+        delta = opt.number - last_number
+        if is_request \
+           and ((not opt.valid_in_request()) or ((0 == delta) and not opt.valid_multiple_in_request())):
+            raise InvalidRequestOptionError(opt)
+        elif (not is_request) \
+           and ((not opt.valid_in_response()) or ((0 == delta) and not opt.valid_multiple_in_response())):
+            raise InvalidResponseOptionError(opt)
+        last_number = opt.number
+        pvalue = opt.packed_value()
+        (od, odx) = _uint2.option_encoding(delta)
+        (ol, olx) = _uint2.option_encoding(len(pvalue))
+        encoded = struct.pack(str('B'), (od << 4) | ol)
+        encoded += odx + olx + pvalue
+        packed.append(encoded)
+    return b''.join(packed)
+
+def _decode_one_option(data):
+    (odl,) = struct.unpack(str('!B'), data[0])
+    if 0xFF == odl:
+        return (None, None, data)
+    data = data[1:]
+    od = (odl >> 4)
+    ol = (odl & 0x0F)
+    if (15 == od) or (15 == ol):
+        raise OptionDecodeError(data)
+    (delta, data) = _uint2.option_decoding(od, data)
+    (length, data) = _uint2.option_decoding(ol, data)
+    return (delta, length, data)
+
+def decode_options(data, is_request):
+    idx = 0
+    option_number = 0
+    options = []
+    while 0 < len(data):
+        (delta, length, data) = _decode_one_option(data)
+        if delta is None:
+            break
+        packed = data[:length]
+        data = data[length:]
+        option_number += delta
+        option_type = find_option(option_number)
+        if option_type is None:
+            opt = UnknownOption(option_number, packed_value=packed)
+            if opt.is_critical():
+                raise UnrecognizedCriticalOptionError(opt)
+        else:
+            opt = option_type(packed_value=packed)
+        options.append(opt)
+    return (options, data)
 
 class UnknownOption (UrOption):
     _RegisterOption = False

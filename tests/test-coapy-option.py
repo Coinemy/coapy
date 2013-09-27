@@ -371,6 +371,27 @@ class TestUintFormat (unittest.TestCase):
         opt.value = 3
         self.assertEqual(3, opt.value)
         self.assertRaises(OptionValueLengthError, self.setValue, opt, 65536)
+        opt = UriPort(532)
+        self.assertEqual(532, opt.value)
+        self.assertRaises(OptionValueLengthError, UriPort, 65536)
+
+    def testOptionCoding(self):
+        uint2 = UrOption.uint(2)
+        self.assertRaises(ValueError, uint2.option_encoding, u'bad')
+        self.assertRaises(ValueError, uint2.option_encoding, -3)
+        self.assertEqual((0, b''), uint2.option_encoding(0))
+        self.assertEqual((0, b'ABC'), uint2.option_decoding(0, b'ABC'))
+        self.assertEqual((8, b''), uint2.option_encoding(8))
+        self.assertEqual((8, b'ABC'), uint2.option_decoding(8, b'ABC'))
+        self.assertEqual((12, b''), uint2.option_encoding(12))
+        self.assertEqual((13, b'\x00'), uint2.option_encoding(13))
+        self.assertEqual((13+0x94, b'ABC'), uint2.option_decoding(13, b'\x94ABC'))
+        self.assertEqual((13, b'\xff'), uint2.option_encoding(13 + 255))
+        self.assertEqual((14, b'\x00\x00'), uint2.option_encoding(269))
+        self.assertEqual((269+0x9432, b'ABC'), uint2.option_decoding(14, b'\x94\x32ABC'))
+        self.assertEqual((14, b'\x00\xff'), uint2.option_encoding(269 + 255))
+        self.assertEqual((14, b'\xff\xff'), uint2.option_encoding(269 + 65535))
+        self.assertRaises(ValueError, uint2.option_decoding, 15, b'')
 
 
 class TestOpaqueFormat (unittest.TestCase):
@@ -394,6 +415,8 @@ class TestOpaqueFormat (unittest.TestCase):
         self.assertRaises(OptionValueLengthError, self.setValue, opt, b'')
         opt.value = b'1234'
         self.assertEqual(b'1234', opt.value)
+        opt = ETag(b'524')
+        self.assertEqual(b'524', opt.value)
 
 
 class TestStringFormat (unittest.TestCase):
@@ -443,6 +466,107 @@ class TestStringFormat (unittest.TestCase):
         self.assertRaises(OptionValueLengthError, self.setValue, opt, u'')
         opt.value = u'localhost'
         self.assertEqual(opt.value, u'localhost')
+        opt = UriHost(u'Trélat')
+        self.assertEqual(u'Trélat', opt.value)
+
+class TestEncodeDecodeOptions (unittest.TestCase):
+    def testEncodeEmpty(self):
+        opt = IfNoneMatch()
+        popt = b'\x50'
+        self.assertEqual(popt, encode_options([opt], True))
+        (opts, remaining) = decode_options(popt, True)
+        self.assertEqual(b'', remaining)
+        self.assertTrue(isinstance(opts, list))
+        self.assertEqual(1, len(opts))
+        opt = opts[0]
+        self.assertTrue(isinstance(opt, IfNoneMatch))
+
+    def testEncodeOpaque(self):
+        val = b'123456'
+        opt = ETag(val)
+        popt = b'\x46' + val
+        self.assertEqual(popt, encode_options([opt], True))
+        (opts, remaining) = decode_options(popt, True)
+        self.assertEqual(b'', remaining)
+        self.assertTrue(isinstance(opts, list))
+        self.assertEqual(1, len(opts))
+        opt = opts[0]
+        self.assertTrue(isinstance(opt, ETag))
+        self.assertEqual(val, opt.value)
+
+    def testEncodeUint(self):
+        val = 5683
+        opt = UriPort(val)
+        popt = b'\x72\x16\x33'
+        self.assertEqual(popt, encode_options([opt], True))
+        (opts, remaining) = decode_options(popt, True)
+        self.assertEqual(b'', remaining)
+        self.assertTrue(isinstance(opts, list))
+        self.assertEqual(1, len(opts))
+        opt = opts[0]
+        self.assertTrue(isinstance(opt, UriPort))
+        self.assertEqual(val, opt.value)
+
+    def testEncodeString(self):
+        val = u'Trélat'
+        opt = UriHost(val)
+        popt = b'\x37' + b'Tr\xc3\xa9lat'
+        self.assertEqual(u'Trélat', opt.value)
+        self.assertEqual(popt, encode_options([opt], True))
+        (opts, remaining) = decode_options(popt, True)
+        self.assertEqual(b'', remaining)
+        self.assertTrue(isinstance(opts, list))
+        self.assertEqual(1, len(opts))
+        opt = opts[0]
+        self.assertTrue(isinstance(opt, UriHost))
+        self.assertEqual(val, opt.value)
+
+    def testDisallowedInResponse(self):
+        opt = IfNoneMatch()
+        with self.assertRaises(InvalidResponseOptionError) as cm:
+            encoded = encode_options([opt], False)
+        self.assertEqual(opt, cm.exception.args[0])
+
+    def testDisallowedInRequest(self):
+        opt = MaxAge(60)
+        with self.assertRaises(InvalidRequestOptionError) as cm:
+            encoded = encode_options([opt], True)
+        self.assertEqual(opt, cm.exception.args[0])
+
+    def testMultiEncoded(self):
+        uh_val = u'Trélat'
+        up_val = 5683
+        et_val = b'123456'
+        opts = [ IfNoneMatch(), ETag(et_val), UriPort(up_val), UriHost(uh_val) ]
+        popt = b'7Tr\xc3\xa9lat\x16123456\x10"\x163'
+        self.assertEqual(popt, encode_options(opts, True))
+        (opts, remaining) = decode_options(popt + b'\xffHiThere', True)
+        self.assertEqual(b'\xffHiThere', remaining)
+        self.assertTrue(isinstance(opts, list))
+        self.assertEqual(4, len(opts))
+        opt = opts.pop(0)
+        self.assertTrue(isinstance(opt, UriHost))
+        self.assertEqual(uh_val, opt.value)
+        opt = opts.pop(0)
+        self.assertTrue(isinstance(opt, ETag))
+        self.assertEqual(et_val, opt.value)
+        opt = opts.pop(0)
+        self.assertTrue(isinstance(opt, IfNoneMatch))
+        opt = opts.pop(0)
+        self.assertTrue(isinstance(opt, UriPort))
+        self.assertEqual(up_val, opt.value)
+
+    def testUnknownCritical(self):
+        opt = UnknownOption(9, b'val')
+        self.assertTrue(opt.is_critical())
+        popt = b'\x93val'
+        self.assertEqual(popt, encode_options([opt], True))
+        with self.assertRaises(UnrecognizedCriticalOptionError) as cm:
+            decode_options(popt, True)
+        opt = cm.exception.args[0]
+        self.assertTrue(isinstance(opt, UnknownOption))
+        self.assertEqual(9, opt.number)
+        self.assertEqual(b'val', opt.value)
 
 if __name__ == '__main__':
     unittest.main()
