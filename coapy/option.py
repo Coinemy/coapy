@@ -150,6 +150,16 @@ class _MetaUrOption(type):
         return mcls
 
 
+def is_critical_option(number):
+    return number & 1
+
+def is_unsafe_option(number):
+    return number & 2
+
+def is_no_cache_key_option(number):
+    return (0x1c == (number & 0x1e))
+
+
 class UrOption (object):
     """Abstract base for CoAP options.
 
@@ -292,13 +302,13 @@ class UrOption (object):
             return rv
 
     def is_critical(self):
-        return (self.number & 1)
+        return is_critical_option(self.number)
 
     def is_unsafe(self):
-        return (self.number & 2)
+        return is_unsafe_option(self.number)
 
     def is_no_cache_key(self):
-        return (0x1c == (self.number & 0x1e))
+        return is_no_cache_key_option(self.number)
 
     def valid_in_request(self):
         return self.repeatable[0] is not None
