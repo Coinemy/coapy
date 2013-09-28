@@ -313,18 +313,23 @@ class TestEmptyFormat (unittest.TestCase):
         empty = format_empty()
         self.assertEqual(empty.min_length, 0)
         self.assertEqual(empty.max_length, 0)
-        self.assertEqual(b'', empty.to_packed(None))
+        self.assertEqual(b'', empty.to_packed(b''))
+        self.assertRaises(ValueError, empty.to_packed, None)
         self.assertRaises(ValueError, empty.to_packed, 0)
 
     def testUnpack(self):
         empty = format_empty()
-        self.assertEqual(None, empty.from_packed(b''))
-        self.assertRaises(ValueError, empty.from_packed, b'\x00')
+        self.assertEqual(b'', empty.from_packed(b''))
+        self.assertRaises(ValueError, empty.from_packed, None)
+        self.assertRaises(ValueError, empty.from_packed, '')
+        self.assertRaises(OptionValueLengthError, empty.from_packed, b'\x00')
 
     def testOptionValues(self):
         opt = IfNoneMatch()
-        self.assertTrue(opt.value is None)
-        opt.value = None
+        self.assertEqual(opt.value, b'')
+        opt.value = b''
+        self.assertRaises(ValueError, self.setValue, opt, None)
+        self.assertRaises(ValueError, self.setValue, opt, '')
         self.assertRaises(ValueError, self.setValue, opt, 0)
 
 
@@ -469,6 +474,7 @@ class TestStringFormat (unittest.TestCase):
         opt = UriHost(u'Trélat')
         self.assertEqual(u'Trélat', opt.value)
 
+
 class TestEncodeDecodeOptions (unittest.TestCase):
     def testEncodeEmpty(self):
         opt = IfNoneMatch()
@@ -537,7 +543,7 @@ class TestEncodeDecodeOptions (unittest.TestCase):
         uh_val = u'Trélat'
         up_val = 5683
         et_val = b'123456'
-        opts = [ IfNoneMatch(), ETag(et_val), UriPort(up_val), UriHost(uh_val) ]
+        opts = [IfNoneMatch(), ETag(et_val), UriPort(up_val), UriHost(uh_val)]
         popt = b'7Tr\xc3\xa9lat\x16123456\x10"\x163'
         self.assertEqual(popt, encode_options(opts, True))
         (opts, remaining) = decode_options(popt + b'\xffHiThere', True)

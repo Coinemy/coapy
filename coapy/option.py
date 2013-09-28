@@ -83,76 +83,160 @@ class InvalidResponseOptionError (InvalidOptionError):
 
 
 class _format_base (object):
+    """Abstract base for typed option value formatters.
+
+    CoAP options encode values as byte sequences in one of several
+    formats including:
+
+    * :class:`format_empty` for no value
+    * :class:`format_opaque` for uninterpreted byte sequences
+    * :class:`format_uint` for variable-length unsigned integers
+    * :class:`format_string` for Unicode text in Net-Unicode form
+      (:rfc:`5198`).
+
+    *max_length* is the maximum length of the packed representation in
+    octets.  *min_length* is the minimum length of the packed
+    representation in octets.
+    """
     def _min_length(self):
+        """The minimum acceptable length of the packed representation,
+        in octets.  This is a read-only property."""
         return self.__min_length
     min_length = property(_min_length)
 
     def _max_length(self):
+        """The maximum acceptable length of the packed representation,
+        in octets.  This is a read-only property."""
         return self.__max_length
     max_length = property(_max_length)
+
+    def _unpacked_type(self):
+        """The Python type used for unpacked values.  This is a
+        read-only property."""
+        return self._UnpackedType
+    unpacked_type = property(_unpacked_type)
 
     def __init__(self, max_length, min_length):
         self.__max_length = max_length
         self.__min_length = min_length
 
     def to_packed(self, value):
-        if value is None:
+        """Convert *value* to packed form.
+
+        If *value* is not an instance of :attr:`unpacked_type` then
+        :exc:`ValueError` will be raised with *value* as an argument.
+
+        The return value is a :class:`bytes` object with a length
+        between :attr:`min_length` and :attr:`max_length`.  If *value*
+        results in a packed format that is not within these bounds,
+        :exc:`OptionValueLengthError` will be raised with *value* as
+        an argument.
+        """
+        if not isinstance(value, self.unpacked_type):
             raise ValueError(value)
         pv = self._to_packed(value)
         if (len(pv) < self.min_length) or (self.max_length < len(pv)):
             raise OptionValueLengthError(value)
         return pv
 
+    def _to_packed(self, value):
+        """'Virtual' method implemented by subclasses to do
+        type-specific packing.  The subclass implementation may assume
+        *value* is of type :attr:`unpacked_type` and that the length
+        constraints on the packed representation will be checked by
+        :method:`to_packed`.
+        """
+        raise NotImplementedError
+
     def from_packed(self, packed):
+        """Convert *packed* to its unpacked form.
+
+        If *packed* is not an instance of :class:`bytes` then
+        :exc:`ValueError` will be raised with *packed* as an argument.
+
+        If the length of *packed* is not between :attr:`min_length`
+        and :attr:`max_length` (both inclusive) then
+        :exc:`OptionValueLengthError` will be raised with *packed* as
+        an argument.
+
+        Otherwise the value is unpacked and a corresponding instance
+        of :attr:`unpacked_type` is returned.
+        """
         if not isinstance(packed, bytes):
             raise ValueError(packed)
         if (len(packed) < self.min_length) or (self.max_length < len(packed)):
             raise OptionValueLengthError(packed)
         return self._from_packed(packed)
 
+    def _from_packed(self, value):
+        """'Virtual' method implemented by subclasses to do
+        type-specific unpacking.  The subclass implementation may
+        assume *value* is of type :attr:`bytes` and that the length
+        constraints on the packed representation have been checked.
+        It must return an instance of :attr:`unpacked_type`.
+        """
+        raise NotImplementedError
+
 
 class format_empty (_format_base):
+    """Support options with no value.
+
+    The only acceptable value is a zero-length byte string.  This is
+    both the packed and unpacked value.
+    """
+
+    _UnpackedType = bytes
+
     def __init__(self):
         super(format_empty, self).__init__(0, 0)
 
-    def to_packed(self, value):
-        if value is not None:
-            raise ValueError(value)
-        return b''
+    def _to_packed(self, value):
+        return value
 
-    def from_packed(self, packed):
-        if packed != b'':
-            raise ValueError(packed)
-        return None
+    def _from_packed(self, value):
+        return value
 
 
 class format_opaque (_format_base):
+    """Support options with opaque values.
+
+    Unpacked values are instances of :class:`bytes`, and packing and
+    unpacking is an identity operation.
+    """
+
+    _UnpackedType = bytes
+
     def __init__(self, max_length, min_length=0):
         super(format_opaque, self).__init__(max_length, min_length)
 
     def _to_packed(self, value):
-        if not isinstance(value, bytes):
-            raise ValueError(value)
         return value
 
     def _from_packed(self, value):
-        if not isinstance(value, bytes):
-            raise ValueError(value)
-        return value
-
-    def convert_value(self, value):
-        if value is not None:
-            value = bytes(value)
         return value
 
 
 class format_uint (_format_base):
-    def __init__(self, max_length, min_length=0):
-        super(format_uint, self).__init__(max_length, min_length)
+    """Supports options with variable-length unsigned integer values.
+    *max_length* is the maximum number of octets in the packed format.
+    The implicit *min_length* is always zero.
+
+    Unpacked values are instances of :class:`int`.  The packed value is
+    big-endian in a :class:`bytes` string with all zero-valued leading
+    bytes removed.  Thus the packed representation of zero is an empty
+    string.
+
+    Per the CoAP specification packed values with leading NUL bytes
+    will decode correctly; however, they are still subject to
+    validation against :attr:`max_length`.
+    """
+
+    _UnpackedType = int
+
+    def __init__(self, max_length):
+        super(format_uint, self).__init__(max_length, 0)
 
     def _to_packed(self, value):
-        if not isinstance(value, int):
-            raise ValueError(value)
         if 0 == value:
             return b''
         pv = struct.pack(str('!Q'), value)
@@ -162,8 +246,6 @@ class format_uint (_format_base):
         return pv[i:]
 
     def _from_packed(self, data):
-        if not isinstance(data, bytes):
-            raise ValueError(value)
         value = 0
         for i in xrange(len(data)):
             value = (value * 256) + ord(data[i])
@@ -198,18 +280,26 @@ class format_uint (_format_base):
 
 
 class format_string (_format_base):
+    """Supports options with text values.
+
+    Unpacked values are Python Unicode (text) strings.  Packed values
+    are in Net-Unicode form (:rfc:`5198`).  Note that, as usual, the
+    *max_length* and *min_length* attributes apply to the packed
+    representation, which for non-ASCII text may be longer than the
+    unpacked representation.
+    """
+
+    _UnpackedType = unicode
+
     def __init__(self, max_length, min_length=0):
         super(format_string, self).__init__(max_length, min_length)
 
     def _to_packed(self, value):
-        if not isinstance(value, unicode):
-            raise ValueError(value)
+        # At first blush, this is Net-Unicode.
         rv = unicodedata.normalize('NFC', value).encode('utf-8')
         return rv
 
     def _from_packed(self, value):
-        if not isinstance(value, bytes):
-            raise ValueError(value)
         rv = value.decode('utf-8')
         return rv
 
@@ -304,14 +394,32 @@ class _MetaUrOption(type):
 
 
 def is_critical_option(number):
+    """Return ``True`` iff *number* identifies a critical option.
+
+    A *critical* option is one that must be understood by the endpoint
+    processing the message.  This is indicated by bit 0 (0x01) of the
+    *number* being set.
+    """
     return number & 1
 
 
 def is_unsafe_option(number):
+    """Return ``True`` iff the option number identifies an unsafe option.
+
+    An *unsafe* option is one that must be recognized by a proxy in
+    order to safely forward (or cache) the message.  This is indicated
+    by bit 1 (0x02) of the *number* being set."""
     return number & 2
 
 
 def is_no_cache_key_option(number):
+    """Return ``True`` iff the option number identifies a NoCacheKey option.
+
+    A *NoCacheKey* option is one for which the value of the option
+    does not contribute the key that identifies a matching value in a
+    cache.  This is encoded in bits 1 through 5 of the *number*.
+
+    """
     return (0x1c == (number & 0x1e))
 
 
@@ -404,7 +512,7 @@ _MetaUrOption.SetUrOption(UrOption)
 # A utility instance used to encode and decode variable-length
 # integers in options, which comprise a 4-bit code with zero to two
 # bytes of offset.
-_optionint_helper = format_uint(0, 2)
+_optionint_helper = format_uint(2)
 
 
 def encode_options(options, is_request):
@@ -507,6 +615,12 @@ class IfNoneMatch (UrOption):
     number = 5
     repeatable = (False, None)
     format = format_empty()
+
+    def __init__(self, unpacked_value=None, packed_value=None):
+        if (unpacked_value is None) and (packed_value is None):
+            unpacked_value = b''
+        super(IfNoneMatch, self).__init__(unpacked_value=unpacked_value,
+                                          packed_value=packed_value)
 
 
 class UriPort (UrOption):
