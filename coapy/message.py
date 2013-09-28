@@ -48,8 +48,14 @@ class TransmissionParameters(object):
     NON_LIFETIME = 145              # seconds
 
     def recalculate_derived(self):
-        self.MAX_TRANSMIT_SPAN = self.ACK_TIMEOUT * ((1 << self.MAX_RETRANSMIT) - 1) * self.ACK_RANDOM_FACTOR
-        self.MAX_TRANSMIT_WAIT = self.ACK_TIMEOUT * ((1 << (self.MAX_RETRANSMIT + 1)) - 1) * self.ACK_RANDOM_FACTOR
+        self.MAX_TRANSMIT_SPAN = \
+            self.ACK_TIMEOUT \
+            * ((1 << self.MAX_RETRANSMIT) - 1) \
+            * self.ACK_RANDOM_FACTOR
+        self.MAX_TRANSMIT_WAIT = \
+            self.ACK_TIMEOUT \
+            * ((1 << (self.MAX_RETRANSMIT + 1)) - 1) \
+            * self.ACK_RANDOM_FACTOR
         self.MAX_RTT = (2 * self.MAX_LATENCY) + self.PROCESSING_DELAY
         self.EXCHANGE_LIFETIME = self.MAX_TRANSMIT_SPAN + self.MAX_RTT
         self.NON_LIFETIME = self.MAX_TRANSMIT_SPAN + self.MAX_LATENCY
@@ -58,7 +64,9 @@ class TransmissionParameters(object):
         class retry (object):
             def __init__(self, params, initial_timeout):
                 if initial_timeout is None:
-                    initial_timeout = params.ACK_TIMEOUT + random.random() * params.ACK_RANDOM_FACTOR
+                    initial_timeout = \
+                        params.ACK_TIMEOUT \
+                        + random.random() * params.ACK_RANDOM_FACTOR
                 self.timeout = initial_timeout
                 self.max_counter = params.MAX_RETRANSMIT
                 self.counter = -1
