@@ -82,6 +82,138 @@ class InvalidResponseOptionError (InvalidOptionError):
     pass
 
 
+class _format_base (object):
+    def _min_length(self):
+        return self.__min_length
+    min_length = property(_min_length)
+
+    def _max_length(self):
+        return self.__max_length
+    max_length = property(_max_length)
+
+    def __init__(self, max_length, min_length):
+        self.__max_length = max_length
+        self.__min_length = min_length
+
+    def to_packed(self, value):
+        if value is None:
+            raise ValueError(value)
+        pv = self._to_packed(value)
+        if (len(pv) < self.min_length) or (self.max_length < len(pv)):
+            raise OptionValueLengthError(value)
+        return pv
+
+    def from_packed(self, packed):
+        if not isinstance(packed, bytes):
+            raise ValueError(packed)
+        if (len(packed) < self.min_length) or (self.max_length < len(packed)):
+            raise OptionValueLengthError(packed)
+        return self._from_packed(packed)
+
+
+class format_empty (_format_base):
+    def __init__(self):
+        super(format_empty, self).__init__(0, 0)
+
+    def to_packed(self, value):
+        if value is not None:
+            raise ValueError(value)
+        return b''
+
+    def from_packed(self, packed):
+        if packed != b'':
+            raise ValueError(packed)
+        return None
+
+
+class format_opaque (_format_base):
+    def __init__(self, max_length, min_length=0):
+        super(format_opaque, self).__init__(max_length, min_length)
+
+    def _to_packed(self, value):
+        if not isinstance(value, bytes):
+            raise ValueError(value)
+        return value
+
+    def _from_packed(self, value):
+        if not isinstance(value, bytes):
+            raise ValueError(value)
+        return value
+
+    def convert_value(self, value):
+        if value is not None:
+            value = bytes(value)
+        return value
+
+
+class format_uint (_format_base):
+    def __init__(self, max_length, min_length=0):
+        super(format_uint, self).__init__(max_length, min_length)
+
+    def _to_packed(self, value):
+        if not isinstance(value, int):
+            raise ValueError(value)
+        if 0 == value:
+            return b''
+        pv = struct.pack(str('!Q'), value)
+        for i in xrange(len(pv)):
+            if ord(pv[i]) != 0:
+                break
+        return pv[i:]
+
+    def _from_packed(self, data):
+        if not isinstance(data, bytes):
+            raise ValueError(value)
+        value = 0
+        for i in xrange(len(data)):
+            value = (value * 256) + ord(data[i])
+        return value
+
+    def option_encoding(self, value):
+        if (not isinstance(value, int)) or (0 > value):
+            raise ValueError(value)
+        if value < 13:
+            ov = value
+            ovx = b''
+        elif value < 269:
+            ov = 13
+            ovx = self.to_packed(value - 13)
+            while len(ovx) < 1:
+                ovx = b'\x00' + ovx
+        else:
+            ov = 14
+            ovx = self.to_packed(value - 269)
+            while len(ovx) < 2:
+                ovx = b'\x00' + ovx
+        return (ov, ovx)
+
+    def option_decoding(self, ov, data):
+        if 15 <= ov:
+            raise ValueError(ov)
+        if 14 == ov:
+            return (269 + self.from_packed(data[:2]), data[2:])
+        if 13 == ov:
+            return (13 + self.from_packed(data[:1]), data[1:])
+        return (ov, data)
+
+
+class format_string (_format_base):
+    def __init__(self, max_length, min_length=0):
+        super(format_string, self).__init__(max_length, min_length)
+
+    def _to_packed(self, value):
+        if not isinstance(value, unicode):
+            raise ValueError(value)
+        rv = unicodedata.normalize('NFC', value).encode('utf-8')
+        return rv
+
+    def _from_packed(self, value):
+        if not isinstance(value, bytes):
+            raise ValueError(value)
+        rv = value.decode('utf-8')
+        return rv
+
+
 _OptionRegistry = {}
 
 
@@ -94,7 +226,7 @@ def _register_option(option_class):
         raise InvalidOptionTypeError(option_class)
     if not ((0 <= option_class.number) and (option_class.number <= 65535)):
         raise InvalidOptionTypeError(option_class)
-    if not isinstance(option_class.format, UrOption._OptionFormat):
+    if not isinstance(option_class.format, _format_base):
         raise InvalidOptionTypeError(option_class)
     if option_class.number in _OptionRegistry:
         raise OptionRegistryConflictError(option_class)
@@ -174,8 +306,10 @@ class _MetaUrOption(type):
 def is_critical_option(number):
     return number & 1
 
+
 def is_unsafe_option(number):
     return number & 2
+
 
 def is_no_cache_key_option(number):
     return (0x1c == (number & 0x1e))
@@ -222,133 +356,6 @@ class UrOption (object):
 
     format = None
 
-    class _OptionFormat (object):
-        def _min_length(self):
-            return self.__min_length
-        min_length = property(_min_length)
-
-        def _max_length(self):
-            return self.__max_length
-        max_length = property(_max_length)
-
-        def __init__(self, max_length, min_length):
-            self.__max_length = max_length
-            self.__min_length = min_length
-
-        def to_packed(self, value):
-            if value is None:
-                raise ValueError(value)
-            pv = self._to_packed(value)
-            if (len(pv) < self.min_length) or (self.max_length < len(pv)):
-                raise OptionValueLengthError(value)
-            return pv
-
-        def from_packed(self, packed):
-            if not isinstance(packed, bytes):
-                raise ValueError(packed)
-            if (len(packed) < self.min_length) or (self.max_length < len(packed)):
-                raise OptionValueLengthError(packed)
-            return self._from_packed(packed)
-
-    class empty (_OptionFormat):
-        def __init__(self):
-            super(UrOption.empty, self).__init__(0, 0)
-
-        def to_packed(self, value):
-            if value is not None:
-                raise ValueError(value)
-            return b''
-
-        def from_packed(self, packed):
-            if packed != b'':
-                raise ValueError(packed)
-            return None
-
-    class opaque (_OptionFormat):
-        def __init__(self, max_length, min_length=0):
-            super(UrOption.opaque, self).__init__(max_length, min_length)
-
-        def _to_packed(self, value):
-            if not isinstance(value, bytes):
-                raise ValueError(value)
-            return value
-
-        def _from_packed(self, value):
-            if not isinstance(value, bytes):
-                raise ValueError(value)
-            return value
-
-        def convert_value(self, value):
-            if value is not None:
-                value = bytes(value)
-            return value
-
-    class uint (_OptionFormat):
-        def __init__(self, max_length, min_length=0):
-            super(UrOption.uint, self).__init__(max_length, min_length)
-
-        def _to_packed(self, value):
-            if not isinstance(value, int):
-                raise ValueError(value)
-            if 0 == value:
-                return b''
-            pv = struct.pack(str('!Q'), value)
-            for i in xrange(len(pv)):
-                if ord(pv[i]) != 0:
-                    break
-            return pv[i:]
-
-        def _from_packed(self, data):
-            if not isinstance(data, bytes):
-                raise ValueError(value)
-            value = 0
-            for i in xrange(len(data)):
-                value = (value * 256) + ord(data[i])
-            return value
-
-        def option_encoding(self, value):
-            if (not isinstance(value, int)) or (0 > value):
-                raise ValueError(value)
-            if value < 13:
-                ov = value
-                ovx = b''
-            elif value < 269:
-                ov = 13
-                ovx = self.to_packed(value - 13)
-                while len(ovx) < 1:
-                    ovx = b'\x00' + ovx
-            else:
-                ov = 14
-                ovx = self.to_packed(value - 269)
-                while len(ovx) < 2:
-                    ovx = b'\x00' + ovx
-            return (ov, ovx)
-
-        def option_decoding(self, ov, data):
-            if 15 <= ov:
-                raise ValueError(ov)
-            if 14 == ov:
-                return (269 + self.from_packed(data[:2]), data[2:])
-            if 13 == ov:
-                return (13 + self.from_packed(data[:1]), data[1:])
-            return (ov, data)
-
-    class string (_OptionFormat):
-        def __init__(self, max_length, min_length=0):
-            super(UrOption.string, self).__init__(max_length, min_length)
-
-        def _to_packed(self, value):
-            if not isinstance(value, unicode):
-                raise ValueError(value)
-            rv = unicodedata.normalize('NFC', value).encode('utf-8')
-            return rv
-
-        def _from_packed(self, value):
-            if not isinstance(value, bytes):
-                raise ValueError(value)
-            rv = value.decode('utf-8')
-            return rv
-
     def is_critical(self):
         return is_critical_option(self.number)
 
@@ -394,7 +401,11 @@ class UrOption (object):
 # Register the UrOption so subclasses can
 _MetaUrOption.SetUrOption(UrOption)
 
-_uint2 = UrOption.uint(0, 2)
+# A utility instance used to encode and decode variable-length
+# integers in options, which comprise a 4-bit code with zero to two
+# bytes of offset.
+_optionint_helper = format_uint(0, 2)
+
 
 def encode_options(options, is_request):
     last_number = 0
@@ -402,20 +413,23 @@ def encode_options(options, is_request):
     options = sorted(options, key=lambda _o: _o.number)
     for opt in options:
         delta = opt.number - last_number
-        if is_request \
-           and ((not opt.valid_in_request()) or ((0 == delta) and not opt.valid_multiple_in_request())):
+        if (is_request
+            and ((not opt.valid_in_request())
+                 or ((0 == delta) and not opt.valid_multiple_in_request()))):
             raise InvalidRequestOptionError(opt)
-        elif (not is_request) \
-           and ((not opt.valid_in_response()) or ((0 == delta) and not opt.valid_multiple_in_response())):
+        elif ((not is_request)
+              and ((not opt.valid_in_response())
+                   or ((0 == delta) and not opt.valid_multiple_in_response()))):
             raise InvalidResponseOptionError(opt)
         last_number = opt.number
         pvalue = opt.packed_value()
-        (od, odx) = _uint2.option_encoding(delta)
-        (ol, olx) = _uint2.option_encoding(len(pvalue))
+        (od, odx) = _optionint_helper.option_encoding(delta)
+        (ol, olx) = _optionint_helper.option_encoding(len(pvalue))
         encoded = struct.pack(str('B'), (od << 4) | ol)
         encoded += odx + olx + pvalue
         packed.append(encoded)
     return b''.join(packed)
+
 
 def _decode_one_option(data):
     (odl,) = struct.unpack(str('!B'), data[0])
@@ -426,9 +440,10 @@ def _decode_one_option(data):
     ol = (odl & 0x0F)
     if (15 == od) or (15 == ol):
         raise OptionDecodeError(data)
-    (delta, data) = _uint2.option_decoding(od, data)
-    (length, data) = _uint2.option_decoding(ol, data)
+    (delta, data) = _optionint_helper.option_decoding(od, data)
+    (length, data) = _optionint_helper.option_decoding(ol, data)
     return (delta, length, data)
+
 
 def decode_options(data, is_request):
     idx = 0
@@ -449,10 +464,11 @@ def decode_options(data, is_request):
         options.append(opt)
     return (options, data)
 
+
 class UnknownOption (UrOption):
     _RegisterOption = False
     repeatable = (True, True)
-    format = UrOption.opaque(1034)
+    format = format_opaque(1034)
 
     def _get_number(self):
         return self.__number
@@ -472,88 +488,88 @@ class UnknownOption (UrOption):
 class IfMatch (UrOption):
     number = 1
     repeatable = (True, None)
-    format = UrOption.opaque(8)
+    format = format_opaque(8)
 
 
 class UriHost (UrOption):
     number = 3
     repeatable = (False, None)
-    format = UrOption.string(255, min_length=1)
+    format = format_string(255, min_length=1)
 
 
 class ETag (UrOption):
     number = 4
     repeatable = (True, False)
-    format = UrOption.opaque(8, min_length=1)
+    format = format_opaque(8, min_length=1)
 
 
 class IfNoneMatch (UrOption):
     number = 5
     repeatable = (False, None)
-    format = UrOption.empty()
+    format = format_empty()
 
 
 class UriPort (UrOption):
     number = 7
     repeatable = (False, None)
-    format = UrOption.uint(2)
+    format = format_uint(2)
 
 
 class LocationPath (UrOption):
     number = 8
     repeatable = (None, True)
-    format = UrOption.string(255)
+    format = format_string(255)
 
 
 class UriPath (UrOption):
     number = 11
     repeatable = (True, None)
-    format = UrOption.string(255)
+    format = format_string(255)
 
 
 class ContentFormat (UrOption):
     number = 12
     repeatable = (False, False)
-    format = UrOption.uint(2)
+    format = format_uint(2)
 
 
 class MaxAge (UrOption):
     number = 14
     repeatable = (None, False)
-    format = UrOption.uint(4)
+    format = format_uint(4)
 
 
 class UriQuery (UrOption):
     number = 15
     repeatable = (True, None)
-    format = UrOption.string(255)
+    format = format_string(255)
 
 
 class Accept (UrOption):
     number = 17
     repeatable = (False, None)
-    format = UrOption.uint(2)
+    format = format_uint(2)
 
 
 class LocationQuery (UrOption):
     number = 20
     repeatable = (None, True)
-    format = UrOption.string(255)
+    format = format_string(255)
 
 
 class ProxyUri (UrOption):
     number = 35
     repeatable = (False, None)
-    format = UrOption.string(1034, min_length=1)
+    format = format_string(1034, min_length=1)
 
 
 class ProxyScheme (UrOption):
     number = 39
     repeatable = (False, None)
-    format = UrOption.string(255, min_length=1)
+    format = format_string(255, min_length=1)
 
 
 class Size1 (UrOption):
     number = 60
     repeatable = (False, False)
-    format = UrOption.uint(4)
+    format = format_uint(4)

@@ -26,31 +26,31 @@ from coapy.option import *
 class TestOptionInfrastructure (unittest.TestCase):
     def testClasses(self):
         self.assertEqual(IfMatch.number, 1)
-        self.assertTrue(isinstance(IfMatch.format, UrOption.opaque))
+        self.assertTrue(isinstance(IfMatch.format, format_opaque))
         self.assertEqual(UriHost.number, 3)
-        self.assertTrue(isinstance(UriHost.format, UrOption.string))
+        self.assertTrue(isinstance(UriHost.format, format_string))
         with self.assertRaises(AttributeError):
             IfMatch.number = 2
         with self.assertRaises(AttributeError):
-            IfMatch.format = UrOption.empty
+            IfMatch.format = format_empty
 
     def testInstances(self):
         im = IfMatch()
         self.assertEqual(im.number, 1)
-        self.assertTrue(isinstance(im.format, UrOption.opaque))
+        self.assertTrue(isinstance(im.format, format_opaque))
         with self.assertRaises(AttributeError):
             im.number = 2
         with self.assertRaises(AttributeError):
-            im.format = UrOption.empty
+            im.format = format_empty
         uh = UriHost()
         self.assertEqual(uh.number, 3)
-        self.assertTrue(isinstance(uh.format, UrOption.string))
+        self.assertTrue(isinstance(uh.format, format_string))
 
     def testRegistry(self):
         with self.assertRaises(OptionRegistryConflictError):
             class ConflictingOption(UrOption):
                 number = IfMatch.number
-                format = UrOption.string(100)
+                format = format_string(100)
 
     def testDeclaration(self):
         with self.assertRaises(InvalidOptionTypeError):
@@ -89,7 +89,7 @@ class TestOptionConformance (unittest.TestCase):
         self.assertTrue(opt.valid_multiple_in_request())
         self.assertFalse(opt.valid_in_response())
         self.assertFalse(opt.valid_multiple_in_response())
-        self.assertTrue(isinstance(opt.format, opt.opaque))
+        self.assertTrue(isinstance(opt.format, format_opaque))
         self.assertEqual(0, opt.format.min_length)
         self.assertEqual(8, opt.format.max_length)
 
@@ -103,7 +103,7 @@ class TestOptionConformance (unittest.TestCase):
         self.assertFalse(opt.valid_multiple_in_request())
         self.assertFalse(opt.valid_in_response())
         self.assertFalse(opt.valid_multiple_in_response())
-        self.assertTrue(isinstance(opt.format, opt.string))
+        self.assertTrue(isinstance(opt.format, format_string))
         self.assertEqual(1, opt.format.min_length)
         self.assertEqual(255, opt.format.max_length)
 
@@ -117,7 +117,7 @@ class TestOptionConformance (unittest.TestCase):
         self.assertTrue(opt.valid_multiple_in_request())
         self.assertTrue(opt.valid_in_response())
         self.assertFalse(opt.valid_multiple_in_response())
-        self.assertTrue(isinstance(opt.format, opt.opaque))
+        self.assertTrue(isinstance(opt.format, format_opaque))
         self.assertEqual(1, opt.format.min_length)
         self.assertEqual(8, opt.format.max_length)
 
@@ -131,7 +131,7 @@ class TestOptionConformance (unittest.TestCase):
         self.assertFalse(opt.valid_multiple_in_request())
         self.assertFalse(opt.valid_in_response())
         self.assertFalse(opt.valid_multiple_in_response())
-        self.assertTrue(isinstance(opt.format, opt.empty))
+        self.assertTrue(isinstance(opt.format, format_empty))
         self.assertEqual(0, opt.format.min_length)
         self.assertEqual(0, opt.format.max_length)
 
@@ -145,7 +145,7 @@ class TestOptionConformance (unittest.TestCase):
         self.assertFalse(opt.valid_multiple_in_request())
         self.assertFalse(opt.valid_in_response())
         self.assertFalse(opt.valid_multiple_in_response())
-        self.assertTrue(isinstance(opt.format, opt.uint))
+        self.assertTrue(isinstance(opt.format, format_uint))
         self.assertEqual(0, opt.format.min_length)
         self.assertEqual(2, opt.format.max_length)
 
@@ -159,7 +159,7 @@ class TestOptionConformance (unittest.TestCase):
         self.assertFalse(opt.valid_multiple_in_request())
         self.assertTrue(opt.valid_in_response())
         self.assertTrue(opt.valid_multiple_in_response())
-        self.assertTrue(isinstance(opt.format, opt.string))
+        self.assertTrue(isinstance(opt.format, format_string))
         self.assertEqual(0, opt.format.min_length)
         self.assertEqual(255, opt.format.max_length)
 
@@ -173,7 +173,7 @@ class TestOptionConformance (unittest.TestCase):
         self.assertTrue(opt.valid_multiple_in_request())
         self.assertFalse(opt.valid_in_response())
         self.assertFalse(opt.valid_multiple_in_response())
-        self.assertTrue(isinstance(opt.format, opt.string))
+        self.assertTrue(isinstance(opt.format, format_string))
         self.assertEqual(0, opt.format.min_length)
         self.assertEqual(255, opt.format.max_length)
 
@@ -187,7 +187,7 @@ class TestOptionConformance (unittest.TestCase):
         self.assertFalse(opt.valid_multiple_in_request())
         self.assertTrue(opt.valid_in_response())
         self.assertFalse(opt.valid_multiple_in_response())
-        self.assertTrue(isinstance(opt.format, opt.uint))
+        self.assertTrue(isinstance(opt.format, format_uint))
         self.assertEqual(0, opt.format.min_length)
         self.assertEqual(2, opt.format.max_length)
 
@@ -201,7 +201,7 @@ class TestOptionConformance (unittest.TestCase):
         self.assertFalse(opt.valid_multiple_in_request())
         self.assertTrue(opt.valid_in_response())
         self.assertFalse(opt.valid_multiple_in_response())
-        self.assertTrue(isinstance(opt.format, opt.uint))
+        self.assertTrue(isinstance(opt.format, format_uint))
         self.assertEqual(0, opt.format.min_length)
         self.assertEqual(4, opt.format.max_length)
 
@@ -215,7 +215,7 @@ class TestOptionConformance (unittest.TestCase):
         self.assertTrue(opt.valid_multiple_in_request())
         self.assertFalse(opt.valid_in_response())
         self.assertFalse(opt.valid_multiple_in_response())
-        self.assertTrue(isinstance(opt.format, opt.string))
+        self.assertTrue(isinstance(opt.format, format_string))
         self.assertEqual(0, opt.format.min_length)
         self.assertEqual(255, opt.format.max_length)
 
@@ -229,7 +229,7 @@ class TestOptionConformance (unittest.TestCase):
         self.assertFalse(opt.valid_multiple_in_request())
         self.assertFalse(opt.valid_in_response())
         self.assertFalse(opt.valid_multiple_in_response())
-        self.assertTrue(isinstance(opt.format, opt.uint))
+        self.assertTrue(isinstance(opt.format, format_uint))
         self.assertEqual(0, opt.format.min_length)
         self.assertEqual(2, opt.format.max_length)
 
@@ -243,7 +243,7 @@ class TestOptionConformance (unittest.TestCase):
         self.assertFalse(opt.valid_multiple_in_request())
         self.assertTrue(opt.valid_in_response())
         self.assertTrue(opt.valid_multiple_in_response())
-        self.assertTrue(isinstance(opt.format, opt.string))
+        self.assertTrue(isinstance(opt.format, format_string))
         self.assertEqual(0, opt.format.min_length)
         self.assertEqual(255, opt.format.max_length)
 
@@ -257,7 +257,7 @@ class TestOptionConformance (unittest.TestCase):
         self.assertFalse(opt.valid_multiple_in_request())
         self.assertFalse(opt.valid_in_response())
         self.assertFalse(opt.valid_multiple_in_response())
-        self.assertTrue(isinstance(opt.format, opt.string))
+        self.assertTrue(isinstance(opt.format, format_string))
         self.assertEqual(1, opt.format.min_length)
         self.assertEqual(1034, opt.format.max_length)
 
@@ -271,7 +271,7 @@ class TestOptionConformance (unittest.TestCase):
         self.assertFalse(opt.valid_multiple_in_request())
         self.assertFalse(opt.valid_in_response())
         self.assertFalse(opt.valid_multiple_in_response())
-        self.assertTrue(isinstance(opt.format, opt.string))
+        self.assertTrue(isinstance(opt.format, format_string))
         self.assertEqual(1, opt.format.min_length)
         self.assertEqual(1034, opt.format.max_length)
 
@@ -285,7 +285,7 @@ class TestOptionConformance (unittest.TestCase):
         self.assertFalse(opt.valid_multiple_in_request())
         self.assertFalse(opt.valid_in_response())
         self.assertFalse(opt.valid_multiple_in_response())
-        self.assertTrue(isinstance(opt.format, opt.string))
+        self.assertTrue(isinstance(opt.format, format_string))
         self.assertEqual(1, opt.format.min_length)
         self.assertEqual(255, opt.format.max_length)
 
@@ -299,7 +299,7 @@ class TestOptionConformance (unittest.TestCase):
         self.assertFalse(opt.valid_multiple_in_request())
         self.assertTrue(opt.valid_in_response())
         self.assertFalse(opt.valid_multiple_in_response())
-        self.assertTrue(isinstance(opt.format, opt.uint))
+        self.assertTrue(isinstance(opt.format, format_uint))
         self.assertEqual(0, opt.format.min_length)
         self.assertEqual(4, opt.format.max_length)
 
@@ -310,14 +310,14 @@ class TestEmptyFormat (unittest.TestCase):
         instance.value = value
 
     def testPack(self):
-        empty = UrOption.empty()
+        empty = format_empty()
         self.assertEqual(empty.min_length, 0)
         self.assertEqual(empty.max_length, 0)
         self.assertEqual(b'', empty.to_packed(None))
         self.assertRaises(ValueError, empty.to_packed, 0)
 
     def testUnpack(self):
-        empty = UrOption.empty()
+        empty = format_empty()
         self.assertEqual(None, empty.from_packed(b''))
         self.assertRaises(ValueError, empty.from_packed, b'\x00')
 
@@ -334,7 +334,7 @@ class TestUintFormat (unittest.TestCase):
         instance.value = value
 
     def testPack(self):
-        uint = UrOption.uint(4)
+        uint = format_uint(4)
         self.assertEqual(uint.min_length, 0)
         self.assertEqual(uint.max_length, 4)
         self.assertEqual(b'', uint.to_packed(0))
@@ -345,7 +345,7 @@ class TestUintFormat (unittest.TestCase):
         self.assertRaises(OptionValueLengthError, uint.to_packed, 0x102030405)
 
     def testUnpack(self):
-        uint = UrOption.uint(4)
+        uint = format_uint(4)
         self.assertEqual(0, uint.from_packed(b''))
         self.assertEqual(0, uint.from_packed(b'\x00'))
         self.assertEqual(0, uint.from_packed(b'\x00\x00'))
@@ -376,7 +376,7 @@ class TestUintFormat (unittest.TestCase):
         self.assertRaises(OptionValueLengthError, UriPort, 65536)
 
     def testOptionCoding(self):
-        uint2 = UrOption.uint(2)
+        uint2 = format_uint(2)
         self.assertRaises(ValueError, uint2.option_encoding, u'bad')
         self.assertRaises(ValueError, uint2.option_encoding, -3)
         self.assertEqual((0, b''), uint2.option_encoding(0))
@@ -400,7 +400,7 @@ class TestOpaqueFormat (unittest.TestCase):
         instance.value = value
 
     def testPackUnpack(self):
-        opaque = UrOption.opaque(4, min_length=1)
+        opaque = format_opaque(4, min_length=1)
         for v in (b'\x01', b'\x01\x02', b'\x01\x02\x03', b'\x01\x02\x03\x04'):
             self.assertEqual(v, opaque.to_packed(v))
             self.assertEqual(v, opaque.from_packed(v))
@@ -425,7 +425,7 @@ class TestStringFormat (unittest.TestCase):
         instance.value = value
 
     def testPack(self):
-        string = UrOption.string(8, min_length=1)
+        string = format_string(8, min_length=1)
         self.assertEqual(1, string.min_length)
         self.assertEqual(8, string.max_length)
         ustr = u'Trélat'
@@ -439,7 +439,7 @@ class TestStringFormat (unittest.TestCase):
         self.assertRaises(OptionValueLengthError, string.to_packed, u'123456789')
 
     def testPack2(self):
-        string = UrOption.string(6)
+        string = format_string(6)
         self.assertEqual(0, string.min_length)
         self.assertEqual(6, string.max_length)
         ustr = u'Trélat'
@@ -454,7 +454,7 @@ class TestStringFormat (unittest.TestCase):
         self.assertEqual(pstr, string.to_packed(ustr2))
 
     def testUnpack(self):
-        string = UrOption.string(8, min_length=1)
+        string = format_string(8, min_length=1)
         self.assertEqual(u'Trélat', string.from_packed(b'Tr\xc3\xa9lat'))
         self.assertRaises(OptionValueLengthError, string.from_packed, b'')
         self.assertRaises(OptionValueLengthError, string.from_packed, b'123456789')
