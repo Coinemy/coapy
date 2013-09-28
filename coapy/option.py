@@ -444,8 +444,6 @@ def decode_options(data, is_request):
         option_type = find_option(option_number)
         if option_type is None:
             opt = UnknownOption(option_number, packed_value=packed)
-            if opt.is_critical():
-                raise UnrecognizedCriticalOptionError(opt)
         else:
             opt = option_type(packed_value=packed)
         options.append(opt)

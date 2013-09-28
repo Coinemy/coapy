@@ -561,11 +561,14 @@ class TestEncodeDecodeOptions (unittest.TestCase):
         self.assertTrue(opt.is_critical())
         popt = b'\x93val'
         self.assertEqual(popt, encode_options([opt], True))
-        with self.assertRaises(UnrecognizedCriticalOptionError) as cm:
-            decode_options(popt, True)
-        opt = cm.exception.args[0]
+        (opts, remaining) = decode_options(popt, True)
+        self.assertEqual(b'', remaining)
+        self.assertTrue(isinstance(opts, list))
+        self.assertEqual(1, len(opts))
+        opt = opts[0]
         self.assertTrue(isinstance(opt, UnknownOption))
         self.assertEqual(9, opt.number)
+        self.assertTrue(opt.is_critical())
         self.assertEqual(b'val', opt.value)
 
 if __name__ == '__main__':
