@@ -9,3 +9,4 @@ API
 
    coapy_message.rst
    coapy_option.rst
+   coapy_util.rst
