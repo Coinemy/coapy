@@ -318,6 +318,12 @@ def _register_option(option_class):
         raise InvalidOptionTypeError(option_class)
     if not isinstance(option_class.format, _format_base):
         raise InvalidOptionTypeError(option_class)
+    if not (isinstance(option_class._repeatable, tuple)
+            and (2 == len(option_class._repeatable))):
+        raise InvalidOptionTypeError(option_class)
+    for v in option_class._repeatable:
+        if not ((v is None) or isinstance(v, bool)):
+            raise InvalidOptionTypeError(option_class)
     if option_class.number in _OptionRegistry:
         raise OptionRegistryConflictError(option_class)
     _OptionRegistry[option_class.number] = option_class

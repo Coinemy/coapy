@@ -51,14 +51,21 @@ class TestOptionInfrastructure (unittest.TestCase):
             class ConflictingOption(UrOption):
                 number = IfMatch.number
                 format = format_string(100)
+                _repeatable = (True, True)
 
     def testDeclaration(self):
         with self.assertRaises(InvalidOptionTypeError):
             class MissingFormatOption(UrOption):
                 number = IfMatch.number
+                _repeatable = (True, True)
         with self.assertRaises(InvalidOptionTypeError):
             class MissingNumberOption(UrOption):
-                number = IfMatch.number
+                format = format_empty()
+                _repeatable = (True, True)
+        with self.assertRaises(InvalidOptionTypeError):
+            class MissingRepeatableOption(UrOption):
+                number = 65001
+                format = format_empty()
         with self.assertRaises(InvalidOptionTypeError):
             class MissingBothOption(UrOption):
                 pass
