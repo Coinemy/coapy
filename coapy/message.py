@@ -13,12 +13,10 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 """
-    *************
-    coapy.message
-    *************
+Something
 
-    :copyright: Copyright 2013, Peter A. Bigot
-    :license: Apache-2.0
+:copyright: Copyright 2013, Peter A. Bigot
+:license: Apache-2.0
 """
 
 from __future__ import unicode_literals
@@ -32,22 +30,99 @@ import coapy
 
 
 class TransmissionParameters(object):
-    ACK_TIMEOUT = 2                 # seconds
-    ACK_RANDOM_FACTOR = 1.5         # no units
-    MAX_RETRANSMIT = 4              # transmissions
-    NSTART = 1                      # messages
-    DEFAULT_LEISURE = 5             # seconds
-    PROBING_RATE = 1                # bytes per second
-    MAX_LATENCY = 100               # seconds
-    PROCESSING_DELAY = ACK_TIMEOUT  # seconds
-    MAX_TRANSMIT_SPAN = 45          # seconds
-    MAX_TRANSMIT_WAIT = 93          # seconds
-    MAX_LATENCY = 100               # seconds
-    MAX_RTT = 202                   # seconds
-    EXCHANGE_LIFETIME = 247         # seconds
-    NON_LIFETIME = 145              # seconds
+    """The :coapsect:`transmission parameters<4.8>` that support
+    message transmission behavior including :coapsect:`congestion
+    control<4.7>` in CoAP.
+
+    Some of these parameters are primitive, and some are derived.
+    Consult :coapsect:`4.8.1` for information related to changing
+    these parameters.  After changing the primitive parameters in an
+    instance, invoke :func:`recalculate_derived` to update the derived
+    parameters.
+
+    ==========================  ==============  ==================  ==========
+    Parameter                   Units           Documentation       Class
+    ==========================  ==============  ==================  ==========
+    :attr:`ACK_TIMEOUT`         seconds         :coapsect:`4.8`     Primitive
+    :attr:`ACK_RANDOM_FACTOR`   seconds         :coapsect:`4.8`     Primitive
+    :attr:`MAX_RETRANSMIT`      transmissions   :coapsect:`4.8`     Primitive
+    :attr:`NSTART`              messages        :coapsect:`4.7`     Primitive
+    :attr:`DEFAULT_LEISURE`     seconds         :coapsect:`8.2`     Primitive
+    :attr:`PROBING_RATE`        bytes/second    :coapsect:`4.7`     Primitive
+    :attr:`MAX_LATENCY`         seconds         :coapsect:`4.8.2`   Primitive
+    :attr:`PROCESSING_DELAY`    seconds         :coapsect:`4.8.2`   Primitive
+    :attr:`MAX_TRANSMIT_SPAN`   seconds         :coapsect:`4.8.2`   Derived
+    :attr:`MAX_TRANSMIT_WAIT`   seconds         :coapsect:`4.8.2`   Derived
+    :attr:`MAX_RTT`             seconds         :coapsect:`4.8.2`   Derived
+    :attr:`EXCHANGE_LIFETIME`   seconds         :coapsect:`4.8.2`   Derived
+    :attr:`NON_LIFETIME`        seconds         :coapsect:`4.8.2`   Derived
+    ==========================  ==============  ==================  ==========
+
+    """
+
+    ACK_TIMEOUT = 2
+    """The initial timeout waiting for an acknowledgement, in seconds."""
+
+    ACK_RANDOM_FACTOR = 1.5
+    """A randomization factor to avoid synchronization, in seconds."""
+
+    MAX_RETRANSMIT = 4
+    """The maximum number of retransmissions of a confirmable message.
+    A value of 4 produces a maximum of 5 transmissions when the first
+    transmission is included."""
+
+    NSTART = 1
+    """The maximum number of messages permitted to be outstanding for
+    an endpoint."""
+
+    DEFAULT_LEISURE = 5
+    """A duration, in seconds, that a server may delay before
+    responding to a multicast message."""
+
+    PROBING_RATE = 1
+    """The target maximum average data rate, in bytes per second, for
+    transmissions to an endpoint that does not respond."""
+
+    MAX_LATENCY = 100
+    """The maximum time, in seconds, expected from the start of
+    datagram transmission to completion of its reception.  This
+    includes endpoint transport-, link-, and physical-layer
+    processing, propagation delay through the communications medium,
+    and intermediate routing overhead."""
+
+    PROCESSING_DELAY = ACK_TIMEOUT
+    """The maximum time, in seconds, that node requires to generate an
+    acknowledgement to a confirmable message."""
+
+    MAX_TRANSMIT_SPAN = 45
+    """Maximum time, in seconds, from first transmission of a
+    confirmable message to its last retransmission.."""
+
+    MAX_TRANSMIT_WAIT = 93
+    """Maximum time, in seconds, from first transmission of a
+    confirmable message to when the sender may give up on receiving
+    acknowledgement or reset."""
+
+    MAX_RTT = 202
+    """Maximum round-trip-time, in seconds, considering
+    :attr:`MAX_LATENCY` and :attr:`PROCESSING_DELAY`."""
+
+    EXCHANGE_LIFETIME = 247
+    """Time, in seconds, from first transmission of a confirmable
+    message to when an acknowledgement is no longer expected."""
+
+    NON_LIFETIME = 145
+    """Time, in seconds, from transmission of a non-confirmable
+    message to when its Message-ID may be safely re-used."""
 
     def recalculate_derived(self):
+        """Calculate values for parameters that may be derived.
+
+        This uses the calculations in :coapsect:`4.8.2` to calculate
+        :attr:`MAX_TRANSMIT_SPAN`, :attr:`MAX_TRANSMIT_WAIT`,
+        :attr:`MAX_RTT`, :attr:`EXCHANGE_LIFETIME`, and
+        :attr:`NON_LIFETIME` from other parameters in the instance.
+        """
         self.MAX_TRANSMIT_SPAN = \
             self.ACK_TIMEOUT \
             * ((1 << self.MAX_RETRANSMIT) - 1) \
@@ -60,29 +135,59 @@ class TransmissionParameters(object):
         self.EXCHANGE_LIFETIME = self.MAX_TRANSMIT_SPAN + self.MAX_RTT
         self.NON_LIFETIME = self.MAX_TRANSMIT_SPAN + self.MAX_LATENCY
 
-    def timeout_control(self, initial_timeout=None):
-        class retry (object):
-            def __init__(self, params, initial_timeout):
-                if initial_timeout is None:
-                    initial_timeout = \
-                        params.ACK_TIMEOUT \
-                        + random.random() * params.ACK_RANDOM_FACTOR
-                self.timeout = initial_timeout
-                self.max_counter = params.MAX_RETRANSMIT
-                self.counter = -1
+    def timeout_control(self, initial_timeout=None, max_retransmissions=None):
+        return RetransmissionState(initial_timeout=initial_timeout,
+                                   max_retransmissions=max_retransmissions,
+                                   transmission_parameters=self)
 
-            def __iter__(self):
-                return self
 
-            def next(self):
-                if not self.have_next():
-                    raise StopIteration
-                rv = self.timeout
-                self.counter += 1
-                self.timeout += self.timeout
-                return rv
+class RetransmissionState (object):
+    """An iterable that provides the time to the next retransmission.
 
-            def have_next(self):
-                return self.counter < self.max_counter
+    *initial_timeout* is the time, in seconds, to the first
+    retransmission; a default is calculated from
+    *transmission_parameters* if provided.
 
-        return retry(self, initial_timeout)
+    *max_retransmissions* is the total number of re-transmissions; a
+    default is obtained from *transmission_parameters* if provided.
+
+    Thus::
+
+      list(RetransmissionState(3,4))
+
+    will produce::
+
+      [3, 6, 12, 24]
+
+    """
+    def __init__(self, initial_timeout=None,
+                 max_retransmissions=None, transmission_parameters=None):
+        if (not isinstance(transmission_parameters, TransmissionParameters)
+            and ((initial_timeout is None)
+                 or (max_retransmissions is None))):
+            raise ValueError
+        if initial_timeout is None:
+            initial_timeout = \
+                transmission_parameters.ACK_TIMEOUT \
+                + random.random() * transmission_parameters.ACK_RANDOM_FACTOR
+        if max_retransmissions is None:
+            max_retransmissions = transmission_parameters.MAX_RETRANSMIT
+        self.timeout = initial_timeout
+        self.max_retransmissions = max_retransmissions
+        self.counter = 0
+
+    def __iter__(self):
+        return self
+
+    def _get_remaining(self):
+        """The number of retransmissions remaining in the iterator."""
+        return self.max_retransmissions - self.counter
+    retransmissions_remaining = property(_get_remaining)
+
+    def next(self):
+        if self.counter >= self.max_retransmissions:
+            raise StopIteration
+        rv = self.timeout
+        self.counter += 1
+        self.timeout += self.timeout
+        return rv

@@ -13,12 +13,15 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 """
-    ************
-    coapy.option
-    ************
+CoAP defines :coapsect:`a variety of options<5.10>` that affect
+request and response semantics.  This module provides classes and
+functions to operate on native Python instances of the options, and to
+translate them between
+the Python instances and their :coapsect:`encoded representation
+within messages<3.1>`
 
-    :copyright: Copyright 2013, Peter A. Bigot
-    :license: Apache-2.0
+:copyright: Copyright 2013, Peter A. Bigot
+:license: Apache-2.0
 """
 
 from __future__ import unicode_literals
@@ -289,7 +292,8 @@ class format_string (_format_base):
     """Supports options with text values.
 
     Unpacked values are Python Unicode (text) strings.  Packed values
-    are in Net-Unicode form (:rfc:`5198`).  Note that, as usual, the
+    are :class:`bytes` in Net-Unicode form (:rfc:`5198`), a
+    canonicalized ``utf-8`` encoding.  Note that, as usual, the
     *max_length* and *min_length* attributes apply to the packed
     representation, which for non-ASCII text may be longer than the
     unpacked representation.
@@ -413,9 +417,9 @@ class _MetaUrOption(type):
 def is_critical_option(number):
     """Return ``True`` iff *number* identifies a critical option.
 
-    A *critical* option is one that must be understood by the endpoint
-    processing the message.  This is indicated by bit 0 (0x01) of the
-    *number* being set.
+    A :coapsect:`critical option<5.4.1>` is one that must be
+    understood by the endpoint processing the message.  This is
+    indicated by bit 0 (0x01) of the *number* being set.
     """
     return number & 1
 
@@ -423,21 +427,20 @@ def is_critical_option(number):
 def is_unsafe_option(number):
     """Return ``True`` iff the option number identifies an unsafe option.
 
-    An *unsafe* option is one that must be recognized by a proxy in
-    order to safely forward (or cache) the message.  This is indicated
-    by bit 1 (0x02) of the *number* being set."""
+    An :coapsect:`unsafe option<5.4.2>` is one that must be recognized
+    by a proxy in order to safely forward (or cache) the message.
+    This is indicated by bit 1 (0x02) of the *number* being set."""
     return number & 2
 
 
 def is_no_cache_key_option(number):
     """Return ``True`` iff the option number identifies a NoCacheKey option.
 
-    A *NoCacheKey* option is one for which the value of the option
-    does not contribute to the key that identifies a matching value in
-    a cache.  This is encoded in bits 1 through 5 of the *number*.
-    Options that are :func:`unsafe<is_unsafe_option>` are always
-    NoCacheKey options.
-
+    A :coapsect:`NoCacheKey option<5.4.2>` is one for which the value
+    of the option does not contribute to the key that identifies a
+    matching value in a cache.  This is encoded in bits 1 through 5 of
+    the *number*.  Options that are :func:`unsafe<is_unsafe_option>`
+    are always NoCacheKey options.
     """
     return (0x1c == (number & 0x1e))
 
@@ -705,24 +708,36 @@ class UnknownOption (UrOption):
 
 
 class IfMatch (UrOption):
+    """Option used to make requests conditional on an :class:`ETag`
+    match.  See :coapsect:`5.10.8.1`.
+    """
     number = 1
     _repeatable = (True, None)
     format = format_opaque(8)
 
 
 class UriHost (UrOption):
+    """Option encoding the Internet host of a requested resource.  See
+    :coapsect:`5.10.1`.
+    """
     number = 3
     _repeatable = (False, None)
     format = format_string(255, min_length=1)
 
 
 class ETag (UrOption):
+    """Option used for a resource-local short-hand for a given
+    representation of a resource.  See :coapsect:`5.10.6`.
+    """
     number = 4
     _repeatable = (True, False)
     format = format_opaque(8, min_length=1)
 
 
 class IfNoneMatch (UrOption):
+    """Option used to make requests conditional absence of a resource.
+    See :coapsect:`5.10.8.2`.
+    """
     number = 5
     _repeatable = (False, None)
     format = format_empty()
@@ -735,66 +750,111 @@ class IfNoneMatch (UrOption):
 
 
 class UriPort (UrOption):
+    """Option encoding the transport-layer port of a requested
+    resource.  See :coapsect:`5.10.1`.
+    """
     number = 7
     _repeatable = (False, None)
     format = format_uint(2)
 
 
 class LocationPath (UrOption):
+    """Option encoding (a segment of) the path of a resource
+    identified in a response.  This option may occur multiple times.
+    See :coapsect:`5.10.7`.
+    """
     number = 8
     _repeatable = (None, True)
     format = format_string(255)
 
 
 class UriPath (UrOption):
+    """Option encoding (a segment of) the path of a requested
+    resource.  This option may occur multiple times.  See
+    :coapsect:`5.10.1`.
+    """
     number = 11
     _repeatable = (True, None)
     format = format_string(255)
 
 
 class ContentFormat (UrOption):
+    """Option encoding the representation format of the message
+    payload.  See :coapsect:`5.10.3`.
+    """
     number = 12
     _repeatable = (False, False)
     format = format_uint(2)
 
 
 class MaxAge (UrOption):
+    """Option encoding the maximum time (in seconds) that a response
+    may be cached before it is outdated.  See :coapsect:`5.10.5`.
+    """
     number = 14
     _repeatable = (None, False)
     format = format_uint(4)
 
 
 class UriQuery (UrOption):
+    """Option encoding (an element of) the query part of a requested
+    resource.  This option may occur multiple times.  See
+    :coapsect:`5.10.1`.
+    """
     number = 15
     _repeatable = (True, None)
     format = format_string(255)
 
 
 class Accept (UrOption):
+    """Option encoding the representation format acceptable to a
+    client.  See :coapsect:`5.10.4`.
+    """
     number = 17
     _repeatable = (False, None)
     format = format_uint(2)
 
 
 class LocationQuery (UrOption):
+    """Option encoding (an element of) the query part of a resource
+    identified in a response.  This option may occur multiple times.
+    See :coapsect:`5.10.7`.
+    """
     number = 20
     _repeatable = (None, True)
     format = format_string(255)
 
 
 class ProxyUri (UrOption):
+    """Option encoding the URI of a request directed through a
+    :coapsect:`forward-proxy<5.7>`. See :coapsect:`5.10.2`.
+
+    If this option appears in a request, none of :class:`UriHost`,
+    :class:`UriPort`, :class:`UriPath`, or :class:`UriQuery` may
+    appear.
+    """
     number = 35
     _repeatable = (False, None)
     format = format_string(1034, min_length=1)
 
 
 class ProxyScheme (UrOption):
+    """Option encoding the schema for a URI of a request directed
+    through a :coapsect:`forward-proxy<5.7>`.  In this case the
+    remainder of the URI is constructed from :class:`UriHost`,
+    :class:`UriPort`, :class:`UriPath`, or :class:`UriQuery` options.
+    See :coapsect:`5.10.2`.
+    """
     number = 39
     _repeatable = (False, None)
     format = format_string(255, min_length=1)
 
 
 class Size1 (UrOption):
+    """Option providing size (in bytes) of a resource representation
+    in a request.  It may appear in an informational role in a
+    diagnostic response.  See :coapsect:`5.10.9`.
+    """
     number = 60
     _repeatable = (False, False)
     format = format_uint(4)

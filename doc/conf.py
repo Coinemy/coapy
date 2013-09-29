@@ -26,7 +26,7 @@ import sys, os
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.autosummary',
-              'sphinx.ext.intersphinx',
+              'sphinx.ext.intersphinx', 'sphinx.ext.extlinks',
               'sphinx.ext.doctest', 'sphinx.ext.coverage', 'sphinx.ext.viewcode']
 
 # Add any paths that contain templates here, relative to this directory.
@@ -248,3 +248,5 @@ sys.path.insert(0, os.path.abspath('..'))
 
 autodoc_default_flags = ['members', 'show-inheritance']
 intersphinx_mapping = {'python': ('http://docs.python.org/2.7', None)}
+extlinks = {'coapsect': ('http://tools.ietf.org/html/draft-ietf-core-coap-18#section-%s',
+                         'CoAP Section ')}
