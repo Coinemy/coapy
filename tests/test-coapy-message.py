@@ -159,5 +159,24 @@ class TestMessage (unittest.TestCase):
         self.assertTrue(m.payload is None)
         self.assertRaises(TypeError, self.setPayload, m, 'text')
 
+    def testReadOnly(self):
+        m = Message()
+        self.assertEqual(0, Message.Type_CON)
+        self.assertEqual(0, m.Type_CON)
+        self.assertEqual(1, Message.Type_NON)
+        self.assertEqual(1, m.Type_NON)
+        self.assertEqual(2, Message.Type_ACK)
+        self.assertEqual(2, m.Type_ACK)
+        self.assertEqual(3, Message.Type_RST)
+        self.assertEqual(3, m.Type_RST)
+        with self.assertRaises(AttributeError):
+            Message.Type_CON = 23
+        with self.assertRaises(AttributeError):
+            Message.Type_NON = 23
+        with self.assertRaises(AttributeError):
+            Message.Type_ACK = 23
+        with self.assertRaises(AttributeError):
+            Message.Type_RST = 23
+
 if __name__ == '__main__':
     unittest.main()

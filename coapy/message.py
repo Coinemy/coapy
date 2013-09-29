@@ -28,7 +28,7 @@ from __future__ import division
 import random
 import coapy
 import coapy.option
-
+import coapy.util
 
 class Message(object):
     """A CoAP message, per :coapsect:`3`.
@@ -42,10 +42,12 @@ class Message(object):
     values for those attributes.
     """
 
-    Type_CON = 0   #: Type for a :meth:`confirmable<is_confirmable>` message
-    Type_NON = 1   #: Type for a :meth:`non-confirmable<is_non_confirmable>` message
-    Type_ACK = 2   #: Type for an :meth:`acknowledgement<is_acknowledgement>` message
-    Type_RST = 3   #: Type for a :meth:`reset<is_reset>` message
+    __metaclass__ = coapy.util.ReadOnlyMeta
+
+    Type_CON = coapy.util.ClassReadOnly(0)   #: Type for a :meth:`confirmable<is_confirmable>` message
+    Type_NON = coapy.util.ClassReadOnly(1)   #: Type for a :meth:`non-confirmable<is_non_confirmable>` message
+    Type_ACK = coapy.util.ClassReadOnly(2)   #: Type for an :meth:`acknowledgement<is_acknowledgement>` message
+    Type_RST = coapy.util.ClassReadOnly(3)   #: Type for a :meth:`reset<is_reset>` message
 
     def is_confirmable(self):
         """True if this message is :coapsect:`confirmable<2.1>`,
@@ -210,10 +212,6 @@ class Message(object):
         self._set_token(token)
         self.options = options
         self._set_payload(payload)
-#type(Message).Type_CON = property(lambda *_: Message.Type_CON)
-#type(Message).Type_NON = property(lambda *_: Message.Type_NON)
-#type(Message).Type_ACK = property(lambda *_: Message.Type_ACK)
-#type(Message).Type_RST = property(lambda *_: Message.Type_RST)
 
 
 class TransmissionParameters(object):
@@ -335,7 +333,7 @@ class RetransmissionState (object):
     retransmission; a default is calculated from
     *transmission_parameters* if provided.
 
-    *max_retransmissions* is the total number of re-transmissions; a
+    *max_retransmissions* is the maximum number of re-transmissions; a
     default is obtained from *transmission_parameters* if provided.
 
     Thus::
