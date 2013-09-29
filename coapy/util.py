@@ -25,8 +25,7 @@ class ClassReadOnly (object):
     read-only within the class as well as instances of the class.
 
     Effective only if the metaclass is (or is derived from)
-    :class:`ReadOnlyMeta`.  The read-only nature of the attribute is
-    not inherited in sub-classes.
+    :class:`ReadOnlyMeta`.
 
     Example::
 
@@ -43,10 +42,6 @@ class ClassReadOnly (object):
       C.Zero = 4
       # As will this:
       instance.Zero = 4
-
-      class SubC(C):
-          # But nothing prevents this:
-          Zero = 2
     """
 
     def __init__(self, value):

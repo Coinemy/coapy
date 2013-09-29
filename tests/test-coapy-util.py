@@ -41,9 +41,39 @@ class TestReadOnlyMeta (unittest.TestCase):
         self.assertRaises(AttributeError, self.setZero, C, 3)
 
     def testInheritance(self):
-        class B(object):
+        class C (object):
             __metaclass__ = ReadOnlyMeta
             Zero = ClassReadOnly(0)
+
+        class S1 (C):
+            # Weirdness:  This creates a new attribute but it's
+            # not visible at the class level, only at instances of
+            # the class
+            Zero = 1
+
+        class S2 (C):
+            One = ClassReadOnly(1)
+
+        self.assertEqual(0, C.Zero)
+        self.assertEqual(0, S1.Zero)
+        self.assertEqual(0, S2.Zero)
+        self.assertEqual(1, S2.One)
+        c = C()
+        s1 = S1()
+        s2 = S2()
+        self.assertEqual(0, c.Zero)
+        self.assertEqual(1, s1.Zero)
+        self.assertEqual(0, s2.Zero)
+        self.assertEqual(1, s2.One)
+        self.assertRaises(AttributeError, self.setZero, C, 3)
+        self.assertRaises(AttributeError, self.setZero, S1, 3)
+        self.assertRaises(AttributeError, self.setZero, S2, 3)
+        self.assertRaises(AttributeError, self.setZero, c, 3)
+        # Oddly, this works:
+        s1.Zero = 3
+        self.assertEqual(0, S1.Zero)
+        self.assertEqual(3, s1.Zero)
+        self.assertRaises(AttributeError, self.setZero, s2, 3)
 
 
 if __name__ == '__main__':
