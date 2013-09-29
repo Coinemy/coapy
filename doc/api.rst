@@ -12,7 +12,7 @@ Option-Related Exceptions
 .. autoexception:: OptionError
 .. autoexception:: OptionRegistryConflictError
 .. autoexception:: InvalidOptionTypeError
-.. autoexception:: OptionValueLengthError
+.. autoexception:: OptionLengthError
 .. autoexception:: OptionDecodeError
 .. autoexception:: UnrecognizedCriticalOptionError
 .. autoexception:: InvalidOptionError

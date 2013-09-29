@@ -72,7 +72,8 @@ class TestOptionInfrastructure (unittest.TestCase):
 
     def testFindOption(self):
         self.assertEqual(IfMatch, find_option(IfMatch.number))
-        self.assertTrue(find_option(-3) is None)
+        self.assertRaises(ValueError, find_option, -3)
+        self.assertTrue(find_option(0) is None)
 
     def testUnknownOption(self):
         with self.assertRaises(ValueError):
@@ -321,23 +322,23 @@ class TestEmptyFormat (unittest.TestCase):
         self.assertEqual(empty.min_length, 0)
         self.assertEqual(empty.max_length, 0)
         self.assertEqual(b'', empty.to_packed(b''))
-        self.assertRaises(ValueError, empty.to_packed, None)
-        self.assertRaises(ValueError, empty.to_packed, 0)
+        self.assertRaises(TypeError, empty.to_packed, None)
+        self.assertRaises(TypeError, empty.to_packed, 0)
 
     def testUnpack(self):
         empty = format_empty()
         self.assertEqual(b'', empty.from_packed(b''))
-        self.assertRaises(ValueError, empty.from_packed, None)
-        self.assertRaises(ValueError, empty.from_packed, '')
-        self.assertRaises(OptionValueLengthError, empty.from_packed, b'\x00')
+        self.assertRaises(TypeError, empty.from_packed, None)
+        self.assertRaises(TypeError, empty.from_packed, '')
+        self.assertRaises(OptionLengthError, empty.from_packed, b'\x00')
 
     def testOptionValues(self):
         opt = IfNoneMatch()
         self.assertEqual(opt.value, b'')
         opt.value = b''
-        self.assertRaises(ValueError, self.setValue, opt, None)
-        self.assertRaises(ValueError, self.setValue, opt, '')
-        self.assertRaises(ValueError, self.setValue, opt, 0)
+        self.assertRaises(TypeError, self.setValue, opt, None)
+        self.assertRaises(TypeError, self.setValue, opt, '')
+        self.assertRaises(TypeError, self.setValue, opt, 0)
 
 
 class TestUintFormat (unittest.TestCase):
@@ -354,7 +355,7 @@ class TestUintFormat (unittest.TestCase):
         self.assertEqual(b'\x01\x02', uint.to_packed(0x102))
         self.assertEqual(b'\x01\x02\x03', uint.to_packed(0x10203))
         self.assertEqual(b'\x01\x02\x03\x04', uint.to_packed(0x1020304))
-        self.assertRaises(OptionValueLengthError, uint.to_packed, 0x102030405)
+        self.assertRaises(OptionLengthError, uint.to_packed, 0x102030405)
 
     def testUnpack(self):
         uint = format_uint(4)
@@ -363,7 +364,7 @@ class TestUintFormat (unittest.TestCase):
         self.assertEqual(0, uint.from_packed(b'\x00\x00'))
         self.assertEqual(0, uint.from_packed(b'\x00\x00\x00'))
         self.assertEqual(0, uint.from_packed(b'\x00\x00\x00\x00'))
-        self.assertRaises(OptionValueLengthError, uint.from_packed, b'\x00\x00\x00\x00\x00')
+        self.assertRaises(OptionLengthError, uint.from_packed, b'\x00\x00\x00\x00\x00')
         self.assertEqual(1, uint.from_packed(b'\x01'))
         self.assertEqual(1, uint.from_packed(b'\x00\x01'))
         self.assertEqual(1, uint.from_packed(b'\x00\x00\x01'))
@@ -374,22 +375,22 @@ class TestUintFormat (unittest.TestCase):
         self.assertEqual(0x010203, uint.from_packed(b'\x01\x02\x03'))
         self.assertEqual(0x010203, uint.from_packed(b'\x00\x01\x02\x03'))
         self.assertEqual(0x01020304, uint.from_packed(b'\x01\x02\x03\x04'))
-        self.assertRaises(OptionValueLengthError, uint.from_packed, b'\x01\x02\x03\x04\x05')
+        self.assertRaises(OptionLengthError, uint.from_packed, b'\x01\x02\x03\x04\x05')
 
     def testOptionValues(self):
         opt = UriPort()
         self.assertTrue(opt.value is None)
-        self.assertRaises(ValueError, self.setValue, opt, None)
+        self.assertRaises(TypeError, self.setValue, opt, None)
         opt.value = 3
         self.assertEqual(3, opt.value)
-        self.assertRaises(OptionValueLengthError, self.setValue, opt, 65536)
+        self.assertRaises(OptionLengthError, self.setValue, opt, 65536)
         opt = UriPort(532)
         self.assertEqual(532, opt.value)
-        self.assertRaises(OptionValueLengthError, UriPort, 65536)
+        self.assertRaises(OptionLengthError, UriPort, 65536)
 
     def testOptionCoding(self):
         uint2 = format_uint(2)
-        self.assertRaises(ValueError, uint2.option_encoding, u'bad')
+        self.assertRaises(TypeError, uint2.option_encoding, u'bad')
         self.assertRaises(ValueError, uint2.option_encoding, -3)
         self.assertEqual((0, b''), uint2.option_encoding(0))
         self.assertEqual((0, b'ABC'), uint2.option_decoding(0, b'ABC'))
@@ -417,14 +418,14 @@ class TestOpaqueFormat (unittest.TestCase):
             self.assertEqual(v, opaque.to_packed(v))
             self.assertEqual(v, opaque.from_packed(v))
         for v in (b'', b'\x01\x02\x03\x04\x05'):
-            self.assertRaises(OptionValueLengthError, opaque.from_packed, v)
-            self.assertRaises(OptionValueLengthError, opaque.to_packed, v)
+            self.assertRaises(OptionLengthError, opaque.from_packed, v)
+            self.assertRaises(OptionLengthError, opaque.to_packed, v)
 
     def testOptionValues(self):
         opt = ETag()
         self.assertTrue(opt.value is None)
-        self.assertRaises(ValueError, self.setValue, opt, 0)
-        self.assertRaises(OptionValueLengthError, self.setValue, opt, b'')
+        self.assertRaises(TypeError, self.setValue, opt, 0)
+        self.assertRaises(OptionLengthError, self.setValue, opt, b'')
         opt.value = b'1234'
         self.assertEqual(b'1234', opt.value)
         opt = ETag(b'524')
@@ -447,8 +448,8 @@ class TestStringFormat (unittest.TestCase):
         self.assertEqual(ustr, pstr.decode('utf-8'))
         self.assertEqual(pstr, ustr.encode('utf-8'))
         self.assertEqual(pstr, string.to_packed(ustr))
-        self.assertRaises(OptionValueLengthError, string.to_packed, u'')
-        self.assertRaises(OptionValueLengthError, string.to_packed, u'123456789')
+        self.assertRaises(OptionLengthError, string.to_packed, u'')
+        self.assertRaises(OptionLengthError, string.to_packed, u'123456789')
 
     def testPack2(self):
         string = format_string(6)
@@ -462,20 +463,20 @@ class TestStringFormat (unittest.TestCase):
         self.assertEqual(7, len(pstr))
         pstr = ustr2.encode('utf-8')
         self.assertEqual(6, len(pstr))
-        self.assertRaises(OptionValueLengthError, string.to_packed, ustr)
+        self.assertRaises(OptionLengthError, string.to_packed, ustr)
         self.assertEqual(pstr, string.to_packed(ustr2))
 
     def testUnpack(self):
         string = format_string(8, min_length=1)
         self.assertEqual(u'Trélat', string.from_packed(b'Tr\xc3\xa9lat'))
-        self.assertRaises(OptionValueLengthError, string.from_packed, b'')
-        self.assertRaises(OptionValueLengthError, string.from_packed, b'123456789')
+        self.assertRaises(OptionLengthError, string.from_packed, b'')
+        self.assertRaises(OptionLengthError, string.from_packed, b'123456789')
 
     def testOptionValues(self):
         opt = UriHost()
         self.assertTrue(opt.value is None)
-        self.assertRaises(ValueError, self.setValue, opt, b'1234')
-        self.assertRaises(OptionValueLengthError, self.setValue, opt, u'')
+        self.assertRaises(TypeError, self.setValue, opt, b'1234')
+        self.assertRaises(OptionLengthError, self.setValue, opt, u'')
         opt.value = u'localhost'
         self.assertEqual(opt.value, u'localhost')
         opt = UriHost(u'Trélat')

@@ -58,7 +58,10 @@ class InvalidOptionTypeError (OptionError):
     pass
 
 
-class OptionValueLengthError (OptionError):
+class OptionLengthError (ValueError, OptionError):
+    """Exception raised when a value's packed representation violates
+    an option's length constraints, as determined by
+    :attr:`UrOption.format`."""
     pass
 
 
@@ -124,19 +127,20 @@ class _format_base (object):
         """Convert *value* to packed form.
 
         If *value* is not an instance of :attr:`unpacked_type` then
-        :exc:`ValueError` will be raised with *value* as an argument.
+        :exc:`TypeError<python:exceptions.typeError>` will be raised
+        with *value* as an argument.
 
         The return value is a :class:`bytes` object with a length
         between :attr:`min_length` and :attr:`max_length`.  If *value*
         results in a packed format that is not within these bounds,
-        :exc:`OptionValueLengthError` will be raised with *value* as
+        :exc:`OptionLengthError` will be raised with *value* as
         an argument.
         """
         if not isinstance(value, self.unpacked_type):
-            raise ValueError(value)
+            raise TypeError(value)
         pv = self._to_packed(value)
         if (len(pv) < self.min_length) or (self.max_length < len(pv)):
-            raise OptionValueLengthError(value)
+            raise OptionLengthError(value)
         return pv
 
     def _to_packed(self, value):
@@ -152,20 +156,21 @@ class _format_base (object):
         """Convert *packed* to its unpacked form.
 
         If *packed* is not an instance of :class:`bytes` then
-        :exc:`ValueError` will be raised with *packed* as an argument.
+        :exc:`TypeError<python:exceptions.TypeError>` will be raised
+        with *packed* as an argument.
 
         If the length of *packed* is not between :attr:`min_length`
         and :attr:`max_length` (both inclusive) then
-        :exc:`OptionValueLengthError` will be raised with *packed* as
+        :exc:`OptionLengthError` will be raised with *packed* as
         an argument.
 
         Otherwise the value is unpacked and a corresponding instance
         of :attr:`unpacked_type` is returned.
         """
         if not isinstance(packed, bytes):
-            raise ValueError(packed)
+            raise TypeError(packed)
         if (len(packed) < self.min_length) or (self.max_length < len(packed)):
-            raise OptionValueLengthError(packed)
+            raise OptionLengthError(packed)
         return self._from_packed(packed)
 
     def _from_packed(self, value):
@@ -252,7 +257,9 @@ class format_uint (_format_base):
         return value
 
     def option_encoding(self, value):
-        if (not isinstance(value, int)) or (0 > value):
+        if not isinstance(value, int):
+            raise TypeError(value)
+        if (0 > value):
             raise ValueError(value)
         if value < 13:
             ov = value
@@ -334,8 +341,13 @@ def find_option(number):
     """Look up an option by number.
 
     Returns the :py:class:`UrOption` subclass registered for *number*,
-    or ``None`` if no such option has been registered.
+    or ``None`` if no such option has been registered.  *number* must
+    be an :class:`int` in the range 0 through 65535.
     """
+    if not isinstance(number, int):
+        raise TypeError(number)
+    if not ((0 <= number) and (number <= 65535)):
+        raise ValueError(number)
     return _OptionRegistry.get(number, None)
 
 
@@ -422,8 +434,10 @@ def is_no_cache_key_option(number):
     """Return ``True`` iff the option number identifies a NoCacheKey option.
 
     A *NoCacheKey* option is one for which the value of the option
-    does not contribute the key that identifies a matching value in a
-    cache.  This is encoded in bits 1 through 5 of the *number*.
+    does not contribute to the key that identifies a matching value in
+    a cache.  This is encoded in bits 1 through 5 of the *number*.
+    Options that are :func:`unsafe<is_unsafe_option>` are always
+    NoCacheKey options.
 
     """
     return (0x1c == (number & 0x1e))
@@ -432,6 +446,11 @@ def is_no_cache_key_option(number):
 class UrOption (object):
     """Abstract base for CoAP options.
 
+    If *unpacked_value* is not ``None``, :attr:`value` will be initialized
+    with that value; otherwise if *packed_value* is not ``None``
+    :attr:`value` will be initialized with the corresponding unpacked
+    value; otherwise :attr:`value` will be ``None`` until a valid
+    value is assigned.
     """
 
     __metaclass__ = _MetaUrOption
@@ -453,9 +472,9 @@ class UrOption (object):
     ============   ========
 
     The attribute is read-only.  Each subclass of :py:class:`UrOption`
-    is registered during its definition; :py:exc:`InvalidOptionType`
-    will be raised if multiple options with the same number are
-    defined.
+    is registered during its definition.  :py:exc:`InvalidOptionType`
+    will be raised if a previously-registered option exists with the
+    same option number.
     """
 
     _repeatable = None
@@ -469,14 +488,21 @@ class UrOption (object):
     """
 
     format = None
+    """An instance of :class:`format_empty`, :class:`format_opaque`,
+    :class:`format_uint`, or :class:`format_string`.  The instance is
+    used to check that the :attr:`value` is acceptable for the
+    option."""
 
     def is_critical(self):
+        """Passes ``self.number`` to :func:`is_critical_option`."""
         return is_critical_option(self.number)
 
     def is_unsafe(self):
+        """Passes ``self.number`` to :func:`is_unsafe_option`."""
         return is_unsafe_option(self.number)
 
     def is_no_cache_key(self):
+        """Passes ``self.number`` to :func:`is_no_cache_key_option`."""
         return is_no_cache_key_option(self.number)
 
     def valid_in_request(self):
@@ -506,7 +532,15 @@ class UrOption (object):
     def _get_value(self):
         return self.__value
 
-    value = property(_get_value, _set_value)
+    value = property(_get_value, _set_value, None,
+                     """Contains the value of the option.  This is an
+                     instance of
+                     :attr:`format.unpacked_type<_format_base.unpacked_type>`.
+                     Only values that pass the restrictions of
+                     :attr:`format` may be assigned to this property.
+                     Unacceptable values result in
+                     :exc:`TypeError<python:exceptions.TypeError>`
+                     or :exc:`OptionLengthError`.""")
 
     def packed_value(self):
         return self.format.to_packed(self.value)
@@ -589,11 +623,9 @@ class UnknownOption (UrOption):
     number = property(_get_number)
 
     def __init__(self, number, unpacked_value=None, packed_value=None):
-        if not (isinstance(number, int) and (0 <= number) and (number <= 65535)):
-            raise ValueError('invalid option number')
         option = find_option(number)
         if option is not None:
-            raise ValueError('conflicting option number', option)
+            raise ValueError(number, option)
         self.__number = number
         super(UnknownOption, self).__init__(unpacked_value=unpacked_value,
                                             packed_value=packed_value)
