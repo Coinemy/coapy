@@ -27,6 +27,193 @@ from __future__ import division
 
 import random
 import coapy
+import coapy.option
+
+
+class Message(object):
+    """A CoAP message, per :coapsect:`3`.
+
+    A message may be created as *confirmable*, an *acknowledgement*,
+    or a *reset* message.  If none of these is specified, it is
+    created as a non-confirmable message.
+
+    *code*, *token*, *options*, and *payload* all initialize the
+    corresponding attributes of this class and must be acceptable
+    values for those attributes.
+    """
+
+    Type_CON = 0   #: Type for a :meth:`confirmable<is_confirmable>` message
+    Type_NON = 1   #: Type for a :meth:`non-confirmable<is_non_confirmable>` message
+    Type_ACK = 2   #: Type for an :meth:`acknowledgement<is_acknowledgement>` message
+    Type_RST = 3   #: Type for a :meth:`reset<is_reset>` message
+
+    def is_confirmable(self):
+        """True if this message is :coapsect:`confirmable<2.1>`,
+        i.e. will be :coapsect:`retransmitted<4.2>` for reliability,
+        and an acknowledgement or reset is expected.
+        """
+        return self.Type_CON == self.__type
+
+    def is_non_confirmable(self):
+        """True if this message is :coapsect:`non-confirmable<2.1>`,
+        meaning the CoAP layer :coapsect:`will not retransmit<4.3>`
+        it, and an acknowledgement is not expected.
+        """
+        return self.Type_NON == self.__type
+
+    def is_acknowledgement(self):
+        """True if this message is an :coapsect:`acknowledgement<1.2>`
+        that a particular confirmable message with :attr:`messageID`
+        was
+        received."""
+        return self.Type_ACK == self.__type
+
+    def is_reset(self):
+        """True if this message is an indication that a particular
+        message with :attr:`messageID` arrived but that the receiver
+        could not process it."""
+        return self.Type_RST == self.__type
+
+    def _get_type(self):
+        """The type of the message as :attr:`Type_CON`,
+        :attr:`Type_NON`, :attr:`Type_ACK`, or :attr:`Type_RST`.  This
+        is a read-only attribute."""
+        return self.__type
+    messageType = property(_get_type)
+
+    def _get_code(self):
+        """The message code, expressed as a tuple ``(class, detail)``
+        where *class* is an integer value from 0 through 7 and
+        *detail* is an integer value from 0 through 31.
+
+        A code of ``None`` is allowed only when the message is
+        created, and a valid code must be assigned before the message
+        may be transmitted.
+
+        For convenience, the code may also be set from its packed
+        format defined by ``(class << 5) | detail``.  Decimal code
+        representation such as ``4.03`` is not supported.
+        """
+        return self.__code
+
+    def _set_code(self, code):
+        if isinstance(code, tuple):
+            if 2 != len(code):
+                raise ValueError(code)
+            (clazz, detail) = code
+            if not (0 <= clazz and clazz <= 7):
+                raise ValueError(code)
+            if not (0 <= detail and detail <= 31):
+                raise ValueError(code)
+        elif isinstance(code, int):
+            if (0 > code) or (255 < code):
+                raise ValueError(code)
+            code = (code >> 5, code & 0x1F)
+        else:
+            raise TypeError(code)
+        self.__code = code
+
+    code = property(_get_code, _set_code)
+
+    def _get_packed_code(self):
+        """Return :attr:`code` in its packed form as an unsigned 8-bit integer.
+
+        This will raise
+        :exc:`ValueError<python:exceptions.ValueError>` if
+        :attr:`code` has not been assigned.
+        """
+        if self.__code is None:
+            raise ValueError(None)
+        return (self.__code[0] << 5) | self.__code[1]
+
+    packed_code = property(_get_packed_code)
+
+    def _get_messageID(self):
+        """An integer between 0 and 65535, inclusive, uniquely
+        identifying a confirmable or non-confirmable message among
+        those recently transmitted by its sender.  This value is used
+        to correlate confirmable and non-confirmable messages with
+        acknowledgement and reset messages.  It is not used for
+        request/response correlation.
+        """
+        return self.__messageID
+
+    def _set_messageID(self, message_id):
+        if not isinstance(message_id, int):
+            raise TypeError(message_id)
+        if not ((0 <= message_id) and (message_id <= 65535)):
+            raise ValueError(message_id)
+        self.__messageID = message_id
+
+    messageID = property(_get_messageID, _set_messageID)
+
+    def _get_token(self):
+        """The :coapsect:`token<5.3.1>` associated with the message.
+
+        Tokens are used to :coapsect:`match<5.3.2>` requests with
+        responses.  ``None`` is used for a message that has no token.
+        Otherwise the token must be a :class:`bytes` instance with
+        length between 1 and 8 octets, inclusive."""
+        return self.__token
+
+    def _set_token(self, token):
+        if token is not None:
+            if not isinstance(token, bytes):
+                raise TypeError(token)
+            if not ((1 <= len(token)) and (len(token) <= 8)):
+                raise ValueError(token)
+        self.__token = token
+
+    token = property(_get_token, _set_token)
+
+    options = None
+    """The set of option instances associated with the message.  This
+    should be ``None`` or a list of :class:`coapy.option.UrOption`
+    subclass instances."""
+
+    def _get_payload(self):
+        """The payload or content of the message.  This may be
+        ``None`` if no payload exists; otherwise it must be a
+        non-empty :class:`bytes` instance.  As a convenience, an empty
+        :class:`bytes` string is equivalent to setting the payload to
+        ``None``.
+
+        The representation of the payload should be conveyed by a
+        :class:`ContentFormat<coapy.option.ContentFormat>` option.
+        """
+        return self.__payload
+
+    def _set_payload(self, payload):
+        if (payload is not None) and not isinstance(payload, bytes):
+            raise TypeError(payload)
+        if (payload is not None) and (0 == len(payload)):
+            payload = None
+        self.__payload = payload
+
+    payload = property(_get_payload, _set_payload)
+
+    def __init__(self, confirmable=False, acknowledgement=False, reset=False,
+                 code=None, token=None, options=None, payload=None):
+        if confirmable:
+            self.__type = self.Type_CON
+        elif acknowledgement:
+            self.__type = self.Type_ACK
+        elif reset:
+            self.__type = self.Type_RST
+        else:
+            self.__type = self.Type_NON
+        if code is None:
+            self.__code = None
+        else:
+            self._set_code(code)
+        self.__messageID = None
+        self._set_token(token)
+        self.options = options
+        self._set_payload(payload)
+#type(Message).Type_CON = property(lambda *_: Message.Type_CON)
+#type(Message).Type_NON = property(lambda *_: Message.Type_NON)
+#type(Message).Type_ACK = property(lambda *_: Message.Type_ACK)
+#type(Message).Type_RST = property(lambda *_: Message.Type_RST)
 
 
 class TransmissionParameters(object):

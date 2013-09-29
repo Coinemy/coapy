@@ -54,5 +54,110 @@ class TestTransmissionParameters (unittest.TestCase):
         self.assertEqual([3, 6, 12, 24], delays)
 
 
+class TestRetransmissionState (unittest.TestCase):
+    def testBasic(self):
+        rs = RetransmissionState(3, 2)
+        self.assertEqual([3, 6], list(rs))
+        rs = RetransmissionState(3, 4)
+        self.assertEqual([3, 6, 12, 24], list(rs))
+        rs = RetransmissionState(1, 5)
+        self.assertEqual([1, 2, 4, 8, 16], list(rs))
+
+
+class TestMessage (unittest.TestCase):
+    def testType(self):
+        m = Message()
+        self.assertEqual(m.messageType, Message.Type_NON)
+        self.assertFalse(m.is_confirmable())
+        self.assertTrue(m.is_non_confirmable())
+        self.assertFalse(m.is_acknowledgement())
+        self.assertFalse(m.is_reset())
+        m = Message(confirmable=True)
+        self.assertEqual(m.messageType, Message.Type_CON)
+        self.assertTrue(m.is_confirmable())
+        self.assertFalse(m.is_non_confirmable())
+        self.assertFalse(m.is_acknowledgement())
+        self.assertFalse(m.is_reset())
+        m = Message(acknowledgement=True)
+        self.assertEqual(m.messageType, Message.Type_ACK)
+        self.assertFalse(m.is_confirmable())
+        self.assertFalse(m.is_non_confirmable())
+        self.assertTrue(m.is_acknowledgement())
+        self.assertFalse(m.is_reset())
+        m = Message(reset=True)
+        self.assertEqual(m.messageType, Message.Type_RST)
+        self.assertFalse(m.is_confirmable())
+        self.assertFalse(m.is_non_confirmable())
+        self.assertFalse(m.is_acknowledgement())
+        self.assertTrue(m.is_reset())
+
+    @staticmethod
+    def setCode(instance, value):
+        instance.code = value
+
+    def testCode(self):
+        m = Message()
+        self.assertTrue(m.code is None)
+        with self.assertRaises(ValueError):
+            _ = m.packed_code
+        m.code = 0
+        self.assertEqual((0, 0), m.code)
+        self.assertEqual(0, m.packed_code)
+        m.code = (7, 15)
+        self.assertEqual((7, 15), m.code)
+        self.assertEqual(0xEF, m.packed_code)
+        for ic in (-3, (1, 2, 3)):
+            with self.assertRaises(ValueError):
+                self.setCode(m, ic)
+        for ic in (None, 23.42, [1, 2]):
+            with self.assertRaises(TypeError):
+                self.setCode(m, ic)
+        m = Message(code=0xef)
+        self.assertEqual((7, 15), m.code)
+
+    @staticmethod
+    def setMessageID(instance, value):
+        instance.messageID = value
+
+    def testMessageID(self):
+        m = Message()
+        self.assertTrue(m.messageID is None)
+        m.messageID = 3
+        self.assertEqual(3, m.messageID)
+        self.assertRaises(TypeError, self.setMessageID, m, None)
+        self.assertRaises(TypeError, self.setMessageID, m, 4.3)
+        self.assertRaises(ValueError, self.setMessageID, m, -1)
+        self.assertRaises(ValueError, self.setMessageID, m, 65536)
+
+    @staticmethod
+    def setToken(instance, value):
+        instance.token = value
+
+    def testToken(self):
+        m = Message()
+        self.assertTrue(m.token is None)
+        m.token = b'123'
+        self.assertEqual(b'123', m.token)
+        m.token = None
+        self.assertTrue(m.token is None)
+        self.assertRaises(TypeError, self.setToken, m, 'text')
+        self.assertRaises(ValueError, self.setToken, m, b'')
+        self.assertRaises(ValueError, self.setToken, m, b'123456789')
+
+    @staticmethod
+    def setPayload(instance, value):
+        instance.payload = value
+
+    def testPayload(self):
+        m = Message()
+        self.assertTrue(m.payload is None)
+        m.payload = b'123'
+        self.assertEqual(b'123', m.payload)
+        m.payload = None
+        self.assertTrue(m.payload is None)
+        m.payload = b''
+        self.assertTrue(m.payload is None)
+        self.assertRaises(TypeError, self.setPayload, m, 'text')
+
 if __name__ == '__main__':
     unittest.main()
