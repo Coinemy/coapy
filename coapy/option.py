@@ -371,6 +371,10 @@ def find_option(number):
 #
 # The concepts in this approach derive from:
 # http://stackoverflow.com/questions/1735434/class-level-read-only-properties-in-python
+#
+# Note that coapy.util.ReadOnlyMeta does something similar but only to
+# the class in which the attribute is introduced, while this works only
+# on subclasses of UrOption.
 class _MetaUrOption(type):
 
     # This class must do its work before UrOption has been added to
