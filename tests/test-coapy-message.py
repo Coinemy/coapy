@@ -178,5 +178,41 @@ class TestMessage (unittest.TestCase):
         with self.assertRaises(AttributeError):
             Message.Type_RST = 23
 
+
+class TestRequest (unittest.TestCase):
+    def testImmutable(self):
+        req = Request()
+        with self.assertRaises(AttributeError):
+            Request.Class = 8
+        with self.assertRaises(AttributeError):
+            req.Class = 8
+        with self.assertRaises(AttributeError):
+            Request.GET = 8
+        with self.assertRaises(AttributeError):
+            req.GET = 8
+        with self.assertRaises(AttributeError):
+            Request.POST = 8
+        with self.assertRaises(AttributeError):
+            req.POST = 8
+        with self.assertRaises(AttributeError):
+            Request.PUT = 8
+        with self.assertRaises(AttributeError):
+            req.PUT = 8
+        with self.assertRaises(AttributeError):
+            Request.DELETE = 8
+        with self.assertRaises(AttributeError):
+            req.DELETE = 8
+        self.assertEqual(0, Request.Class)
+        self.assertEqual(1, Request.GET)
+        self.assertEqual(2, Request.POST)
+        self.assertEqual(3, Request.PUT)
+        self.assertEqual(4, Request.DELETE)
+        self.assertEqual(0, req.Class)
+        self.assertEqual(1, req.GET)
+        self.assertEqual(2, req.POST)
+        self.assertEqual(3, req.PUT)
+        self.assertEqual(4, req.DELETE)
+
+
 if __name__ == '__main__':
     unittest.main()

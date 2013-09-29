@@ -30,6 +30,7 @@ import coapy
 import coapy.option
 import coapy.util
 
+
 class Message(object):
     """A CoAP message, per :coapsect:`3`.
 
@@ -44,10 +45,14 @@ class Message(object):
 
     __metaclass__ = coapy.util.ReadOnlyMeta
 
-    Type_CON = coapy.util.ClassReadOnly(0)   #: Type for a :meth:`confirmable<is_confirmable>` message
-    Type_NON = coapy.util.ClassReadOnly(1)   #: Type for a :meth:`non-confirmable<is_non_confirmable>` message
-    Type_ACK = coapy.util.ClassReadOnly(2)   #: Type for an :meth:`acknowledgement<is_acknowledgement>` message
-    Type_RST = coapy.util.ClassReadOnly(3)   #: Type for a :meth:`reset<is_reset>` message
+    Type_CON = coapy.util.ClassReadOnly(0)
+    """Type for a :meth:`confirmable<is_confirmable>` message."""
+    Type_NON = coapy.util.ClassReadOnly(1)
+    """Type for a :meth:`confirmable<is_non_confirmable>` message."""
+    Type_ACK = coapy.util.ClassReadOnly(2)
+    """Type for a :meth:`confirmable<is_acknowledgement>` message."""
+    Type_RST = coapy.util.ClassReadOnly(3)
+    """Type for a :meth:`confirmable<is_reset>` message."""
 
     def is_confirmable(self):
         """True if this message is :coapsect:`confirmable<2.1>`,
@@ -212,6 +217,183 @@ class Message(object):
         self._set_token(token)
         self.options = options
         self._set_payload(payload)
+
+
+class Request (Message):
+    """Subclass for messages that are requests.
+
+    The following table shows the pre-defined method code values ``(class,
+    detail)`` as specified in :coapsect:`12.1.1`:
+
+    =======  ===============  ==================
+    Code     Name             Documentation
+    =======  ===============  ==================
+    (0, 1)   :attr:`GET`      :coapsect:`5.8.1`
+    (0, 2)   :attr:`POST`     :coapsect:`5.8.2`
+    (0, 3)   :attr:`PUT`      :coapsect:`5.8.3`
+    (0, 4)   :attr:`DELETE`   :coapsect:`5.8.4`
+    =======  ===============  ==================
+
+    """
+
+    Class = coapy.util.ClassReadOnly(0)
+    """The :attr:`Message.code` class component for :class:`Request` messages."""
+
+    GET = coapy.util.ClassReadOnly(1)
+    """Retrieve a representation for the requested resource.  See
+    :coapsect:`5.8.1`."""
+
+    POST = coapy.util.ClassReadOnly(2)
+    """Process the representation enclosed in the requested resource.
+    See :coapsect:`5.8.2`."""
+
+    PUT = coapy.util.ClassReadOnly(3)
+    """Update or create the resource using the enclosed representation.
+    See :coapsect:`5.8.3`."""
+
+    DELETE = coapy.util.ClassReadOnly(4)
+    """Delete the resource identified by the request URI.
+    See :coapsect:`5.8.4`."""
+
+
+class SuccessResponse (Message):
+    """Subclass for messages that are responses that indicate the
+    request was successfully received, understood, and accepted.
+
+    The following table shows the pre-defined :coapsect:`success
+    response<5.9.1>` code values ``(class, detail)`` as specified in
+    :coapsect:`12.1.2`:
+
+    =======  ================  ====================
+    Code     Name              Documentation
+    =======  ================  ====================
+    (2, 1)   :attr:`Created`   :coapsect:`5.9.1.1`
+    (2, 2)   :attr:`Deleted`   :coapsect:`5.9.1.2`
+    (2, 3)   :attr:`Valid`     :coapsect:`5.9.1.3`
+    (2, 4)   :attr:`Changed`   :coapsect:`5.9.1.4`
+    (2, 5)   :attr:`Content`   :coapsect:`5.9.1.4`
+    =======  ================  ====================
+    """
+    Class = coapy.util.ClassReadOnly(2)
+    """The :attr:`Message.code` class component for
+    :class:`SuccessResponse` messages."""
+
+    Created = coapy.util.ClassReadOnly(1)
+    """See :coapsect:`5.9.1.1`."""
+
+    Deleted = coapy.util.ClassReadOnly(2)
+    """See :coapsect:`5.9.1.2`."""
+
+    Valid = coapy.util.ClassReadOnly(3)
+    """See :coapsect:`5.9.1.3`."""
+
+    Changed = coapy.util.ClassReadOnly(4)
+    """See :coapsect:`5.9.1.4`."""
+
+    Content = coapy.util.ClassReadOnly(5)
+    """See :coapsect:`5.9.1.5`."""
+
+
+class ClientErrorResponse (Message):
+    """Subclass for messages that are responses in cases where the
+    server detects an error in the client's request.
+
+    The following table shows the pre-defined :coapsect:`client error
+    response<5.9.2>` code values ``(class, detail)`` as specified in
+    :coapsect:`12.1.2`:
+
+    ========  =================================  =====================
+    Code      Name                               Documentation
+    ========  =================================  =====================
+    (4, 0)    :attr:`BadRequest`                 :coapsect:`5.9.2.1`
+    (4, 1)    :attr:`Unauthorized`               :coapsect:`5.9.2.2`
+    (4, 2)    :attr:`BadOption`                  :coapsect:`5.9.2.3`
+    (4, 3)    :attr:`Forbidden`                  :coapsect:`5.9.2.4`
+    (4, 4)    :attr:`NotFound`                   :coapsect:`5.9.2.5`
+    (4, 5)    :attr:`MethodNotAllowed`           :coapsect:`5.9.2.6`
+    (4, 6)    :attr:`NotAcceptable`              :coapsect:`5.9.2.7`
+    (4, 12)   :attr:`PreconditionFailed`         :coapsect:`5.9.2.8`
+    (4, 13)   :attr:`RequestEntityTooLarge`      :coapsect:`5.9.2.9`
+    (4, 15)   :attr:`UnsupportedContentFormat`   :coapsect:`5.9.2.10`
+    ========  =================================  =====================
+    """
+
+    Class = coapy.util.ClassReadOnly(4)
+    """The :attr:`Message.code` class component for
+    :class:`ClientErrorResponse` messages."""
+
+    BadRequest = coapy.util.ClassReadOnly(0)
+    """See :coapsect:`5.9.2.1`"""
+
+    Unauthorized = coapy.util.ClassReadOnly(1)
+    """See :coapsect:`5.9.2.2`"""
+
+    BadOption = coapy.util.ClassReadOnly(2)
+    """See :coapsect:`5.9.2.3`"""
+
+    Forbidden = coapy.util.ClassReadOnly(3)
+    """See :coapsect:`5.9.2.4`"""
+
+    NotFound = coapy.util.ClassReadOnly(4)
+    """See :coapsect:`5.9.2.5`"""
+
+    MethodNotAllowed = coapy.util.ClassReadOnly(5)
+    """See :coapsect:`5.9.2.6`"""
+
+    NotAcceptable = coapy.util.ClassReadOnly(6)
+    """See :coapsect:`5.9.2.7`"""
+
+    PreconditionFailed = coapy.util.ClassReadOnly(12)
+    """See :coapsect:`5.9.2.8`"""
+
+    RequestEntityTooLarge = coapy.util.ClassReadOnly(13)
+    """See :coapsect:`5.9.2.9`"""
+
+    UnsupportedContentFormat = coapy.util.ClassReadOnly(15)
+    """See :coapsect:`5.9.2.10`"""
+
+
+class ServerErrorResponse (Message):
+    """Subclass for messages that are responses that indicate the
+    server is incapable of performing the request.
+
+    The following table shows the pre-defined :coapsect:`server error
+    response<5.9.3>` code values ``(class, detail)`` as specified in
+    :coapsect:`12.1.2`:
+
+    ========  =================================  =====================
+    Code      Name                               Documentation
+    ========  =================================  =====================
+    (5, 0)    :attr:`InternalServerError`        :coapsect:`5.9.3.1`
+    (5, 1)    :attr:`NotImplemented`             :coapsect:`5.9.3.2`
+    (5, 2)    :attr:`BadGateway`                 :coapsect:`5.9.3.3`
+    (5, 3)    :attr:`ServiceUnavailable`         :coapsect:`5.9.3.4`
+    (5, 4)    :attr:`GatewayTimeout`             :coapsect:`5.9.3.5`
+    (5, 5)    :attr:`ProxyingNotSupported`       :coapsect:`5.9.3.6`
+    ========  =================================  =====================
+    """
+
+    Class = coapy.util.ClassReadOnly(5)
+    """The :attr:`Message.code` class component for
+    :class:`ServerErrorResponse` messages."""
+
+    InternalServerError = coapy.util.ClassReadOnly(0)
+    """See :coapsect:`5.9.3.1`"""
+
+    NotImplemented = coapy.util.ClassReadOnly(1)
+    """See :coapsect:`5.9.3.2`"""
+
+    BadGateway = coapy.util.ClassReadOnly(2)
+    """See :coapsect:`5.9.3.3`"""
+
+    ServiceUnavailable = coapy.util.ClassReadOnly(3)
+    """See :coapsect:`5.9.3.4`"""
+
+    GatewayTimeout = coapy.util.ClassReadOnly(4)
+    """See :coapsect:`5.9.3.5`"""
+
+    ProxyingNotSupported = coapy.util.ClassReadOnly(5)
+    """See :coapsect:`5.9.3.6`"""
 
 
 class TransmissionParameters(object):
