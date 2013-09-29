@@ -638,12 +638,12 @@ def _decode_one_option(data):
 
 
 def decode_options(data):
-    """Extract a list of options from packed data.
+    """Extract a list of options from the packed *data* which is :class:`bytes`.
 
     Returns ``(options, remaining_data)`` where *options* is a list of
     instances of subclasses of :class:`UrOption`.  Options that are
-    unknown to the infrastructure will still be returned as instances
-    of :class:`UnknownOption`.  *remaining_data* will be the suffix of
+    unknown to the infrastructure will be returned as instances of
+    :class:`UnknownOption`.  *remaining_data* will be the suffix of
     *data* that was not consumed when unpacking the options.
 
     This will raise :exc:`OptionDecodeError` or other exceptions if
@@ -670,11 +670,28 @@ def decode_options(data):
 
 
 class UnknownOption (UrOption):
+    """Contains an option for which registered :class:`UrOption` subclass is available.
+
+    *number* must be provided, must be in the range 0 through 65535,
+    and must not correspond to a registered option class.
+    *unpacked_value* and *packed_value* operate as in
+    :class:`UrOption` and accept only :class:`bytes` objects.
+
+    :class:`UnknownOption` instances are structurally accepted in both
+    request and response messages and instances with the same
+    :attr:`number` may appear multiple times in each.  Semantic
+    restrictions may apply based on :meth:`UrOption.is_critical`.
+    """
+
     _RegisterOption = False
     _repeatable = (True, True)
     format = format_opaque(1034)
+    """Unknown options carry their payload as uninterpreted
+    :class:`bytes` objects with a maximum length of 1034 octets."""
 
     def _get_number(self):
+        """The :attr:`option number<UrOption.number>` associated with
+        this option.  This is a read-only attribute."""
         return self.__number
     number = property(_get_number)
 

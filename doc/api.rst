@@ -6,40 +6,20 @@ API Documentation
 
 .. module:: coapy.option
 
-Option-Related Exceptions
-=========================
-
-.. autoexception:: OptionError
-.. autoexception:: OptionRegistryConflictError
-.. autoexception:: InvalidOptionTypeError
-.. autoexception:: OptionLengthError
-.. autoexception:: OptionDecodeError
-.. autoexception:: UnrecognizedCriticalOptionError
-.. autoexception:: InvalidOptionError
-.. autoexception:: InvalidMultipleOptionError
-
-
-Option Formatting
-=================
-
-.. autoclass:: _format_base
-   :no-show-inheritance:
-.. autoclass:: format_empty
-.. autoclass:: format_opaque
-.. autoclass:: format_uint
-.. autoclass:: format_string
-
-Options
-=======
+Operations on Options
+=====================
 
 .. autofunction:: find_option
 .. autofunction:: is_critical_option
 .. autofunction:: is_unsafe_option
 .. autofunction:: is_no_cache_key_option
-.. autofunction:: sorted_options
-.. autofunction:: validate_options
 .. autofunction:: encode_options
 .. autofunction:: decode_options
+.. autofunction:: validate_options
+.. autofunction:: sorted_options
+
+Option Classes
+==============
 
 .. autoclass:: UrOption
    :no-show-inheritance:
@@ -83,3 +63,25 @@ Pre-Defined Options
 .. autoclass:: ProxyUri
 .. autoclass:: ProxyScheme
 .. autoclass:: Size1
+
+Option Formatter Classes
+========================
+
+.. autoclass:: _format_base
+   :no-show-inheritance:
+.. autoclass:: format_empty
+.. autoclass:: format_opaque
+.. autoclass:: format_uint
+.. autoclass:: format_string
+
+Option-Related Exceptions
+=========================
+
+.. autoexception:: OptionError
+.. autoexception:: OptionRegistryConflictError
+.. autoexception:: InvalidOptionTypeError
+.. autoexception:: OptionLengthError
+.. autoexception:: OptionDecodeError
+.. autoexception:: UnrecognizedCriticalOptionError
+.. autoexception:: InvalidOptionError
+.. autoexception:: InvalidMultipleOptionError
