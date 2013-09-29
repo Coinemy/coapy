@@ -359,7 +359,7 @@ class _MetaUrOption(type):
 
     # The set of attributes in types that are to be made immutable if
     # the type provides a non-None value for the attribute.
-    __ReadOnlyAttrs = ('number', 'repeatable', 'format')
+    __ReadOnlyAttrs = ('number', '_repeatable', 'format')
 
     @classmethod
     def SetUrOption(cls, ur_option):
@@ -452,7 +452,7 @@ class UrOption (object):
     defined.
     """
 
-    repeatable = None
+    _repeatable = None
     """A tuple ``(request, response)`` indicating allowed
     cardinality of the option in requests and responses, respectively.
 
@@ -474,16 +474,16 @@ class UrOption (object):
         return is_no_cache_key_option(self.number)
 
     def valid_in_request(self):
-        return self.repeatable[0] is not None
+        return self._repeatable[0] is not None
 
     def valid_multiple_in_request(self):
-        return self.repeatable[0] is True
+        return self._repeatable[0] is True
 
     def valid_in_response(self):
-        return self.repeatable[1] is not None
+        return self._repeatable[1] is not None
 
     def valid_multiple_in_response(self):
-        return self.repeatable[1] is True
+        return self._repeatable[1] is True
 
     def __init__(self, unpacked_value=None, packed_value=None):
         super(UrOption, self).__init__()
@@ -575,7 +575,7 @@ def decode_options(data, is_request):
 
 class UnknownOption (UrOption):
     _RegisterOption = False
-    repeatable = (True, True)
+    _repeatable = (True, True)
     format = format_opaque(1034)
 
     def _get_number(self):
@@ -595,25 +595,25 @@ class UnknownOption (UrOption):
 
 class IfMatch (UrOption):
     number = 1
-    repeatable = (True, None)
+    _repeatable = (True, None)
     format = format_opaque(8)
 
 
 class UriHost (UrOption):
     number = 3
-    repeatable = (False, None)
+    _repeatable = (False, None)
     format = format_string(255, min_length=1)
 
 
 class ETag (UrOption):
     number = 4
-    repeatable = (True, False)
+    _repeatable = (True, False)
     format = format_opaque(8, min_length=1)
 
 
 class IfNoneMatch (UrOption):
     number = 5
-    repeatable = (False, None)
+    _repeatable = (False, None)
     format = format_empty()
 
     def __init__(self, unpacked_value=None, packed_value=None):
@@ -625,65 +625,65 @@ class IfNoneMatch (UrOption):
 
 class UriPort (UrOption):
     number = 7
-    repeatable = (False, None)
+    _repeatable = (False, None)
     format = format_uint(2)
 
 
 class LocationPath (UrOption):
     number = 8
-    repeatable = (None, True)
+    _repeatable = (None, True)
     format = format_string(255)
 
 
 class UriPath (UrOption):
     number = 11
-    repeatable = (True, None)
+    _repeatable = (True, None)
     format = format_string(255)
 
 
 class ContentFormat (UrOption):
     number = 12
-    repeatable = (False, False)
+    _repeatable = (False, False)
     format = format_uint(2)
 
 
 class MaxAge (UrOption):
     number = 14
-    repeatable = (None, False)
+    _repeatable = (None, False)
     format = format_uint(4)
 
 
 class UriQuery (UrOption):
     number = 15
-    repeatable = (True, None)
+    _repeatable = (True, None)
     format = format_string(255)
 
 
 class Accept (UrOption):
     number = 17
-    repeatable = (False, None)
+    _repeatable = (False, None)
     format = format_uint(2)
 
 
 class LocationQuery (UrOption):
     number = 20
-    repeatable = (None, True)
+    _repeatable = (None, True)
     format = format_string(255)
 
 
 class ProxyUri (UrOption):
     number = 35
-    repeatable = (False, None)
+    _repeatable = (False, None)
     format = format_string(1034, min_length=1)
 
 
 class ProxyScheme (UrOption):
     number = 39
-    repeatable = (False, None)
+    _repeatable = (False, None)
     format = format_string(255, min_length=1)
 
 
 class Size1 (UrOption):
     number = 60
-    repeatable = (False, False)
+    _repeatable = (False, False)
     format = format_uint(4)
