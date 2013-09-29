@@ -487,8 +487,8 @@ class TestEncodeDecodeOptions (unittest.TestCase):
     def testEncodeEmpty(self):
         opt = IfNoneMatch()
         popt = b'\x50'
-        self.assertEqual(popt, encode_options([opt], True))
-        (opts, remaining) = decode_options(popt, True)
+        self.assertEqual(popt, encode_options([opt]))
+        (opts, remaining) = decode_options(popt)
         self.assertEqual(b'', remaining)
         self.assertTrue(isinstance(opts, list))
         self.assertEqual(1, len(opts))
@@ -499,8 +499,8 @@ class TestEncodeDecodeOptions (unittest.TestCase):
         val = b'123456'
         opt = ETag(val)
         popt = b'\x46' + val
-        self.assertEqual(popt, encode_options([opt], True))
-        (opts, remaining) = decode_options(popt, True)
+        self.assertEqual(popt, encode_options([opt]))
+        (opts, remaining) = decode_options(popt)
         self.assertEqual(b'', remaining)
         self.assertTrue(isinstance(opts, list))
         self.assertEqual(1, len(opts))
@@ -512,8 +512,8 @@ class TestEncodeDecodeOptions (unittest.TestCase):
         val = 5683
         opt = UriPort(val)
         popt = b'\x72\x16\x33'
-        self.assertEqual(popt, encode_options([opt], True))
-        (opts, remaining) = decode_options(popt, True)
+        self.assertEqual(popt, encode_options([opt]))
+        (opts, remaining) = decode_options(popt)
         self.assertEqual(b'', remaining)
         self.assertTrue(isinstance(opts, list))
         self.assertEqual(1, len(opts))
@@ -526,8 +526,8 @@ class TestEncodeDecodeOptions (unittest.TestCase):
         opt = UriHost(val)
         popt = b'\x37' + b'Tr\xc3\xa9lat'
         self.assertEqual(u'Trélat', opt.value)
-        self.assertEqual(popt, encode_options([opt], True))
-        (opts, remaining) = decode_options(popt, True)
+        self.assertEqual(popt, encode_options([opt]))
+        (opts, remaining) = decode_options(popt)
         self.assertEqual(b'', remaining)
         self.assertTrue(isinstance(opts, list))
         self.assertEqual(1, len(opts))
@@ -535,17 +535,29 @@ class TestEncodeDecodeOptions (unittest.TestCase):
         self.assertTrue(isinstance(opt, UriHost))
         self.assertEqual(val, opt.value)
 
-    def testDisallowedInResponse(self):
+    def testInvalidOptions(self):
         opt = IfNoneMatch()
-        with self.assertRaises(InvalidResponseOptionError) as cm:
-            encoded = encode_options([opt], False)
+        opts = [opt]
+        with self.assertRaises(InvalidOptionError) as cm:
+            validate_options(opts, False)
         self.assertEqual(opt, cm.exception.args[0])
-
-    def testDisallowedInRequest(self):
+        validate_options(opts, True)
+        opt2 = IfNoneMatch()
+        opts.append(opt2)
+        with self.assertRaises(InvalidMultipleOptionError) as cm:
+            validate_options(opts, True)
+        self.assertEqual(opt2, cm.exception.args[0])
         opt = MaxAge(60)
-        with self.assertRaises(InvalidRequestOptionError) as cm:
-            encoded = encode_options([opt], True)
+        opts = [opt]
+        with self.assertRaises(InvalidOptionError) as cm:
+            validate_options(opts, True)
         self.assertEqual(opt, cm.exception.args[0])
+        validate_options(opts, False)
+        opt2 = MaxAge(23)
+        opts.append(opt2)
+        with self.assertRaises(InvalidMultipleOptionError) as cm:
+            validate_options(opts, False)
+        self.assertEqual(opt2, cm.exception.args[0])
 
     def testMultiEncoded(self):
         uh_val = u'Trélat'
@@ -553,8 +565,8 @@ class TestEncodeDecodeOptions (unittest.TestCase):
         et_val = b'123456'
         opts = [IfNoneMatch(), ETag(et_val), UriPort(up_val), UriHost(uh_val)]
         popt = b'7Tr\xc3\xa9lat\x16123456\x10"\x163'
-        self.assertEqual(popt, encode_options(opts, True))
-        (opts, remaining) = decode_options(popt + b'\xffHiThere', True)
+        self.assertEqual(popt, encode_options(opts))
+        (opts, remaining) = decode_options(popt + b'\xffHiThere')
         self.assertEqual(b'\xffHiThere', remaining)
         self.assertTrue(isinstance(opts, list))
         self.assertEqual(4, len(opts))
@@ -574,8 +586,8 @@ class TestEncodeDecodeOptions (unittest.TestCase):
         opt = UnknownOption(9, b'val')
         self.assertTrue(opt.is_critical())
         popt = b'\x93val'
-        self.assertEqual(popt, encode_options([opt], True))
-        (opts, remaining) = decode_options(popt, True)
+        self.assertEqual(popt, encode_options([opt]))
+        (opts, remaining) = decode_options(popt)
         self.assertEqual(b'', remaining)
         self.assertTrue(isinstance(opts, list))
         self.assertEqual(1, len(opts))
@@ -584,6 +596,13 @@ class TestEncodeDecodeOptions (unittest.TestCase):
         self.assertEqual(9, opt.number)
         self.assertTrue(opt.is_critical())
         self.assertEqual(b'val', opt.value)
+
+    def testDecodeLengthViolation(self):
+        # Too short
+        self.assertRaises(OptionDecodeError, decode_options, b'\x40')
+        # Too long
+        self.assertRaises(OptionLengthError, decode_options, b'\x49' + b'123456789')
+
 
 if __name__ == '__main__':
     unittest.main()

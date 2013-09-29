@@ -16,8 +16,7 @@ Option-Related Exceptions
 .. autoexception:: OptionDecodeError
 .. autoexception:: UnrecognizedCriticalOptionError
 .. autoexception:: InvalidOptionError
-.. autoexception:: InvalidRequestOptionError
-.. autoexception:: InvalidResponseOptionError
+.. autoexception:: InvalidMultipleOptionError
 
 
 Option Formatting
@@ -37,6 +36,10 @@ Options
 .. autofunction:: is_critical_option
 .. autofunction:: is_unsafe_option
 .. autofunction:: is_no_cache_key_option
+.. autofunction:: sorted_options
+.. autofunction:: validate_options
+.. autofunction:: encode_options
+.. autofunction:: decode_options
 
 .. autoclass:: UrOption
    :no-show-inheritance:

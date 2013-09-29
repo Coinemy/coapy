@@ -74,14 +74,13 @@ class UnrecognizedCriticalOptionError (OptionError):
 
 
 class InvalidOptionError (OptionError):
+    """An option appears in a response or request when it must not."""
     pass
 
 
-class InvalidRequestOptionError (InvalidOptionError):
-    pass
-
-
-class InvalidResponseOptionError (InvalidOptionError):
+class InvalidMultipleOptionError (InvalidOptionError):
+    """An option appears multiple times in a response or request when
+    it must only appear once."""
     pass
 
 
@@ -506,15 +505,19 @@ class UrOption (object):
         return is_no_cache_key_option(self.number)
 
     def valid_in_request(self):
+        """Return ``True`` iff this option may appear at least once in a request message."""
         return self._repeatable[0] is not None
 
     def valid_multiple_in_request(self):
+        """Return ``True`` iff this option may appear multiple times in a request message."""
         return self._repeatable[0] is True
 
     def valid_in_response(self):
+        """Return ``True`` iff this option may appear at least once in a response message."""
         return self._repeatable[1] is not None
 
     def valid_multiple_in_response(self):
+        """Return ``True`` iff this option may appear multiple times in a response message."""
         return self._repeatable[1] is True
 
     def __init__(self, unpacked_value=None, packed_value=None):
@@ -555,20 +558,61 @@ _MetaUrOption.SetUrOption(UrOption)
 _optionint_helper = format_uint(2)
 
 
-def encode_options(options, is_request):
+def sorted_options(options):
+    """Sort a sequence of options into canonical order.
+
+    Return a list with the same elements as *options* sorted using the option
+    :attr:`number<UrOption.number>` as the key.  The sort is stable:
+    options with the same number remain in their original order.  This
+    operation is used for duplicate detection and to calculate the
+    delta required to encode options."""
+    return sorted(options, key=lambda _o: _o.number)
+
+
+def validate_options(options, is_request):
+    """Verify that a set of options passes CoAP requirements.
+
+    Individual options have constraints on whether they may appear
+    once, multiple times, or not at all within request or response
+    messages; see, for example,
+    :meth:`UrOption.valid_multiple_in_request`.
+
+    This function validates the *options* against the expectations for
+    a request message if *is_request* is true, otherwise against the
+    expectations for a response message.  A violation is diagnosed
+    through :exc:`InvalidOptionError` or
+    :exc:`InvalidMultipleOptionError` with the offending option as an
+    argument.
+    """
     last_number = 0
     packed = []
-    options = sorted(options, key=lambda _o: _o.number)
-    for opt in options:
+    for opt in sorted_options(options):
         delta = opt.number - last_number
-        if (is_request
-            and ((not opt.valid_in_request())
-                 or ((0 == delta) and not opt.valid_multiple_in_request()))):
-            raise InvalidRequestOptionError(opt)
-        elif ((not is_request)
-              and ((not opt.valid_in_response())
-                   or ((0 == delta) and not opt.valid_multiple_in_response()))):
-            raise InvalidResponseOptionError(opt)
+        last_number = opt.number
+        if (is_request):
+            if not opt.valid_in_request():
+                raise InvalidOptionError(opt)
+            if (0 == delta) and not opt.valid_multiple_in_request():
+                raise InvalidMultipleOptionError(opt)
+        else:
+            if not opt.valid_in_response():
+                raise InvalidOptionError(opt)
+            if (0 == delta) and not opt.valid_multiple_in_response():
+                raise InvalidMultipleOptionError(opt)
+
+
+def encode_options(options):
+    """Encode a set of options into packed form.
+
+    This returns a :class:`bytes` object that represents the encoding
+    of *options* after they have been :func:`sorted<sorted_options>`.
+    It may raise an exception if an option's value cannot be encoded,
+    but performs no semantic
+    validation."""
+    last_number = 0
+    packed = []
+    for opt in sorted_options(options):
+        delta = opt.number - last_number
         last_number = opt.number
         pvalue = opt.packed_value()
         (od, odx) = _optionint_helper.option_encoding(delta)
@@ -593,7 +637,17 @@ def _decode_one_option(data):
     return (delta, length, data)
 
 
-def decode_options(data, is_request):
+def decode_options(data):
+    """Extract a list of options from packed data.
+
+    Returns ``(options, remaining_data)`` where *options* is a list of
+    instances of subclasses of :class:`UrOption`.  Options that are
+    unknown to the infrastructure will still be returned as instances
+    of :class:`UnknownOption`.  *remaining_data* will be the suffix of
+    *data* that was not consumed when unpacking the options.
+
+    This will raise :exc:`OptionDecodeError` or other exceptions if
+    the option data is malformed, but does no semantic validation"""
     idx = 0
     option_number = 0
     options = []
@@ -601,10 +655,12 @@ def decode_options(data, is_request):
         (delta, length, data) = _decode_one_option(data)
         if delta is None:
             break
-        packed = data[:length]
-        data = data[length:]
         option_number += delta
         option_type = find_option(option_number)
+        if (option_type is not None) and (option_type.format.min_length > length):
+            raise OptionDecodeError(data)
+        packed = data[:length]
+        data = data[length:]
         if option_type is None:
             opt = UnknownOption(option_number, packed_value=packed)
         else:
