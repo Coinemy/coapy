@@ -40,6 +40,13 @@ class MessageError (coapy.CoAPyException):
 
 
 class MessageFormatError (MessageError):
+    """Exception raised by :meth:`Message.from_packed` when the
+    message cannot be decoded.  :attr:`args` will be ``(diagnostic,
+    dkw)`` where *diagnostic* is a human-readonable description of the
+    failure cause, and *dkw* is a dictionary with entries for
+    :attr:`code<Message.code>` and
+    :attr:`messageID<Message.messageID>`.
+    """
     pass
 
 
@@ -50,9 +57,9 @@ class Message(object):
     or a *reset* message.  If none of these is specified, it is
     created as a non-confirmable message.
 
-    *code*, *token*, *options*, and *payload* all initialize the
-    corresponding attributes of this class and must be acceptable
-    values for those attributes.
+    *code*, *messageID*, *token*, *options*, and *payload* all
+    initialize the corresponding attributes of this class and must be
+    acceptable values for those attributes.
     """
 
     __metaclass__ = coapy.util.ReadOnlyMeta
@@ -61,7 +68,7 @@ class Message(object):
     """Identifier for message class.
 
     In subclasses this is a read-only attribute giving the numeric
-    value of the class component of :attr:`code` values for classes.
+    value of the *class* component of :attr:`code` values for classes.
     This serves as a key to identify the appropriate constructor when
     creating messages from packed format.
     """
@@ -112,8 +119,9 @@ class Message(object):
         *code*.  The constructor defaults to *cls* if not provided.
 
         This method should be invoked through the subclass that is
-        responsible for *code*, e.g. :class:`RequestMessage` for
-        :attr:`RequestMessage.GET`.
+        responsible for *code*, e.g. :class:`Request` for
+        :attr:`Request.GET`.  See examples of use in the
+        :mod:`coapy.message` source code.
         """
         assert code == cls.code_as_tuple(code)
         if constructor is None:
@@ -150,13 +158,13 @@ class Message(object):
     """Version of the CoAP protocol."""
 
     Type_CON = coapy.util.ClassReadOnly(0)
-    """Type for a :meth:`confirmable<is_confirmable>` message."""
+    """Type for a :meth:`confirmable (CON)<is_confirmable>` message."""
     Type_NON = coapy.util.ClassReadOnly(1)
-    """Type for a :meth:`confirmable<is_non_confirmable>` message."""
+    """Type for a :meth:`non-confirmable (NON)<is_non_confirmable>` message."""
     Type_ACK = coapy.util.ClassReadOnly(2)
-    """Type for a :meth:`confirmable<is_acknowledgement>` message."""
+    """Type for a :meth:`acknowledgement (ACK)<is_acknowledgement>` message."""
     Type_RST = coapy.util.ClassReadOnly(3)
-    """Type for a :meth:`confirmable<is_reset>` message."""
+    """Type for a :meth:`reset (RST)<is_reset>` message."""
 
     def is_confirmable(self):
         """True if this message is :coapsect:`confirmable<2.1>`,
@@ -175,26 +183,31 @@ class Message(object):
     def is_acknowledgement(self):
         """True if this message is an :coapsect:`acknowledgement<1.2>`
         that a particular confirmable message with :attr:`messageID`
-        was
-        received."""
+        was received.
+        """
         return self.Type_ACK == self.__type
 
     def is_reset(self):
         """True if this message is an indication that a particular
         message with :attr:`messageID` arrived but that the receiver
-        could not process it."""
+        could not process it.
+        """
         return self.Type_RST == self.__type
 
     def _get_type(self):
         """The type of the message as :attr:`Type_CON`,
         :attr:`Type_NON`, :attr:`Type_ACK`, or :attr:`Type_RST`.  This
-        is a read-only attribute."""
+        is a read-only attribute.
+        """
         return self.__type
     messageType = property(_get_type)
 
     def _get_type_name(self):
-        """The type of the message as a three-letter descriptive name.
-        This is a read-only attribute."""
+        """The type of the message as a three-letter descriptive name
+        (:attr:`CON<Type_CON>`, :attr:`NON<Type_NON>`,
+        :attr:`ACK<Type_ACK>`, :attr:`RST<Type_RST>`).  This is a
+        read-only attribute.
+        """
         return ('CON', 'NON', 'ACK', 'RST')[self.__type]
     messageTypeName = property(_get_type_name)
 
@@ -286,7 +299,8 @@ class Message(object):
         Tokens are used to :coapsect:`match<5.3.2>` requests with
         responses.  ``None`` is used for a message that has no token.
         Otherwise the token must be a :class:`bytes` instance with
-        length between 1 and 8 octets, inclusive."""
+        length between 1 and 8 octets, inclusive.
+        """
         return self.__token
 
     def _set_token(self, token):
@@ -307,7 +321,8 @@ class Message(object):
         of the list must be :class:`coapy.option.UrOption` (subclass)
         instances.  The list object is owned by the message instance.
         Assignment to it will replace its contents.  The contents will
-        be rearranged in a stable sort by option number as needed by
+        be rearranged in a stable sort by option
+        :attr:`number<coapy.option.UrOption.number>` as needed by
         operations performed on the message.
         """
         return self.__options
@@ -316,7 +331,8 @@ class Message(object):
         self.__options[:] = coapy.option.sorted_options(value)
 
     def _sort_options(self):
-        """Sort the :attr:`options` list and return a reference to it."""
+        """Sort the :attr:`options` list and return a reference to it.
+        """
         self.__options[:] = coapy.option.sorted_options(self.__options)
         return self.__options
 
@@ -344,7 +360,7 @@ class Message(object):
     payload = property(_get_payload, _set_payload)
 
     def __init__(self, confirmable=False, acknowledgement=False, reset=False,
-                 code=None, message_id=None, token=None, options=None, payload=None):
+                 code=None, messageID=None, token=None, options=None, payload=None):
         if confirmable:
             self.__type = self.Type_CON
         elif acknowledgement:
@@ -357,10 +373,10 @@ class Message(object):
             self.__code = None
         else:
             self.code = code
-        if message_id is None:
+        if messageID is None:
             self.__messageID = None
         else:
-            self.messageID = message_id
+            self.messageID = messageID
         self.token = token
         self.__options = []
         if options is not None:
@@ -369,6 +385,8 @@ class Message(object):
 
     def to_packed(self):
         """Generate the packed representation of the message, per :coapsect:`3`.
+
+        The result is a :class:`bytes` instance.
         """
 
         vttkl = (1 << 6) | (self.__type << 4)
@@ -389,6 +407,15 @@ class Message(object):
     def from_packed(cls, packed_message):
         """Create a :class:`Message` (or subclass) instance from the
         packed representation of a message, per :coapsect:`3`.
+
+        This will return ``None`` if the first four octets cannot be
+        successfully decoded (yielding at minimum the :attr:`code` and
+        :attr:`messageID` values).  It will raise a
+        :exc:`MessageFormatError` for cases where the content cannot
+        be fully extracted.  Otherwise
+        it will return an instance of :class:`Message` or a refined
+        subclass based on the :attr:`code` within the packed
+        representation.
         """
 
         if not isinstance(packed_message, bytes):
@@ -404,8 +431,10 @@ class Message(object):
         code = cls.code_as_tuple(data.pop(0))
         message_id = data.pop(0)
         message_id = (message_id << 8) | data.pop(0)
+        dkw = {'code': code,
+               'messageID': message_id}
         if ((cls.Empty == code) and ((0 != tkl) or (0 < len(data)))):
-            raise MessageFormatError('4.1: bytes after Message ID')
+            raise MessageFormatError('4.1: bytes after Message ID', dkw)
         token = None
         if 0 < tkl:
             token = bytes(data[:tkl])
@@ -416,21 +445,21 @@ class Message(object):
             # This can be an invalid delta or length in the first byte,
             # or a value field that does not conform to the requirements.
             # @todo@ refine this
-            raise MessageFormatError('option decode error')
+            raise MessageFormatError('option decode error', dkw)
         payload = None
         if 0 < len(remainder):
             data = bytearray(remainder)
             if 0xFF != data[0]:
                 # This should have been interpreted as an option decode error
-                raise MessageFormatError('invalid payload marker')
+                raise MessageFormatError('invalid payload marker', dkw)
             payload = remainder[1:]
             if 0 == len(payload):
-                raise MessageFormatError('empty payload')
+                raise MessageFormatError('empty payload', dkw)
         kw = {'confirmable': (cls.Type_CON == message_type),
               'acknowledgement': (cls.Type_ACK == message_type),
               'reset': (cls.Type_RST == message_type),
               'code': code,
-              'message_id': message_id,
+              'messageID': message_id,
               'token': token,
               'options': options,
               'payload': payload
@@ -441,7 +470,7 @@ class Message(object):
         else:
             constructor = code_support.constructor
         if constructor is None:
-            raise MessageFormatError('unrecognized code', code)
+            raise MessageFormatError('unrecognized code', dkw)
         return constructor(**kw)
 
     def __unicode__(self):
@@ -481,7 +510,9 @@ class Request (Message):
     """
 
     CodeClass = coapy.util.ClassReadOnly(0)
-    """The :attr:`Message.code` class component for :class:`Request` messages."""
+    """The :attr:`Message.code` *class* component for :class:`Request`
+    messages.
+    """
 
     GET = coapy.util.ClassReadOnly((0, 1))
     """Retrieve a representation for the requested resource.  See
@@ -534,7 +565,7 @@ class SuccessResponse (Response):
     =======  ================  ====================
     """
     CodeClass = coapy.util.ClassReadOnly(2)
-    """The :attr:`Message.code` class component for
+    """The :attr:`Message.code` *class* component for
     :class:`SuccessResponse` messages."""
 
     Created = coapy.util.ClassReadOnly((2, 1))
@@ -583,7 +614,7 @@ class ClientErrorResponse (Response):
     """
 
     CodeClass = coapy.util.ClassReadOnly(4)
-    """The :attr:`Message.code` class component for
+    """The :attr:`Message.code` *class* component for
     :class:`ClientErrorResponse` messages."""
 
     BadRequest = coapy.util.ClassReadOnly((4, 0))
@@ -648,7 +679,7 @@ class ServerErrorResponse (Response):
     """
 
     CodeClass = coapy.util.ClassReadOnly(5)
-    """The :attr:`Message.code` class component for
+    """The :attr:`Message.code` *class* component for
     :class:`ServerErrorResponse` messages."""
 
     InternalServerError = coapy.util.ClassReadOnly((5, 0))

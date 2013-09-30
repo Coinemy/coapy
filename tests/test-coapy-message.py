@@ -234,7 +234,7 @@ class TestMessage (unittest.TestCase):
             Message.Type_RST = 23
 
     def testStringize(self):
-        m = Message(confirmable=True, token=b'123', message_id=0x1234, code=Request.GET,
+        m = Message(confirmable=True, token=b'123', messageID=0x1234, code=Request.GET,
                     options=[coapy.option.UriPath('sensor'),
                              coapy.option.UriPath('temp')],
                     payload=b'20 C')
@@ -294,7 +294,7 @@ class TestMessageEncodeDecode (unittest.TestCase):
     import coapy.option
 
     def testBasic(self):
-        m = Message(confirmable=True, token=b'123', message_id=0x1234, code=Request.GET)
+        m = Message(confirmable=True, token=b'123', messageID=0x1234, code=Request.GET)
         phdr = b'\x43\x01\x12\x34123'
         popt = b''
         ppld = b''
@@ -352,7 +352,8 @@ class TestMessageEncodeDecode (unittest.TestCase):
         with self.assertRaises(MessageFormatError) as cm:
             m = Message.from_packed(b'\x40\x6A\x12\x34')
         self.assertEqual(cm.exception.args[0], 'unrecognized code')
-        self.assertEqual(cm.exception.args[1], (3, 10))
+        self.assertEqual(cm.exception.args[1]['code'], (3, 10))
+        self.assertEqual(cm.exception.args[1]['messageID'], 0x1234)
 
 
 if __name__ == '__main__':

@@ -36,3 +36,9 @@ Utility Classes
 
 .. autoclass:: RetransmissionState
    :no-show-inheritance:
+
+Message-Related Exceptions
+--------------------------
+
+.. autoexception:: MessageError
+.. autoexception:: MessageFormatError
