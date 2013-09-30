@@ -422,7 +422,7 @@ class Message(object):
             data = bytearray(remainder)
             if 0xFF != data[0]:
                 # This should have been interpreted as an option decode error
-                raise MesageFormatError('invalid payload marker')
+                raise MessageFormatError('invalid payload marker')
             payload = remainder[1:]
             if 0 == len(payload):
                 raise MessageFormatError('empty payload')
@@ -441,7 +441,7 @@ class Message(object):
         else:
             constructor = code_support.constructor
         if constructor is None:
-            raise MessageFormatError('unrecognized code')
+            raise MessageFormatError('unrecognized code', code)
         return constructor(**kw)
 
     def __unicode__(self):

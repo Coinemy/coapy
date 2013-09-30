@@ -654,7 +654,7 @@ def _decode_one_option(data):
     od = (odl >> 4)
     ol = (odl & 0x0F)
     if (15 == od) or (15 == ol):
-        raise OptionDecodeError(data)
+        raise OptionDecodeError(odl, bytes(data))
     (delta, data) = _optionint_helper.option_decoding(od, data)
     (length, data) = _optionint_helper.option_decoding(ol, data)
     return (delta, length, data)

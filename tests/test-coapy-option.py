@@ -72,12 +72,15 @@ class TestOptionInfrastructure (unittest.TestCase):
 
     def testFindOption(self):
         self.assertEqual(IfMatch, find_option(IfMatch.number))
+        self.assertRaises(TypeError, find_option, 'text')
         self.assertRaises(ValueError, find_option, -3)
         self.assertTrue(find_option(0) is None)
 
     def testUnrecognizedOption(self):
         instance = UnrecognizedOption(IfMatch.number)
         self.assertEqual(instance.number, IfMatch.number)
+        with self.assertRaises(TypeError):
+            instance = UnrecognizedOption(None)
         with self.assertRaises(ValueError):
             instance = UnrecognizedOption(65536)
         instance = UnrecognizedOption(1234)
@@ -423,6 +426,8 @@ class TestOpaqueFormat (unittest.TestCase):
 
     def testPackUnpack(self):
         opaque = format_opaque(4, min_length=1)
+        self.assertRaises(TypeError, opaque.to_packed, 23)
+        self.assertRaises(TypeError, opaque.from_packed, 23)
         for v in (b'\x01', b'\x01\x02', b'\x01\x02\x03', b'\x01\x02\x03\x04'):
             self.assertEqual(v, opaque.to_packed(v))
             self.assertEqual(v, opaque.from_packed(v))
@@ -493,6 +498,13 @@ class TestStringFormat (unittest.TestCase):
 
 
 class TestEncodeDecodeOptions (unittest.TestCase):
+    def testDecodeInvalid(self):
+        packed = b'\x50\xF0abc'
+        with self.assertRaises(OptionDecodeError) as cm:
+            decode_options(packed)
+        self.assertEqual(cm.exception.args[0], 0xF0)
+        self.assertEqual(cm.exception.args[1], b'abc')
+
     def testEncodeEmpty(self):
         opt = IfNoneMatch()
         popt = b'\x50'

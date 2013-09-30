@@ -53,6 +53,15 @@ class TestTransmissionParameters (unittest.TestCase):
         delays = list(tp.timeout_control(3))
         self.assertEqual([3, 6, 12, 24], delays)
 
+    def testDefaults(self):
+        tp = TransmissionParameters()
+        rs = tp.timeout_control()
+        self.assertEqual(rs.retransmissions_remaining, tp.MAX_RETRANSMIT)
+        ti = rs.timeout
+        t0 = rs.next()
+        self.assertTrue((t0 >= tp.ACK_TIMEOUT) and (t0 < (tp.ACK_TIMEOUT + tp.ACK_RANDOM_FACTOR)))
+        self.assertEqual(t0, ti)
+
 
 class TestRetransmissionState (unittest.TestCase):
     def testBasic(self):
@@ -62,6 +71,29 @@ class TestRetransmissionState (unittest.TestCase):
         self.assertEqual([3, 6, 12, 24], list(rs))
         rs = RetransmissionState(1, 5)
         self.assertEqual([1, 2, 4, 8, 16], list(rs))
+
+    def testBadCreation(self):
+        with self.assertRaises(ValueError):
+            RetransmissionState(initial_timeout=3)
+        with self.assertRaises(ValueError):
+            RetransmissionState(max_retransmissions=4)
+
+
+class TestCodeSupport (unittest.TestCase):
+    def testBasic(self):
+        m = Message(code=Request.GET)
+        self.assertEqual(m.code, Request.GET)
+        cs = m.code_support()
+        self.assertEqual(cs.name, 'GET')
+        self.assertEqual(cs.constructor, Request)
+        self.assertEqual(Message._type_for_code(m.code), Request)
+
+    def testUnregistered(self):
+        m = Message(code=(1,31))
+        self.assertEqual(m.code, (1,31))
+        cs = m.code_support()
+        self.assertTrue(m.code_support() is None)
+        self.assertTrue(Message._type_for_code(m.code) is None)
 
 
 class TestMessage (unittest.TestCase):
@@ -201,6 +233,17 @@ class TestMessage (unittest.TestCase):
         with self.assertRaises(AttributeError):
             Message.Type_RST = 23
 
+    def testStringize(self):
+        m = Message(confirmable=True, token=b'123', message_id=0x1234, code=Request.GET,
+                    options=[coapy.option.UriPath('sensor'),
+                             coapy.option.UriPath('temp')],
+                    payload=b'20 C')
+        self.assertEqual(unicode(m), '''[1234] CON 0.01 (GET)
+Token: 123
+Option UriPath: sensor
+Option UriPath: temp
+Payload: 20 C''')
+
 
 class TestRequest (unittest.TestCase):
     def testImmutable(self):
@@ -268,6 +311,17 @@ class TestMessageEncodeDecode (unittest.TestCase):
         pm = m.to_packed()
         self.assertTrue(isinstance(pm, bytes))
         self.assertEqual(phdr + popt + ppld, pm)
+        m2 = Message.from_packed(pm)
+        self.assertEqual(m.messageType, m2.messageType)
+        self.assertEqual(m.code, m2.code)
+        self.assertEqual(m.messageID, m2.messageID)
+        self.assertEqual(m.token, m2.token)
+        self.assertEqual(len(m.options), len(m2.options))
+        for i in xrange(len(m.options)):
+            self.assertEqual(type(m.options[i]), type(m2.options[i]))
+            self.assertEqual(m.options[i].value, m2.options[i].value)
+        self.assertEqual(m.payload, m2.payload)
+
 
     def testDiagnosticEmpty(self):
         empty_diag = '4.1: bytes after Message ID'
@@ -277,6 +331,28 @@ class TestMessageEncodeDecode (unittest.TestCase):
         with self.assertRaises(MessageFormatError) as cm:
             Message.from_packed(b'\x40\x00\x00\x00\x01')
         self.assertEqual(cm.exception.args[0], empty_diag)
+
+    def testInvalid(self):
+        self.assertRaises(TypeError, Message.from_packed, 'text')
+        m = Message.from_packed(b'\x80')
+        self.assertTrue(m is None)
+        packed = b'\x43\x01\x12\x34123\xF0'
+        with self.assertRaises(MessageFormatError) as cm:
+            Message.from_packed(packed)
+        self.assertEqual(cm.exception.args[0], 'option decode error')
+        packed = b'\x43\x01\x12\x34123\xFF'
+        with self.assertRaises(MessageFormatError) as cm:
+            Message.from_packed(packed)
+        self.assertEqual(cm.exception.args[0], 'empty payload')
+
+    def testUnrecognizedCodes(self):
+        m = Message.from_packed(b'\x40\x8A\x12\x34')
+        self.assertEqual((4, 10), m.code)
+        self.assertTrue(isinstance(m, ClientErrorResponse))
+        with self.assertRaises(MessageFormatError) as cm:
+            m = Message.from_packed(b'\x40\x6A\x12\x34')
+        self.assertEqual(cm.exception.args[0], 'unrecognized code')
+        self.assertEqual(cm.exception.args[1], (3, 10))
 
 
 if __name__ == '__main__':
