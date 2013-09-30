@@ -29,27 +29,32 @@ Option Classes
 Base CoAP Options
 ^^^^^^^^^^^^^^^^^
 
-The following table shows all options that are defined in base CoAP.
+The following table shows all options that are defined in base CoAP, along
+with the format and the :attr:`maximum length of the packed
+value<_format_base.max_length>` (and the minimum length if not zero).
+
+   =======  ========================  =======================  =================
+   Option   Class                     Format                   Max (min) Length
+   =======  ========================  =======================  =================
+   1        :class:`IfMatch`          :class:`format_opaque`   8
+   3        :class:`UriHost`          :class:`format_string`   255 (1)
+   4        :class:`ETag`             :class:`format_opaque`   8 (1)
+   5        :class:`IfNoneMatch`      :class:`format_empty`
+   7        :class:`UriPort`          :class:`format_uint`     2
+   8        :class:`LocationPath`     :class:`format_string`   255
+   11       :class:`UriPath`          :class:`format_string`   255
+   12       :class:`ContentFormat`    :class:`format_uint`     2
+   14       :class:`MaxAge`           :class:`format_uint`     4
+   15       :class:`UriQuery`         :class:`format_string`   255
+   17       :class:`Accept`           :class:`format_uint`     2
+   20       :class:`LocationQuery`    :class:`format_string`   255
+   35       :class:`ProxyUri`         :class:`format_string`   1034 (1)
+   39       :class:`ProxyScheme`      :class:`format_string`   255 (1)
+   60       :class:`Size1`            :class:`format_uint`     4
+   =======  ========================  =======================  =================
+
 Additional options are defined in protocol extensions.
 
-.. autosummary::
-   :nosignatures:
-
-   UriHost
-   UriPort
-   UriPath
-   UriQuery
-   ProxyUri
-   ProxyScheme
-   ContentFormat
-   Accept
-   MaxAge
-   ETag
-   LocationPath
-   LocationQuery
-   IfMatch
-   IfNoneMatch
-   Size1
 
 .. autoclass:: UriHost
 .. autoclass:: UriPort
