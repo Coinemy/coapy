@@ -156,6 +156,17 @@ class TestMessage (unittest.TestCase):
         self.assertRaises(ValueError, self.setToken, m, b'')
         self.assertRaises(ValueError, self.setToken, m, b'123456789')
 
+    def testOptions(self):
+        m = Message()
+        self.assertEqual([], m.options)
+        m.options = [coapy.option.UriPath('p1'),
+                     coapy.option.UriHost('h')]
+        self.assertTrue(isinstance(m.options, list))
+        self.assertEqual(2, len(m.options))
+        # Assignment sorts the instances
+        self.assertTrue(isinstance(m.options[0], coapy.option.UriHost))
+        self.assertTrue(isinstance(m.options[1], coapy.option.UriPath))
+
     @staticmethod
     def setPayload(instance, value):
         instance.payload = value

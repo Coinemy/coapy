@@ -299,10 +299,28 @@ class Message(object):
 
     token = property(_get_token, _set_token)
 
-    options = None
-    """The set of option instances associated with the message.  This
-    should be ``None`` or a list of :class:`coapy.option.UrOption`
-    subclass instances."""
+    def _get_options(self):
+        """The list of :coapsect:`options<5.10>` associated with the
+        message.
+
+        Absence of options is represented by an empty list.  Elements
+        of the list must be :class:`coapy.option.UrOption` (subclass)
+        instances.  The list object is owned by the message instance.
+        Assignment to it will replace its contents.  The contents will
+        be rearranged in a stable sort by option number as needed by
+        operations performed on the message.
+        """
+        return self.__options
+
+    def _set_options(self, value):
+        self.__options[:] = coapy.option.sorted_options(value)
+
+    def _sort_options(self):
+        """Sort the :attr:`options` list and return a reference to it."""
+        self.__options[:] = coapy.option.sorted_options(self.__options)
+        return self.__options
+
+    options = property(_get_options, _set_options)
 
     def _get_payload(self):
         """The payload or content of the message.  This may be
@@ -344,10 +362,15 @@ class Message(object):
         else:
             self.messageID = message_id
         self.token = token
-        self.options = options
+        self.__options = []
+        if options is not None:
+            self.options = options
         self.payload = payload
 
     def to_packed(self):
+        """Generate the packed representation of the message, per :coapsect:`3`.
+        """
+
         vttkl = (1 << 6) | (self.__type << 4)
         if self.__token is not None:
             vttkl |= 0x0F & len(self.__token)
@@ -364,6 +387,10 @@ class Message(object):
 
     @classmethod
     def from_packed(cls, packed_message):
+        """Create a :class:`Message` (or subclass) instance from the
+        packed representation of a message, per :coapsect:`3`.
+        """
+
         if not isinstance(packed_message, bytes):
             raise TypeError(packed_message)
         data = bytearray(packed_message)
@@ -426,9 +453,8 @@ class Message(object):
         elt.append('\n')
         if self.token is not None:
             elt.append('Token: {m.token!s}\n'.format(m=self))
-        if self.options is not None:
-            for o in self.options:
-                elt.append('Option {on}: {ov!s}\n'.format(on=type(o).__name__, ov=o.value))
+        for opt in self._sort_options():
+            elt.append('Option {on}: {ov!s}\n'.format(on=type(opt).__name__, ov=opt.value))
         if self.payload is not None:
             elt.append('Payload: {m.payload}'.format(m=self))
         return ''.join(elt)
