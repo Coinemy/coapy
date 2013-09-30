@@ -553,7 +553,9 @@ class UrOption (object):
                      :exc:`TypeError<python:exceptions.TypeError>`
                      or :exc:`OptionLengthError`.""")
 
+    @property
     def packed_value(self):
+        """The :attr:`value` of the option in its packed representation."""
         return self.format.to_packed(self.value)
 
 
@@ -622,7 +624,7 @@ def encode_options(options):
     for opt in sorted_options(options):
         delta = opt.number - last_number
         last_number = opt.number
-        pvalue = opt.packed_value()
+        pvalue = opt.packed_value
         (od, odx) = _optionint_helper.option_encoding(delta)
         (ol, olx) = _optionint_helper.option_encoding(len(pvalue))
         encoded = struct.pack(str('B'), (od << 4) | ol)
@@ -721,6 +723,16 @@ class UnrecognizedOption (UrOption):
         self.__number = number
         super(UnrecognizedOption, self).__init__(unpacked_value=unpacked_value,
                                                  packed_value=packed_value)
+
+    @classmethod
+    def from_option(cls, opt):
+        """Create an :class:`UnrecognizedOption` from an existing (recognized) option.
+
+        This conversion is necessary per :coapsect:`5.4` in various
+        instances where the recognized option is not accepted.
+        Standard option processing then proceeds with the option left
+        unrecognized."""
+        return cls(opt.number, opt.packed_value)
 
 
 class IfMatch (UrOption):

@@ -75,7 +75,7 @@ class TestOptionInfrastructure (unittest.TestCase):
         self.assertRaises(ValueError, find_option, -3)
         self.assertTrue(find_option(0) is None)
 
-    def testUnknownOption(self):
+    def testUnrecognizedOption(self):
         instance = UnrecognizedOption(IfMatch.number)
         self.assertEqual(instance.number, IfMatch.number)
         with self.assertRaises(ValueError):
@@ -84,6 +84,15 @@ class TestOptionInfrastructure (unittest.TestCase):
         self.assertEqual(1234, instance.number)
         with self.assertRaises(AttributeError):
             instance.number = 4321
+        opt = ETag(b'1234')
+        uopt = UnrecognizedOption.from_option(opt)
+        self.assertTrue(isinstance(opt, ETag))
+        self.assertFalse(isinstance(opt, UnrecognizedOption))
+        self.assertFalse(isinstance(uopt, ETag))
+        self.assertTrue(isinstance(uopt, UnrecognizedOption))
+        popt = encode_options([opt])
+        puopt = encode_options([uopt])
+        self.assertEqual(popt, puopt)
 
 
 class TestOptionConformance (unittest.TestCase):
