@@ -26,6 +26,7 @@ from __future__ import division
 
 
 import random
+import struct
 import coapy
 import coapy.option
 import coapy.util
@@ -44,6 +45,9 @@ class Message(object):
     """
 
     __metaclass__ = coapy.util.ReadOnlyMeta
+
+    Ver = coapy.util.ClassReadOnly(1)
+    """Version of the CoAP protocol."""
 
     Type_CON = coapy.util.ClassReadOnly(0)
     """Type for a :meth:`confirmable<is_confirmable>` message."""
@@ -200,7 +204,7 @@ class Message(object):
     payload = property(_get_payload, _set_payload)
 
     def __init__(self, confirmable=False, acknowledgement=False, reset=False,
-                 code=None, token=None, options=None, payload=None):
+                 code=None, message_id=None, token=None, options=None, payload=None):
         if confirmable:
             self.__type = self.Type_CON
         elif acknowledgement:
@@ -212,11 +216,29 @@ class Message(object):
         if code is None:
             self.__code = None
         else:
-            self._set_code(code)
-        self.__messageID = None
-        self._set_token(token)
+            self.code = code
+        if message_id is None:
+            self.__messageID = None
+        else:
+            self.messageID = message_id
+        self.token = token
         self.options = options
-        self._set_payload(payload)
+        self.payload = payload
+
+    def to_packed(self):
+        vttkl = (1 << 6) | (self.__type << 4)
+        if self.__token is not None:
+            vttkl |= 0x0F & len(self.__token)
+        elements = []
+        elements.append(struct.pack(str('!BBH'), vttkl, self.packed_code, self.messageID))
+        if self.__token is not None:
+            elements.append(self.__token)
+        if self.options:
+            elements.append(coapy.option.encode_options(self.options))
+        elements.append(b'\xFF')
+        if self.__payload:
+            elements.append(self.__payload)
+        return b''.join(elements)
 
 
 class Request (Message):

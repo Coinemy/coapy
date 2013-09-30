@@ -213,5 +213,28 @@ class TestRequest (unittest.TestCase):
         self.assertEqual((0, 3), req.PUT)
         self.assertEqual((0, 4), req.DELETE)
 
+class TestMessageEncodeDecode (unittest.TestCase):
+    import coapy.option
+
+    def testBasic(self):
+        m = Message(confirmable=True, token=b'123', message_id=0x1234, code=Request.GET)
+        phdr = b'\x43\x01\x12\x34123'
+        popt = b''
+        ppld = b''
+        pm = m.to_packed()
+        self.assertTrue(isinstance(pm, bytes))
+        self.assertEqual(phdr + popt + b'\xff' + ppld, pm)
+        m.options = [ coapy.option.UriPath(u'sensor') ]
+        popt = coapy.option.encode_options(m.options)
+        pm = m.to_packed()
+        self.assertTrue(isinstance(pm, bytes))
+        self.assertEqual(phdr + popt + b'\xff' + ppld, pm)
+        ppld = b'20 C'
+        m.payload = ppld
+        pm = m.to_packed()
+        self.assertTrue(isinstance(pm, bytes))
+        self.assertEqual(phdr + popt + b'\xff' + ppld, pm)
+
+
 if __name__ == '__main__':
     unittest.main()
