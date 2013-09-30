@@ -100,6 +100,18 @@ class TestMessage (unittest.TestCase):
         self.assertTrue(m.code is None)
         with self.assertRaises(ValueError):
             _ = m.packed_code
+        self.assertRaises(TypeError, Message.code_as_tuple, None)
+        self.assertRaises(ValueError, Message.code_as_tuple, (1, 2, 3))
+        self.assertRaises(ValueError, Message.code_as_tuple, (8, 0))
+        self.assertRaises(ValueError, Message.code_as_tuple, (1, 32))
+        self.assertRaises(TypeError, Message.code_as_integer, None)
+        self.assertRaises(ValueError, Message.code_as_integer, (1, 2, 3))
+        self.assertRaises(ValueError, Message.code_as_integer, (8, 0))
+        self.assertRaises(ValueError, Message.code_as_integer, (1, 32))
+        self.assertEqual((0, 0), Message.code_as_tuple(0))
+        self.assertEqual((7, 15), Message.code_as_tuple(0xef))
+        self.assertEqual(0xef, Message.code_as_integer(0xef))
+        self.assertEqual(0xef, Message.code_as_integer((7, 15)))
         m.code = 0
         self.assertEqual((0, 0), m.code)
         self.assertEqual(0, m.packed_code)

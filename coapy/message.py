@@ -75,7 +75,7 @@ class Message(object):
 
     @classmethod
     def type_for_code(cls, code):
-        (clazz, detail) = cls.__code_as_tuple(code)
+        (clazz, detail) = cls.code_as_tuple(code)
         return cls.__ClassRegistry.get(clazz)
 
     Empty = coapy.util.ClassReadOnly((0, 0))
@@ -135,23 +135,10 @@ class Message(object):
         return ('CON', 'NON', 'ACK', 'RST')[self.__type]
     messageTypeName = property(_get_type_name)
 
-    def _get_code(self):
-        """The message code, expressed as a tuple ``(class, detail)``
-        where *class* is an integer value from 0 through 7 and
-        *detail* is an integer value from 0 through 31.
-
-        A code of ``None`` is allowed only when the message is
-        created, and a valid code must be assigned before the message
-        may be transmitted.
-
-        For convenience, the code may also be set from its packed
-        format defined by ``(class << 5) | detail``.  Decimal code
-        representation such as ``4.03`` is not supported.
-        """
-        return self.__code
 
     @staticmethod
-    def __code_as_tuple(code):
+    def code_as_tuple(code):
+        """Validate *code* and return it as a ``(class, detail)`` tuple."""
         if isinstance(code, tuple):
             if 2 != len(code):
                 raise ValueError(code)
@@ -168,8 +155,34 @@ class Message(object):
             raise TypeError(code)
         return code
 
+    @staticmethod
+    def code_as_integer(code):
+        """Validate *code* and return it as an integer.
+
+        The packed encoding of ``(class, detail)`` has the 3-bit code
+        class combined with the 5-bit code detail, as: ``(class << 5)
+        | detail``.
+        """
+        (clazz, detail) = Message.code_as_tuple(code)
+        return (clazz << 5) | detail
+
+    def _get_code(self):
+        """The message code, expressed as a tuple ``(class, detail)``
+        where *class* is an integer value from 0 through 7 and
+        *detail* is an integer value from 0 through 31.
+
+        A code of ``None`` is allowed only when a raw :class:`Message`
+        is created, and a valid code must be assigned before the
+        message may be transmitted.
+
+        For convenience, the code may also be set from its packed
+        format defined by ``(class << 5) | detail``.  Decimal code
+        representation such as ``4.03`` is not supported.
+        """
+        return self.__code
+
     def _set_code(self, code):
-        self.__code = self.__code_as_tuple(code)
+        self.__code = self.code_as_tuple(code)
 
     code = property(_get_code, _set_code)
 
@@ -182,7 +195,7 @@ class Message(object):
         """
         if self.__code is None:
             raise ValueError(None)
-        return (self.__code[0] << 5) | self.__code[1]
+        return self.code_as_integer(self.__code)
 
     packed_code = property(_get_packed_code)
 
@@ -299,7 +312,7 @@ class Message(object):
             return None
         message_type = 0x03 & (vttkl >> 4)
         tkl = 0x0F & vttkl
-        code = cls.__code_as_tuple(data.pop(0))
+        code = cls.code_as_tuple(data.pop(0))
         message_id = data.pop(0)
         message_id = (message_id << 8) | data.pop(0)
         if ((cls.Empty == code)
