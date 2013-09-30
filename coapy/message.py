@@ -32,6 +32,14 @@ import coapy.option
 import coapy.util
 
 
+class MessageError (coapy.CoAPyException):
+    pass
+
+
+class MessageFormatError (MessageError):
+    pass
+
+
 class Message(object):
     """A CoAP message, per :coapsect:`3`.
 
@@ -69,6 +77,11 @@ class Message(object):
     def type_for_code(cls, code):
         (clazz, detail) = cls.__code_as_tuple(code)
         return cls.__ClassRegistry.get(clazz)
+
+    Empty = coapy.util.ClassReadOnly((0, 0))
+    """Code for a message that is neither a request nor a response.
+    This is used for message-layer non-piggybacked ACK and for RST.
+    """
 
     Ver = coapy.util.ClassReadOnly(1)
     """Version of the CoAP protocol."""
@@ -115,6 +128,12 @@ class Message(object):
         is a read-only attribute."""
         return self.__type
     messageType = property(_get_type)
+
+    def _get_type_name(self):
+        """The type of the message as a three-letter descriptive name.
+        This is a read-only attribute."""
+        return ('CON', 'NON', 'ACK', 'RST')[self.__type]
+    messageTypeName = property(_get_type_name)
 
     def _get_code(self):
         """The message code, expressed as a tuple ``(class, detail)``
@@ -263,11 +282,77 @@ class Message(object):
             elements.append(self.__token)
         if self.options:
             elements.append(coapy.option.encode_options(self.options))
-        elements.append(b'\xFF')
         if self.__payload:
+            elements.append(b'\xFF')
             elements.append(self.__payload)
         return b''.join(elements)
 
+    @classmethod
+    def from_packed(cls, packed_message):
+        if not isinstance(packed_message, bytes):
+            raise TypeError(packed_message)
+        data = bytearray(packed_message)
+        vttkl = data.pop(0)
+        ver = (vttkl >> 6)
+        if ver != cls.Ver:
+            # 3: Unknown version number: silently ignore
+            return None
+        message_type = 0x03 & (vttkl >> 4)
+        tkl = 0x0F & vttkl
+        code = cls.__code_as_tuple(data.pop(0))
+        message_id = data.pop(0)
+        message_id = (message_id << 8) | data.pop(0)
+        if ((cls.Empty == code)
+            and ((0 != tkl) or (0 < len(data)))):
+            raise MessageFormatError('4.1: bytes after Message ID')
+        token = None
+        if 0 < tkl:
+            token = bytes(data[:tkl])
+            data[:tkl] = b''
+        try:
+            (options, remainder) = coapy.option.decode_options(bytes(data))
+        except coapy.option.OptionDecodeError as e:
+            # This can be an invalid delta or length in the first byte,
+            # or a value field that does not conform to the requirements.
+            # @todo@ refine this
+            raise MessageFormatError('option decode error')
+        payload = None
+        if 0 < len(remainder):
+            data = bytearray(remainder)
+            if 0xFF != data[0]:
+                # This should have been interpreted as an option decode error
+                raise MesageFormatError('invalid payload marker')
+            payload = remainder[1:]
+            if 0 == len(payload):
+                raise MessageFormatError('empty payload')
+        kw = { 'confirmable' : (cls.Type_CON == message_type),
+               'acknowledgement' : (cls.Type_ACK == message_type),
+               'reset' : (cls.Type_RST == message_type),
+               'code' : code,
+               'message_id' : message_id,
+               'token' : token,
+               'options' : options,
+               'payload' : payload }
+        if cls.Empty == code:
+            return cls(**kw)
+        python_type = cls.type_for_code(code)
+        if python_type is None:
+            # Standard doesn't seem to specify behavior in this case
+            raise MessageFormatError('unrecognized code')
+        return python_type(**kw)
+
+    def __unicode__(self):
+        elt = []
+        elt.append(u'[{m.messageID:04X}] {m.messageTypeName} {m.code!s}\n'.format(m=self))
+        if self.token is not None:
+            elt.append(u'Token: {m.token!s}\n'.format(m=self))
+        if self.options is not None:
+            for o in self.options:
+                elt.append(u'Option {on}: {ov!s}\n'.format(on=type(o).__name__, ov=o.value))
+        if self.payload is not None:
+            elt.append(u'Payload: {m.payload}'.format(m=self))
+        return u''.join(elt)
+    __str__ = __unicode__
 
 class Request (Message):
     """Subclass for messages that are requests.

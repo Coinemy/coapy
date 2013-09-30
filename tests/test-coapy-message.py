@@ -234,17 +234,26 @@ class TestMessageEncodeDecode (unittest.TestCase):
         ppld = b''
         pm = m.to_packed()
         self.assertTrue(isinstance(pm, bytes))
-        self.assertEqual(phdr + popt + b'\xff' + ppld, pm)
+        self.assertEqual(phdr + popt + ppld, pm)
         m.options = [coapy.option.UriPath(u'sensor')]
         popt = coapy.option.encode_options(m.options)
         pm = m.to_packed()
         self.assertTrue(isinstance(pm, bytes))
-        self.assertEqual(phdr + popt + b'\xff' + ppld, pm)
-        ppld = b'20 C'
-        m.payload = ppld
+        self.assertEqual(phdr + popt + ppld, pm)
+        m.payload = b'20 C'
+        ppld = b'\xff' + m.payload
         pm = m.to_packed()
         self.assertTrue(isinstance(pm, bytes))
-        self.assertEqual(phdr + popt + b'\xff' + ppld, pm)
+        self.assertEqual(phdr + popt + ppld, pm)
+
+    def testDiagnosticEmpty(self):
+        empty_diag = '4.1: bytes after Message ID'
+        with self.assertRaises(MessageFormatError) as cm:
+            Message.from_packed(b'\x42\x00\x00\x00')
+        self.assertEqual(cm.exception.args[0], empty_diag)
+        with self.assertRaises(MessageFormatError) as cm:
+            Message.from_packed(b'\x40\x00\x00\x00\x01')
+        self.assertEqual(cm.exception.args[0], empty_diag)
 
 
 if __name__ == '__main__':
