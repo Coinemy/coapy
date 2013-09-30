@@ -239,19 +239,19 @@ class Request (Message):
     Class = coapy.util.ClassReadOnly(0)
     """The :attr:`Message.code` class component for :class:`Request` messages."""
 
-    GET = coapy.util.ClassReadOnly(1)
+    GET = coapy.util.ClassReadOnly((0, 1))
     """Retrieve a representation for the requested resource.  See
     :coapsect:`5.8.1`."""
 
-    POST = coapy.util.ClassReadOnly(2)
+    POST = coapy.util.ClassReadOnly((0, 2))
     """Process the representation enclosed in the requested resource.
     See :coapsect:`5.8.2`."""
 
-    PUT = coapy.util.ClassReadOnly(3)
+    PUT = coapy.util.ClassReadOnly((0, 3))
     """Update or create the resource using the enclosed representation.
     See :coapsect:`5.8.3`."""
 
-    DELETE = coapy.util.ClassReadOnly(4)
+    DELETE = coapy.util.ClassReadOnly((0, 4))
     """Delete the resource identified by the request URI.
     See :coapsect:`5.8.4`."""
 
@@ -278,19 +278,19 @@ class SuccessResponse (Message):
     """The :attr:`Message.code` class component for
     :class:`SuccessResponse` messages."""
 
-    Created = coapy.util.ClassReadOnly(1)
+    Created = coapy.util.ClassReadOnly((2, 1))
     """See :coapsect:`5.9.1.1`."""
 
-    Deleted = coapy.util.ClassReadOnly(2)
+    Deleted = coapy.util.ClassReadOnly((2, 2))
     """See :coapsect:`5.9.1.2`."""
 
-    Valid = coapy.util.ClassReadOnly(3)
+    Valid = coapy.util.ClassReadOnly((2, 3))
     """See :coapsect:`5.9.1.3`."""
 
-    Changed = coapy.util.ClassReadOnly(4)
+    Changed = coapy.util.ClassReadOnly((2, 4))
     """See :coapsect:`5.9.1.4`."""
 
-    Content = coapy.util.ClassReadOnly(5)
+    Content = coapy.util.ClassReadOnly((2, 5))
     """See :coapsect:`5.9.1.5`."""
 
 
@@ -322,34 +322,34 @@ class ClientErrorResponse (Message):
     """The :attr:`Message.code` class component for
     :class:`ClientErrorResponse` messages."""
 
-    BadRequest = coapy.util.ClassReadOnly(0)
+    BadRequest = coapy.util.ClassReadOnly((4, 0))
     """See :coapsect:`5.9.2.1`"""
 
-    Unauthorized = coapy.util.ClassReadOnly(1)
+    Unauthorized = coapy.util.ClassReadOnly((4, 1))
     """See :coapsect:`5.9.2.2`"""
 
-    BadOption = coapy.util.ClassReadOnly(2)
+    BadOption = coapy.util.ClassReadOnly((4, 2))
     """See :coapsect:`5.9.2.3`"""
 
-    Forbidden = coapy.util.ClassReadOnly(3)
+    Forbidden = coapy.util.ClassReadOnly((4, 3))
     """See :coapsect:`5.9.2.4`"""
 
-    NotFound = coapy.util.ClassReadOnly(4)
+    NotFound = coapy.util.ClassReadOnly((4, 4))
     """See :coapsect:`5.9.2.5`"""
 
-    MethodNotAllowed = coapy.util.ClassReadOnly(5)
+    MethodNotAllowed = coapy.util.ClassReadOnly((4, 5))
     """See :coapsect:`5.9.2.6`"""
 
-    NotAcceptable = coapy.util.ClassReadOnly(6)
+    NotAcceptable = coapy.util.ClassReadOnly((4, 6))
     """See :coapsect:`5.9.2.7`"""
 
-    PreconditionFailed = coapy.util.ClassReadOnly(12)
+    PreconditionFailed = coapy.util.ClassReadOnly((4, 12))
     """See :coapsect:`5.9.2.8`"""
 
-    RequestEntityTooLarge = coapy.util.ClassReadOnly(13)
+    RequestEntityTooLarge = coapy.util.ClassReadOnly((4, 13))
     """See :coapsect:`5.9.2.9`"""
 
-    UnsupportedContentFormat = coapy.util.ClassReadOnly(15)
+    UnsupportedContentFormat = coapy.util.ClassReadOnly((4, 15))
     """See :coapsect:`5.9.2.10`"""
 
 
@@ -377,22 +377,22 @@ class ServerErrorResponse (Message):
     """The :attr:`Message.code` class component for
     :class:`ServerErrorResponse` messages."""
 
-    InternalServerError = coapy.util.ClassReadOnly(0)
+    InternalServerError = coapy.util.ClassReadOnly((5, 0))
     """See :coapsect:`5.9.3.1`"""
 
-    NotImplemented = coapy.util.ClassReadOnly(1)
+    NotImplemented = coapy.util.ClassReadOnly((5, 1))
     """See :coapsect:`5.9.3.2`"""
 
-    BadGateway = coapy.util.ClassReadOnly(2)
+    BadGateway = coapy.util.ClassReadOnly((5, 2))
     """See :coapsect:`5.9.3.3`"""
 
-    ServiceUnavailable = coapy.util.ClassReadOnly(3)
+    ServiceUnavailable = coapy.util.ClassReadOnly((5, 3))
     """See :coapsect:`5.9.3.4`"""
 
-    GatewayTimeout = coapy.util.ClassReadOnly(4)
+    GatewayTimeout = coapy.util.ClassReadOnly((5, 4))
     """See :coapsect:`5.9.3.5`"""
 
-    ProxyingNotSupported = coapy.util.ClassReadOnly(5)
+    ProxyingNotSupported = coapy.util.ClassReadOnly((5, 5))
     """See :coapsect:`5.9.3.6`"""
 
 

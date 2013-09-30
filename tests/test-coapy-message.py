@@ -203,16 +203,15 @@ class TestRequest (unittest.TestCase):
         with self.assertRaises(AttributeError):
             req.DELETE = 8
         self.assertEqual(0, Request.Class)
-        self.assertEqual(1, Request.GET)
-        self.assertEqual(2, Request.POST)
-        self.assertEqual(3, Request.PUT)
-        self.assertEqual(4, Request.DELETE)
+        self.assertEqual((0, 1), Request.GET)
+        self.assertEqual((0, 2), Request.POST)
+        self.assertEqual((0, 3), Request.PUT)
+        self.assertEqual((0, 4), Request.DELETE)
         self.assertEqual(0, req.Class)
-        self.assertEqual(1, req.GET)
-        self.assertEqual(2, req.POST)
-        self.assertEqual(3, req.PUT)
-        self.assertEqual(4, req.DELETE)
-
+        self.assertEqual((0, 1), req.GET)
+        self.assertEqual((0, 2), req.POST)
+        self.assertEqual((0, 3), req.PUT)
+        self.assertEqual((0, 4), req.DELETE)
 
 if __name__ == '__main__':
     unittest.main()
