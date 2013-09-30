@@ -228,12 +228,12 @@ class TestRequest (unittest.TestCase):
 
 class TestClassRegistry (unittest.TestCase):
     def testBasic(self):
-        self.assertEqual(Request, Message.type_for_code(Request.GET))
-        self.assertEqual(SuccessResponse, Message.type_for_code(SuccessResponse.Valid))
+        self.assertEqual(Request, Message._type_for_code(Request.GET))
+        self.assertEqual(SuccessResponse, Message._type_for_code(SuccessResponse.Valid))
         self.assertEqual(ClientErrorResponse,
-                         Message.type_for_code(ClientErrorResponse.NotFound))
+                         Message._type_for_code(ClientErrorResponse.NotFound))
         self.assertEqual(ServerErrorResponse,
-                         Message.type_for_code(ServerErrorResponse.NotImplemented))
+                         Message._type_for_code(ServerErrorResponse.NotImplemented))
 
 
 class TestMessageEncodeDecode (unittest.TestCase):

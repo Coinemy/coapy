@@ -63,20 +63,80 @@ class Message(object):
     creating messages from packed format.
     """
 
-    __ClassRegistry = {}
+    class _CodeSupport (object):
+        code = None
+        """The CoAP message code to which other attributes apply.
+        This is the ``(class, detail)`` representation.
+        """
+
+        name = None
+        """The text name of the particular code within its class."""
+
+        constructor = None
+        """The subclass of :class:`Message` that should be used to
+        construct messages with :attr:`code`.
+        """
+
+        def __init__(self, code, name, constructor):
+            self.code = code
+            self.name = name
+            self.constructor = constructor
+
+    # Registry from code tuples to assorted information about messages
+    # with that code.
+    __CodeRegistry = {}
+
+    # Registry from code classes to the primary Python type used for
+    # messages in that class.  This is for fall-backs when the details
+    # is unrecognized but we still have to do class-specific actions
+    # on the message.
+    __CodeClassRegistry = {}
 
     @classmethod
-    def _RegisterClass(cls, message_class):
-        assert isinstance(message_class.CodeClass, int)
-        assert 0 <= message_class.CodeClass
-        assert message_class.CodeClass <= 7
-        assert message_class.CodeClass not in cls.__ClassRegistry
-        cls.__ClassRegistry[message_class.CodeClass] = message_class
+    def RegisterCode(cls, code, name, constructor=None):
+        """Register some information about messages with a particular code.
+
+        This allows extensions to add new codes as the IANA registries
+        are updated.  It also allows the Python version of decoded
+        messages to be created using the most appropriate subclass of
+        :class:`Message`.
+
+        *code* must be a valid code expressed in tuple form.  *name*
+        is the standardized text name or description from the
+        corresponding IANA registry.  *constructor* is the callable
+        that takes the same arguments as :class:`Message` and creates
+        a new instance of the class best suited for messages with code
+        *code*.  The constructor defaults to *cls* if not provided.
+
+        This method should be invoked through the subclass that is
+        responsible for *code*, e.g. :class:`RequestMessage` for
+        :attr:`RequestMessage.GET`.
+        """
+        assert code == cls.code_as_tuple(code)
+        if constructor is None:
+            constructor = cls
+        if code in cls.__CodeRegistry:
+            raise ValueError(code)
+        if cls.CodeClass is not None:
+            if code[0] != cls.CodeClass:
+                raise ValueError(code)
+            if code[0] not in cls.__CodeClassRegistry:
+                cls.__CodeClassRegistry[code[0]] = cls
+        cls.__CodeRegistry[code] = cls._CodeSupport(code, name, constructor)
 
     @classmethod
-    def type_for_code(cls, code):
-        (clazz, detail) = cls.code_as_tuple(code)
-        return cls.__ClassRegistry.get(clazz)
+    def _code_support(cls, code):
+        return cls.__CodeRegistry.get(cls.code_as_tuple(code))
+
+    @classmethod
+    def _type_for_code(cls, code):
+        cs = cls._code_support(code)
+        if cs is not None:
+            return cs.constructor
+        return None
+
+    def code_support(self):
+        return self._code_support(self.code)
 
     Empty = coapy.util.ClassReadOnly((0, 0))
     """Code for a message that is neither a request nor a response.
@@ -345,26 +405,33 @@ class Message(object):
               'options': options,
               'payload': payload
               }
-        if cls.Empty == code:
-            return cls(**kw)
-        python_type = cls.type_for_code(code)
-        if python_type is None:
-            # Standard doesn't seem to specify behavior in this case
+        code_support = cls.__CodeRegistry.get(code)
+        if code_support is None:
+            constructor = cls.__CodeClassRegistry.get(code[0])
+        else:
+            constructor = code_support.constructor
+        if constructor is None:
             raise MessageFormatError('unrecognized code')
-        return python_type(**kw)
+        return constructor(**kw)
 
     def __unicode__(self):
         elt = []
-        elt.append(u'[{m.messageID:04X}] {m.messageTypeName} {m.code!s}\n'.format(m=self))
+        elt.append('[{m.messageID:04X}] {m.messageTypeName} {m.code[0]}.{m.code[1]:02d}'.format(m=self))  # nopep8
+        cs = self.code_support()
+        if cs is not None:
+            elt.append(' ({cs.name})'.format(cs=cs))
+        elt.append('\n')
         if self.token is not None:
-            elt.append(u'Token: {m.token!s}\n'.format(m=self))
+            elt.append('Token: {m.token!s}\n'.format(m=self))
         if self.options is not None:
             for o in self.options:
-                elt.append(u'Option {on}: {ov!s}\n'.format(on=type(o).__name__, ov=o.value))
+                elt.append('Option {on}: {ov!s}\n'.format(on=type(o).__name__, ov=o.value))
         if self.payload is not None:
-            elt.append(u'Payload: {m.payload}'.format(m=self))
-        return u''.join(elt)
+            elt.append('Payload: {m.payload}'.format(m=self))
+        return ''.join(elt)
     __str__ = __unicode__
+
+Message.RegisterCode(Message.Empty, 'Empty')
 
 
 class Request (Message):
@@ -402,7 +469,10 @@ class Request (Message):
     DELETE = coapy.util.ClassReadOnly((0, 4))
     """Delete the resource identified by the request URI.
     See :coapsect:`5.8.4`."""
-Message._RegisterClass(Request)
+Request.RegisterCode(Request.GET, 'GET')
+Request.RegisterCode(Request.POST, 'POST')
+Request.RegisterCode(Request.PUT, 'PUT')
+Request.RegisterCode(Request.DELETE, 'DELETE')
 
 
 class Response (Message):
@@ -452,7 +522,11 @@ class SuccessResponse (Response):
 
     Content = coapy.util.ClassReadOnly((2, 5))
     """See :coapsect:`5.9.1.5`."""
-Message._RegisterClass(SuccessResponse)
+SuccessResponse.RegisterCode(SuccessResponse.Created, 'Created')
+SuccessResponse.RegisterCode(SuccessResponse.Deleted, 'Deleted')
+SuccessResponse.RegisterCode(SuccessResponse.Valid, 'Valid')
+SuccessResponse.RegisterCode(SuccessResponse.Changed, 'Changed')
+SuccessResponse.RegisterCode(SuccessResponse.Content, 'Content')
 
 
 class ClientErrorResponse (Response):
@@ -512,7 +586,16 @@ class ClientErrorResponse (Response):
 
     UnsupportedContentFormat = coapy.util.ClassReadOnly((4, 15))
     """See :coapsect:`5.9.2.10`"""
-Message._RegisterClass(ClientErrorResponse)
+ClientErrorResponse.RegisterCode(ClientErrorResponse.BadRequest, 'Bad Request')
+ClientErrorResponse.RegisterCode(ClientErrorResponse.Unauthorized, 'Unauthorized')
+ClientErrorResponse.RegisterCode(ClientErrorResponse.BadOption, 'Bad Option')
+ClientErrorResponse.RegisterCode(ClientErrorResponse.Forbidden, 'Forbidden')
+ClientErrorResponse.RegisterCode(ClientErrorResponse.NotFound, 'Not Found')
+ClientErrorResponse.RegisterCode(ClientErrorResponse.MethodNotAllowed, 'Method Not Allowed')
+ClientErrorResponse.RegisterCode(ClientErrorResponse.NotAcceptable, 'Not Acceptable')
+ClientErrorResponse.RegisterCode(ClientErrorResponse.PreconditionFailed, 'Precondition Failed')
+ClientErrorResponse.RegisterCode(ClientErrorResponse.RequestEntityTooLarge, 'Request Entity Too Large')  # nopep8
+ClientErrorResponse.RegisterCode(ClientErrorResponse.UnsupportedContentFormat, 'Unsupported Content-Format')  # nopep8
 
 
 class ServerErrorResponse (Response):
@@ -556,7 +639,12 @@ class ServerErrorResponse (Response):
 
     ProxyingNotSupported = coapy.util.ClassReadOnly((5, 5))
     """See :coapsect:`5.9.3.6`"""
-Message._RegisterClass(ServerErrorResponse)
+ServerErrorResponse.RegisterCode(ServerErrorResponse.InternalServerError, 'Internal Server Error')
+ServerErrorResponse.RegisterCode(ServerErrorResponse.NotImplemented, 'Not Implemented')
+ServerErrorResponse.RegisterCode(ServerErrorResponse.BadGateway, 'Bad Gateway')
+ServerErrorResponse.RegisterCode(ServerErrorResponse.ServiceUnavailable, 'Service Unavailable')
+ServerErrorResponse.RegisterCode(ServerErrorResponse.GatewayTimeout, 'Gateway Timeout')
+ServerErrorResponse.RegisterCode(ServerErrorResponse.ProxyingNotSupported, 'Proxying Not Supported')  # nopep8
 
 
 class TransmissionParameters(object):
