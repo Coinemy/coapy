@@ -46,7 +46,7 @@ class Message(object):
 
     __metaclass__ = coapy.util.ReadOnlyMeta
 
-    Class = None
+    CodeClass = None
     """Identifier for message class.
 
     In subclasses this is a read-only attribute giving the numeric
@@ -59,11 +59,11 @@ class Message(object):
 
     @classmethod
     def _RegisterClass(cls, message_class):
-        assert isinstance(message_class.Class, int)
-        assert 0 <= message_class.Class
-        assert message_class.Class <= 7
-        assert message_class.Class not in cls.__ClassRegistry
-        cls.__ClassRegistry[message_class.Class] = message_class
+        assert isinstance(message_class.CodeClass, int)
+        assert 0 <= message_class.CodeClass
+        assert message_class.CodeClass <= 7
+        assert message_class.CodeClass not in cls.__ClassRegistry
+        cls.__ClassRegistry[message_class.CodeClass] = message_class
 
     @classmethod
     def type_for_code(cls, code):
@@ -286,7 +286,7 @@ class Request (Message):
 
     """
 
-    Class = coapy.util.ClassReadOnly(0)
+    CodeClass = coapy.util.ClassReadOnly(0)
     """The :attr:`Message.code` class component for :class:`Request` messages."""
 
     GET = coapy.util.ClassReadOnly((0, 1))
@@ -325,7 +325,7 @@ class SuccessResponse (Message):
     (2, 5)   :attr:`Content`   :coapsect:`5.9.1.4`
     =======  ================  ====================
     """
-    Class = coapy.util.ClassReadOnly(2)
+    CodeClass = coapy.util.ClassReadOnly(2)
     """The :attr:`Message.code` class component for
     :class:`SuccessResponse` messages."""
 
@@ -370,7 +370,7 @@ class ClientErrorResponse (Message):
     ========  =================================  =====================
     """
 
-    Class = coapy.util.ClassReadOnly(4)
+    CodeClass = coapy.util.ClassReadOnly(4)
     """The :attr:`Message.code` class component for
     :class:`ClientErrorResponse` messages."""
 
@@ -426,7 +426,7 @@ class ServerErrorResponse (Message):
     ========  =================================  =====================
     """
 
-    Class = coapy.util.ClassReadOnly(5)
+    CodeClass = coapy.util.ClassReadOnly(5)
     """The :attr:`Message.code` class component for
     :class:`ServerErrorResponse` messages."""
 

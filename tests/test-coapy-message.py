@@ -183,9 +183,9 @@ class TestRequest (unittest.TestCase):
     def testImmutable(self):
         req = Request()
         with self.assertRaises(AttributeError):
-            Request.Class = 8
+            Request.CodeClass = 8
         with self.assertRaises(AttributeError):
-            req.Class = 8
+            req.CodeClass = 8
         with self.assertRaises(AttributeError):
             Request.GET = 8
         with self.assertRaises(AttributeError):
@@ -202,12 +202,12 @@ class TestRequest (unittest.TestCase):
             Request.DELETE = 8
         with self.assertRaises(AttributeError):
             req.DELETE = 8
-        self.assertEqual(0, Request.Class)
+        self.assertEqual(0, Request.CodeClass)
         self.assertEqual((0, 1), Request.GET)
         self.assertEqual((0, 2), Request.POST)
         self.assertEqual((0, 3), Request.PUT)
         self.assertEqual((0, 4), Request.DELETE)
-        self.assertEqual(0, req.Class)
+        self.assertEqual(0, req.CodeClass)
         self.assertEqual((0, 1), req.GET)
         self.assertEqual((0, 2), req.POST)
         self.assertEqual((0, 3), req.PUT)
