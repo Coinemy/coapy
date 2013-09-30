@@ -135,7 +135,6 @@ class Message(object):
         return ('CON', 'NON', 'ACK', 'RST')[self.__type]
     messageTypeName = property(_get_type_name)
 
-
     @staticmethod
     def code_as_tuple(code):
         """Validate *code* and return it as a ``(class, detail)`` tuple."""
@@ -315,8 +314,7 @@ class Message(object):
         code = cls.code_as_tuple(data.pop(0))
         message_id = data.pop(0)
         message_id = (message_id << 8) | data.pop(0)
-        if ((cls.Empty == code)
-            and ((0 != tkl) or (0 < len(data)))):
+        if ((cls.Empty == code) and ((0 != tkl) or (0 < len(data)))):
             raise MessageFormatError('4.1: bytes after Message ID')
         token = None
         if 0 < tkl:
@@ -338,14 +336,15 @@ class Message(object):
             payload = remainder[1:]
             if 0 == len(payload):
                 raise MessageFormatError('empty payload')
-        kw = { 'confirmable' : (cls.Type_CON == message_type),
-               'acknowledgement' : (cls.Type_ACK == message_type),
-               'reset' : (cls.Type_RST == message_type),
-               'code' : code,
-               'message_id' : message_id,
-               'token' : token,
-               'options' : options,
-               'payload' : payload }
+        kw = {'confirmable': (cls.Type_CON == message_type),
+              'acknowledgement': (cls.Type_ACK == message_type),
+              'reset': (cls.Type_RST == message_type),
+              'code': code,
+              'message_id': message_id,
+              'token': token,
+              'options': options,
+              'payload': payload
+              }
         if cls.Empty == code:
             return cls(**kw)
         python_type = cls.type_for_code(code)
@@ -366,6 +365,7 @@ class Message(object):
             elt.append(u'Payload: {m.payload}'.format(m=self))
         return u''.join(elt)
     __str__ = __unicode__
+
 
 class Request (Message):
     """Subclass for messages that are requests.
@@ -405,7 +405,18 @@ class Request (Message):
 Message._RegisterClass(Request)
 
 
-class SuccessResponse (Message):
+class Response (Message):
+    """Subclass for messages that are responses.
+
+    Some of the semantics of CoAP depends on distinguishing requests
+    from responses; use this as an intermediary class for common
+    handling of :class:`SuccessResponse`,
+    :class:`ClientErrorResponse`, and :class:`ServerErrorResponse`.
+    """
+    pass
+
+
+class SuccessResponse (Response):
     """Subclass for messages that are responses that indicate the
     request was successfully received, understood, and accepted.
 
@@ -444,7 +455,7 @@ class SuccessResponse (Message):
 Message._RegisterClass(SuccessResponse)
 
 
-class ClientErrorResponse (Message):
+class ClientErrorResponse (Response):
     """Subclass for messages that are responses in cases where the
     server detects an error in the client's request.
 
@@ -504,7 +515,7 @@ class ClientErrorResponse (Message):
 Message._RegisterClass(ClientErrorResponse)
 
 
-class ServerErrorResponse (Message):
+class ServerErrorResponse (Response):
     """Subclass for messages that are responses that indicate the
     server is incapable of performing the request.
 

@@ -23,6 +23,7 @@ The following message types are available:
    :no-show-inheritance:
 
 .. autoclass:: Request
+.. autoclass:: Response
 .. autoclass:: SuccessResponse
 .. autoclass:: ClientErrorResponse
 .. autoclass:: ServerErrorResponse
