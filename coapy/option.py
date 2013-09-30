@@ -650,7 +650,7 @@ def decode_options(data):
     Returns ``(options, remaining_data)`` where *options* is a list of
     instances of subclasses of :class:`UrOption`.  Options that are
     unknown to the infrastructure will be returned as instances of
-    :class:`UnknownOption`.  *remaining_data* will be the suffix of
+    :class:`UnrecognizedOption`.  *remaining_data* will be the suffix of
     *data* that was not consumed when unpacking the options.
 
     This will raise :exc:`OptionDecodeError` or other exceptions if
@@ -665,32 +665,40 @@ def decode_options(data):
             break
         option_number += delta
         option_type = find_option(option_number)
-        if (option_type is not None) and (option_type.format.min_length > length):
-            raise OptionDecodeError(data)
         packed = bytes(data[:length])
         data = data[length:]
-        if option_type is None:
-            opt = UnknownOption(option_number, packed_value=packed)
-        else:
-            opt = option_type(packed_value=packed)
+        opt = None
+        if option_type is not None:
+            try:
+                opt = option_type(packed_value=packed)
+            except OptionLengthError:
+                pass
+        if opt is None:
+            opt = UnrecognizedOption(option_number, packed_value=packed)
         options.append(opt)
     if 0 == len(options):
         options = None
     return (options, bytes(data))
 
 
-class UnknownOption (UrOption):
-    """Contains an option for which registered :class:`UrOption` subclass is available.
+class UnrecognizedOption (UrOption):
+    """Contains an option for which the registered :class:`UrOption`
+    subclass is not available or may not be used.
 
-    *number* must be provided, must be in the range 0 through 65535,
-    and must not correspond to a registered option class.
+    *number* must be provided, must be in the range 0 through 65535.
     *unpacked_value* and *packed_value* operate as in
     :class:`UrOption` and accept only :class:`bytes` objects.
 
-    :class:`UnknownOption` instances are structurally accepted in both
-    request and response messages and instances with the same
+    :class:`UnrecognizedOption` instances are structurally accepted in
+    both request and response messages and instances with the same
     :attr:`number` may appear multiple times in each.  Semantic
     restrictions may apply based on :meth:`UrOption.is_critical`.
+
+    .. note::
+
+       :coapsect:`5.4` specifies situations where an option must be
+       treated as an unrecognized option even if its number matches a
+       recognized option.
     """
 
     _RegisterOption = False
@@ -706,12 +714,13 @@ class UnknownOption (UrOption):
     number = property(_get_number)
 
     def __init__(self, number, unpacked_value=None, packed_value=None):
-        option = find_option(number)
-        if option is not None:
-            raise ValueError(number, option)
+        if not isinstance(number, int):
+            raise TypeError(number)
+        if (0 > number) or (65535 < number):
+            raise ValueError(number)
         self.__number = number
-        super(UnknownOption, self).__init__(unpacked_value=unpacked_value,
-                                            packed_value=packed_value)
+        super(UnrecognizedOption, self).__init__(unpacked_value=unpacked_value,
+                                                 packed_value=packed_value)
 
 
 class IfMatch (UrOption):

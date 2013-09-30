@@ -24,7 +24,7 @@ Option Classes
 .. autoclass:: UrOption
    :no-show-inheritance:
 
-.. autoclass:: UnknownOption
+.. autoclass:: UnrecognizedOption
 
 Base CoAP Options
 ^^^^^^^^^^^^^^^^^

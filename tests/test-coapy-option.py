@@ -76,11 +76,11 @@ class TestOptionInfrastructure (unittest.TestCase):
         self.assertTrue(find_option(0) is None)
 
     def testUnknownOption(self):
+        instance = UnrecognizedOption(IfMatch.number)
+        self.assertEqual(instance.number, IfMatch.number)
         with self.assertRaises(ValueError):
-            instance = UnknownOption(IfMatch.number)
-        with self.assertRaises(ValueError):
-            instance = UnknownOption(65536)
-        instance = UnknownOption(1234)
+            instance = UnrecognizedOption(65536)
+        instance = UnrecognizedOption(1234)
         self.assertEqual(1234, instance.number)
         with self.assertRaises(AttributeError):
             instance.number = 4321
@@ -591,7 +591,7 @@ class TestEncodeDecodeOptions (unittest.TestCase):
         self.assertEqual(up_val, opt.value)
 
     def testUnknownCritical(self):
-        opt = UnknownOption(9, b'val')
+        opt = UnrecognizedOption(9, b'val')
         self.assertTrue(opt.is_critical())
         popt = b'\x93val'
         self.assertEqual(popt, encode_options([opt]))
@@ -600,16 +600,35 @@ class TestEncodeDecodeOptions (unittest.TestCase):
         self.assertTrue(isinstance(opts, list))
         self.assertEqual(1, len(opts))
         opt = opts[0]
-        self.assertTrue(isinstance(opt, UnknownOption))
+        self.assertTrue(isinstance(opt, UnrecognizedOption))
         self.assertEqual(9, opt.number)
         self.assertTrue(opt.is_critical())
         self.assertEqual(b'val', opt.value)
 
+    def testLengths(self):
+        self.assertRaises(OptionLengthError, ETag, packed_value=b'')
+        self.assertRaises(OptionLengthError, ETag, packed_value=b'123456789')
+
     def testDecodeLengthViolation(self):
-        # Too short
-        self.assertRaises(OptionDecodeError, decode_options, b'\x40')
-        # Too long
-        self.assertRaises(OptionLengthError, decode_options, b'\x49' + b'123456789')
+        # Recognized but too short
+        rem = b'\xffrem'
+        (opts, remaining) = decode_options(b'\x40' + rem)
+        self.assertTrue(isinstance(opts, list))
+        self.assertEqual(1, len(opts))
+        opt = opts[0]
+        self.assertTrue(isinstance(opt, UnrecognizedOption))
+        self.assertEqual(4, opt.number)
+        self.assertEqual(b'', opt.value)
+        self.assertEqual(rem, remaining)
+        # Recognized but too long
+        (opts, remaining) = decode_options(b'\x49' + b'123456789' + rem)
+        self.assertTrue(isinstance(opts, list))
+        self.assertEqual(1, len(opts))
+        opt = opts[0]
+        self.assertTrue(isinstance(opt, UnrecognizedOption))
+        self.assertEqual(4, opt.number)
+        self.assertEqual(b'123456789', opt.value)
+        self.assertEqual(rem, remaining)
 
 
 if __name__ == '__main__':
