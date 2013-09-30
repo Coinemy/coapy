@@ -46,6 +46,30 @@ class Message(object):
 
     __metaclass__ = coapy.util.ReadOnlyMeta
 
+    Class = None
+    """Identifier for message class.
+
+    In subclasses this is a read-only attribute giving the numeric
+    value of the class component of :attr:`code` values for classes.
+    This serves as a key to identify the appropriate constructor when
+    creating messages from packed format.
+    """
+
+    __ClassRegistry = {}
+
+    @classmethod
+    def _RegisterClass(cls, message_class):
+        assert isinstance(message_class.Class, int)
+        assert 0 <= message_class.Class
+        assert message_class.Class <= 7
+        assert message_class.Class not in cls.__ClassRegistry
+        cls.__ClassRegistry[message_class.Class] = message_class
+
+    @classmethod
+    def type_for_code(cls, code):
+        (clazz, detail) = cls.__code_as_tuple(code)
+        return cls.__ClassRegistry.get(clazz)
+
     Ver = coapy.util.ClassReadOnly(1)
     """Version of the CoAP protocol."""
 
@@ -107,7 +131,8 @@ class Message(object):
         """
         return self.__code
 
-    def _set_code(self, code):
+    @staticmethod
+    def __code_as_tuple(code):
         if isinstance(code, tuple):
             if 2 != len(code):
                 raise ValueError(code)
@@ -122,7 +147,10 @@ class Message(object):
             code = (code >> 5, code & 0x1F)
         else:
             raise TypeError(code)
-        self.__code = code
+        return code
+
+    def _set_code(self, code):
+        self.__code = self.__code_as_tuple(code)
 
     code = property(_get_code, _set_code)
 
@@ -276,6 +304,7 @@ class Request (Message):
     DELETE = coapy.util.ClassReadOnly((0, 4))
     """Delete the resource identified by the request URI.
     See :coapsect:`5.8.4`."""
+Message._RegisterClass(Request)
 
 
 class SuccessResponse (Message):
@@ -314,6 +343,7 @@ class SuccessResponse (Message):
 
     Content = coapy.util.ClassReadOnly((2, 5))
     """See :coapsect:`5.9.1.5`."""
+Message._RegisterClass(SuccessResponse)
 
 
 class ClientErrorResponse (Message):
@@ -373,6 +403,7 @@ class ClientErrorResponse (Message):
 
     UnsupportedContentFormat = coapy.util.ClassReadOnly((4, 15))
     """See :coapsect:`5.9.2.10`"""
+Message._RegisterClass(ClientErrorResponse)
 
 
 class ServerErrorResponse (Message):
@@ -416,6 +447,7 @@ class ServerErrorResponse (Message):
 
     ProxyingNotSupported = coapy.util.ClassReadOnly((5, 5))
     """See :coapsect:`5.9.3.6`"""
+Message._RegisterClass(ServerErrorResponse)
 
 
 class TransmissionParameters(object):

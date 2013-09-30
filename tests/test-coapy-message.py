@@ -213,6 +213,17 @@ class TestRequest (unittest.TestCase):
         self.assertEqual((0, 3), req.PUT)
         self.assertEqual((0, 4), req.DELETE)
 
+
+class TestClassRegistry (unittest.TestCase):
+    def testBasic(self):
+        self.assertEqual(Request, Message.type_for_code(Request.GET))
+        self.assertEqual(SuccessResponse, Message.type_for_code(SuccessResponse.Valid))
+        self.assertEqual(ClientErrorResponse,
+                         Message.type_for_code(ClientErrorResponse.NotFound))
+        self.assertEqual(ServerErrorResponse,
+                         Message.type_for_code(ServerErrorResponse.NotImplemented))
+
+
 class TestMessageEncodeDecode (unittest.TestCase):
     import coapy.option
 
@@ -224,7 +235,7 @@ class TestMessageEncodeDecode (unittest.TestCase):
         pm = m.to_packed()
         self.assertTrue(isinstance(pm, bytes))
         self.assertEqual(phdr + popt + b'\xff' + ppld, pm)
-        m.options = [ coapy.option.UriPath(u'sensor') ]
+        m.options = [coapy.option.UriPath(u'sensor')]
         popt = coapy.option.encode_options(m.options)
         pm = m.to_packed()
         self.assertTrue(isinstance(pm, bytes))

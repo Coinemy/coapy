@@ -9,6 +9,16 @@ coapy.message
 Messages
 --------
 
+The following message types are available:
+
+.. autosummary::
+   :nosignatures:
+
+   Request
+   SuccessResponse
+   ClientErrorResponse
+   ServerErrorResponse
+
 .. autoclass:: Message
    :no-show-inheritance:
 
