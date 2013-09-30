@@ -246,16 +246,17 @@ class format_uint (_format_base):
     def _to_packed(self, value):
         if 0 == value:
             return b''
-        pv = struct.pack(str('!Q'), value)
+        pv = bytearray(struct.pack(str('!Q'), value))
         for i in xrange(len(pv)):
-            if ord(pv[i]) != 0:
+            if pv[i] != 0:
                 break
-        return pv[i:]
+        return bytes(pv[i:])
 
     def _from_packed(self, data):
         value = 0
+        data = bytearray(data)
         for i in xrange(len(data)):
-            value = (value * 256) + ord(data[i])
+            value = (value * 256) + data[i]
         return value
 
     def option_encoding(self, value):
@@ -631,10 +632,9 @@ def encode_options(options):
 
 
 def _decode_one_option(data):
-    (odl,) = struct.unpack(str('!B'), data[0])
-    if 0xFF == odl:
+    if 0xFF == data[0]:
         return (None, None, data)
-    data = data[1:]
+    odl = data.pop(0)
     od = (odl >> 4)
     ol = (odl & 0x0F)
     if (15 == od) or (15 == ol):
@@ -658,6 +658,7 @@ def decode_options(data):
     idx = 0
     option_number = 0
     options = []
+    data = bytearray(data)      # avoid 2to3 ord/chr issues
     while 0 < len(data):
         (delta, length, data) = _decode_one_option(data)
         if delta is None:
@@ -666,14 +667,14 @@ def decode_options(data):
         option_type = find_option(option_number)
         if (option_type is not None) and (option_type.format.min_length > length):
             raise OptionDecodeError(data)
-        packed = data[:length]
+        packed = bytes(data[:length])
         data = data[length:]
         if option_type is None:
             opt = UnknownOption(option_number, packed_value=packed)
         else:
             opt = option_type(packed_value=packed)
         options.append(opt)
-    return (options, data)
+    return (options, bytes(data))
 
 
 class UnknownOption (UrOption):
