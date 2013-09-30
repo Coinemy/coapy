@@ -674,6 +674,8 @@ def decode_options(data):
         else:
             opt = option_type(packed_value=packed)
         options.append(opt)
+    if 0 == len(options):
+        options = None
     return (options, bytes(data))
 
 

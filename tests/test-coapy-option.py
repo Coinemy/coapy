@@ -495,6 +495,14 @@ class TestEncodeDecodeOptions (unittest.TestCase):
         opt = opts[0]
         self.assertTrue(isinstance(opt, IfNoneMatch))
 
+    def testDecodeOptionsEmpty(self):
+        (opts, remaining) = decode_options(b'')
+        self.assertTrue(opts is None)
+        self.assertEqual(b'', remaining)
+        (opts, remaining) = decode_options(b'\xffpayload')
+        self.assertTrue(opts is None)
+        self.assertEqual(b'\xffpayload', remaining)
+
     def testEncodeOpaque(self):
         val = b'123456'
         opt = ETag(val)
