@@ -555,26 +555,45 @@ class TestEncodeDecodeOptions (unittest.TestCase):
     def testInvalidOptions(self):
         opt = IfNoneMatch()
         opts = [opt]
-        with self.assertRaises(InvalidOptionError) as cm:
-            validate_options(opts, False)
-        self.assertEqual(opt, cm.exception.args[0])
-        validate_options(opts, True)
+        nopts = replace_unacceptable_options(opts, False)
+        self.assertEqual(len(opts), len(nopts))
+        nopt = nopts[0]
+        self.assertTrue(isinstance(nopt, UnrecognizedOption))
+        self.assertEqual(opt.packed_value, nopt.packed_value)
+
+        nopts = replace_unacceptable_options(opts, True)
+        self.assertEqual(len(nopts), 1)
+        self.assertEqual(opts[0], nopts[0])
+
         opt2 = IfNoneMatch()
         opts.append(opt2)
-        with self.assertRaises(InvalidMultipleOptionError) as cm:
-            validate_options(opts, True)
-        self.assertEqual(opt2, cm.exception.args[0])
+        nopts = replace_unacceptable_options(opts, True)
+        self.assertEqual(len(nopts), 2)
+        self.assertEqual(opt, nopts[0])
+        nopt = nopts[1]
+        self.assertTrue(isinstance(nopt, UnrecognizedOption))
+        self.assertEqual(opt2.packed_value, nopt.packed_value)
+
         opt = MaxAge(60)
         opts = [opt]
-        with self.assertRaises(InvalidOptionError) as cm:
-            validate_options(opts, True)
-        self.assertEqual(opt, cm.exception.args[0])
-        validate_options(opts, False)
+        nopts = replace_unacceptable_options(opts, True)
+        self.assertEqual(len(opts), len(nopts))
+        nopt = nopts[0]
+        self.assertTrue(isinstance(nopt, UnrecognizedOption))
+        self.assertEqual(opt.packed_value, nopt.packed_value)
+
+        nopts = replace_unacceptable_options(opts, False)
+        self.assertEqual(len(nopts), 1)
+        self.assertEqual(opts[0], nopts[0])
+
         opt2 = MaxAge(23)
         opts.append(opt2)
-        with self.assertRaises(InvalidMultipleOptionError) as cm:
-            validate_options(opts, False)
-        self.assertEqual(opt2, cm.exception.args[0])
+        nopts = replace_unacceptable_options(opts, True)
+        self.assertEqual(len(nopts), 2)
+        self.assertTrue(isinstance(nopts[0], UnrecognizedOption))
+        self.assertTrue(isinstance(nopts[1], UnrecognizedOption))
+        self.assertEqual(opt.packed_value, nopts[0].packed_value)
+        self.assertEqual(opt2.packed_value, nopts[1].packed_value)
 
     def testMultiEncoded(self):
         uh_val = u'Trélat'

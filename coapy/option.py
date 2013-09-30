@@ -582,36 +582,47 @@ def sorted_options(options):
     return sorted(options, key=lambda _o: _o.number)
 
 
-def validate_options(options, is_request):
+def replace_unacceptable_options(options, is_request):
     """Verify that a set of options passes CoAP requirements.
 
-    Individual options have constraints on whether they may appear
-    once, multiple times, or not at all within request or response
-    messages; see, for example,
-    :meth:`UrOption.valid_multiple_in_request`.
+    Individual options have occurrence restrictions that are encoded
+    within the options themselves and may be inspected by these
+    methods:
 
-    This function validates the *options* against the expectations for
-    a request message if *is_request* is true, otherwise against the
-    expectations for a response message.  A violation is diagnosed
-    through :exc:`InvalidOptionError` or
-    :exc:`InvalidMultipleOptionError` with the offending option as an
-    argument.
+        * :meth:`coapy.option.UrOption.valid_in_request`
+        * :meth:`coapy.option.UrOption.valid_in_response`
+        * :meth:`coapy.option.UrOption.valid_multiple_in_request`
+        * :meth:`coapy.option.UrOption.valid_multiple_in_response`
+
+    :coapsect:`5.4.5` specifies that options violating these
+    constraints are to be interpreted as :class:`unrecognized
+    options<UnrecognizedOption>`.  These are subsequently used to
+    check for :coapsect:`critical<5.4.1>` or :coapsect:`unsafe<5.7>`
+    options.
+
+    This method replaces individual recognized options in
+    :attr:`options` with an equivalent unrecognized option instance
+    based on *is_request* and each option's restrictions.  The
+    resulting list of options is returned.
     """
+    newopts = []
+    if is_request:
+        valid = lambda _o: _o.valid_in_request()
+        valid_multiple = lambda _o: _o.valid_multiple_in_request()
+    else:
+        valid = lambda _o: _o.valid_in_response()
+        valid_multiple = lambda _o: _o.valid_multiple_in_response()
     last_number = 0
-    packed = []
     for opt in sorted_options(options):
         delta = opt.number - last_number
         last_number = opt.number
-        if (is_request):
-            if not opt.valid_in_request():
-                raise InvalidOptionError(opt)
-            if (0 == delta) and not opt.valid_multiple_in_request():
-                raise InvalidMultipleOptionError(opt)
+        if not valid(opt):
+            newopts.append(UnrecognizedOption.from_option(opt))
+        elif (0 == delta) and not valid_multiple(opt):
+            newopts.append(UnrecognizedOption.from_option(opt))
         else:
-            if not opt.valid_in_response():
-                raise InvalidOptionError(opt)
-            if (0 == delta) and not opt.valid_multiple_in_response():
-                raise InvalidMultipleOptionError(opt)
+            newopts.append(opt)
+    return newopts
 
 
 def encode_options(options):

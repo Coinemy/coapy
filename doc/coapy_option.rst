@@ -15,7 +15,7 @@ Operations on Options
 .. autofunction:: is_no_cache_key_option
 .. autofunction:: encode_options
 .. autofunction:: decode_options
-.. autofunction:: validate_options
+.. autofunction:: replace_unacceptable_options
 .. autofunction:: sorted_options
 
 Option Classes
