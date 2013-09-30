@@ -19,6 +19,14 @@ Utility classes and functions used within CoAPy.
 :license: Apache-2.0
 """
 
+from __future__ import unicode_literals
+from __future__ import print_function
+from __future__ import absolute_import
+from __future__ import division
+
+import logging
+_log = logging.getLogger(__name__)
+
 
 class ClassReadOnly (object):
     """A marker to indicate an attribute of a class should be
