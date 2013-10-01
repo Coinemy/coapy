@@ -234,11 +234,11 @@ class TestMessage (unittest.TestCase):
             Message.Type_RST = 23
 
     def testStringize(self):
-        m = Message(confirmable=True, token=b'123', messageID=0x1234, code=Request.GET,
+        m = Message(confirmable=True, token=b'123', messageID=12345, code=Request.GET,
                     options=[coapy.option.UriPath('sensor'),
                              coapy.option.UriPath('temp')],
                     payload=b'20 C')
-        self.assertEqual(unicode(m), '''[1234] CON 0.01 (GET)
+        self.assertEqual(unicode(m), '''[12345] CON 0.01 (GET)
 Token: 123
 Option Uri-Path: sensor
 Option Uri-Path: temp
@@ -353,6 +353,14 @@ class TestMessageEncodeDecode (unittest.TestCase):
         self.assertEqual(cm.exception.args[0], 'unrecognized code')
         self.assertEqual(cm.exception.args[1]['code'], (3, 10))
         self.assertEqual(cm.exception.args[1]['messageID'], 0x1234)
+
+    def testLibCoapRoot(self):
+        p = b'\x60\x45\xd4\x48\xc0\x23\x02\xff\xff\xff' + b'This is a test server'
+        m = Message.from_packed(p)
+        self.assertEqual(unicode(m), '''[54344] ACK 2.05 (Content)
+Option Content-Format: 0
+Option Max-Age: 196607
+Payload: This is a test server''')
 
 
 if __name__ == '__main__':

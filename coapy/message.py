@@ -475,7 +475,7 @@ class Message(object):
 
     def __unicode__(self):
         elt = []
-        elt.append('[{m.messageID:04X}] {m.messageTypeName} {m.code[0]}.{m.code[1]:02d}'.format(m=self))  # nopep8
+        elt.append('[{m.messageID:d}] {m.messageTypeName} {m.code[0]}.{m.code[1]:02d}'.format(m=self))  # nopep8
         cs = self.code_support()
         if cs is not None:
             elt.append(' ({cs.name})'.format(cs=cs))
