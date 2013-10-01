@@ -52,6 +52,15 @@ class TestEndpoint (unittest.TestCase):
         self.assertEqual(('not an address', coapy.COAP_PORT), ep.sockaddr)
 
 
+class TestURLParse (unittest.TestCase):
+    def testJoin(self):
+        ep = Endpoint(host='::1')
+        base = ep.uri_from_options([])
+        self.assertEqual('coap://[::1]/', base)
+        self.assertEqual('coap://[::1]/path', urlparse.urljoin(base, '/path'))
+        self.assertEqual('coap://[::1]/other', urlparse.urljoin(base + 'path/', '../other'))
+
+
 class TestURLConversion (unittest.TestCase):
     def testB1(self):
         ep = Endpoint(host='2001:db8::2:1')

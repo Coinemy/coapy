@@ -35,6 +35,14 @@ class URIError (coapy.CoAPyException):
     pass
 
 
+# Gross Hack: Update urlparse so it knows about the coap and coaps
+# schemes, specifically that it should support joining relative URIs
+# and process netloc and query.
+urlparse.uses_relative.extend(['coap', 'coaps'])
+urlparse.uses_netloc.extend(['coap', 'coaps'])
+urlparse.uses_query.extend(['coap', 'coaps'])
+
+
 class Endpoint (object):
     """A CoAP endpoint.
 
@@ -247,14 +255,8 @@ class Endpoint (object):
         if port != self.port:
             opts.append(coapy.option.UriPort(port))
 
-        # 6.4.8/9. OK, trickiness.  Python's urlparse won't separate the
-        # query part from the path if the scheme isn't one that it thinks
-        # should support query (coap is not such a one).  Do that first.
+        # 6.4.8
         path = res.path
-        query = res.query
-        splitq = path.split('?', 1)
-        if (not query) and (1 < len(splitq)):
-            (path, query) = splitq
         if path and not ('/' == path):
             if path.startswith('/'):
                 path = path[1:]
@@ -263,6 +265,9 @@ class Endpoint (object):
                 segment = urllib.unquote(segment)
                 segment = segment.decode('utf-8')
                 opts.append(coapy.option.UriPath(segment))
+
+        # 6.4.9
+        query = res.query
         if query:
             for qseg in query.split('&'):
                 qseg = bytes(qseg)
