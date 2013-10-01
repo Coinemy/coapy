@@ -20,7 +20,13 @@ from __future__ import division
 
 
 import unittest
+import coapy
 from coapy.util import *
+
+
+class TestCoAPy (unittest.TestCase):
+    def testConstants(self):
+        self.assertEqual(5683, coapy.COAP_PORT)
 
 
 class TestReadOnlyMeta (unittest.TestCase):

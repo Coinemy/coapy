@@ -30,6 +30,17 @@ import logging
 _log = logging.getLogger(__name__)
 
 
+COAP_PORT = 5683
+"""The IANA-assigned default port number for unsecured CoAP (the
+"coap" URI scheme).
+"""
+
+COAPS_PORT = 0
+"""The IANA-assigned default port number for secured CoAP (the "coaps"
+URI scheme).
+"""
+
+
 class CoAPyException (Exception):
     pass
 
