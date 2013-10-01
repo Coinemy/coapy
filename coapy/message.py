@@ -483,7 +483,7 @@ class Message(object):
         if self.token is not None:
             elt.append('Token: {m.token!s}\n'.format(m=self))
         for opt in self._sort_options():
-            elt.append('Option {on}: {ov!s}\n'.format(on=type(opt).__name__, ov=opt.value))
+            elt.append('Option {on}: {ov!s}\n'.format(on=opt.name, ov=opt.value))
         if self.payload is not None:
             elt.append('Payload: {m.payload}'.format(m=self))
         return ''.join(elt)

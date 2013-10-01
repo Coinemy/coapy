@@ -89,8 +89,8 @@ class TestCodeSupport (unittest.TestCase):
         self.assertEqual(Message._type_for_code(m.code), Request)
 
     def testUnregistered(self):
-        m = Message(code=(1,31))
-        self.assertEqual(m.code, (1,31))
+        m = Message(code=(1, 31))
+        self.assertEqual(m.code, (1, 31))
         cs = m.code_support()
         self.assertTrue(m.code_support() is None)
         self.assertTrue(Message._type_for_code(m.code) is None)
@@ -240,8 +240,8 @@ class TestMessage (unittest.TestCase):
                     payload=b'20 C')
         self.assertEqual(unicode(m), '''[1234] CON 0.01 (GET)
 Token: 123
-Option UriPath: sensor
-Option UriPath: temp
+Option Uri-Path: sensor
+Option Uri-Path: temp
 Payload: 20 C''')
 
 
@@ -321,7 +321,6 @@ class TestMessageEncodeDecode (unittest.TestCase):
             self.assertEqual(type(m.options[i]), type(m2.options[i]))
             self.assertEqual(m.options[i].value, m2.options[i].value)
         self.assertEqual(m.payload, m2.payload)
-
 
     def testDiagnosticEmpty(self):
         empty_diag = '4.1: bytes after Message ID'

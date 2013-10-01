@@ -33,6 +33,8 @@ class TestOptionInfrastructure (unittest.TestCase):
             IfMatch.number = 2
         with self.assertRaises(AttributeError):
             IfMatch.format = format_empty
+        with self.assertRaises(AttributeError):
+            IfMatch.name = 'Something-Else'
 
     def testInstances(self):
         im = IfMatch()
@@ -42,6 +44,8 @@ class TestOptionInfrastructure (unittest.TestCase):
             im.number = 2
         with self.assertRaises(AttributeError):
             im.format = format_empty
+        with self.assertRaises(AttributeError):
+            im.name = 'Something-Else'
         uh = UriHost()
         self.assertEqual(uh.number, 3)
         self.assertTrue(isinstance(uh.format, format_string))
@@ -50,6 +54,7 @@ class TestOptionInfrastructure (unittest.TestCase):
         with self.assertRaises(OptionRegistryConflictError):
             class ConflictingOption(UrOption):
                 number = IfMatch.number
+                name = 'Conflicting-Option'
                 format = format_string(100)
                 _repeatable = (True, True)
 
@@ -57,18 +62,23 @@ class TestOptionInfrastructure (unittest.TestCase):
         with self.assertRaises(InvalidOptionTypeError):
             class MissingFormatOption(UrOption):
                 number = IfMatch.number
+                name = 'Missing-Format-Option'
+                _repeatable = (True, True)
+        with self.assertRaises(InvalidOptionTypeError):
+            class MissingNameOption(UrOption):
+                number = IfMatch.number
+                format = format_empty()
                 _repeatable = (True, True)
         with self.assertRaises(InvalidOptionTypeError):
             class MissingNumberOption(UrOption):
                 format = format_empty()
+                name = 'Missing-Number-Option'
                 _repeatable = (True, True)
         with self.assertRaises(InvalidOptionTypeError):
             class MissingRepeatableOption(UrOption):
                 number = 65001
+                name = 'Missing-Repeatable-Option'
                 format = format_empty()
-        with self.assertRaises(InvalidOptionTypeError):
-            class MissingBothOption(UrOption):
-                pass
 
     def testFindOption(self):
         self.assertEqual(IfMatch, find_option(IfMatch.number))
@@ -102,6 +112,7 @@ class TestOptionConformance (unittest.TestCase):
     def testIfMatch(self):
         opt = IfMatch()
         self.assertEqual(1, opt.number)
+        self.assertEqual('If-Match', opt.name)
         self.assertTrue(opt.is_critical())
         self.assertFalse(opt.is_unsafe())
         self.assertFalse(opt.is_no_cache_key())
@@ -116,6 +127,7 @@ class TestOptionConformance (unittest.TestCase):
     def testUriHost(self):
         opt = UriHost()
         self.assertEqual(3, opt.number)
+        self.assertEqual('Uri-Host', opt.name)
         self.assertTrue(opt.is_critical())
         self.assertTrue(opt.is_unsafe())
         self.assertFalse(opt.is_no_cache_key())
@@ -130,6 +142,7 @@ class TestOptionConformance (unittest.TestCase):
     def testETag(self):
         opt = ETag()
         self.assertEqual(4, opt.number)
+        self.assertEqual('ETag', opt.name)
         self.assertFalse(opt.is_critical())
         self.assertFalse(opt.is_unsafe())
         self.assertFalse(opt.is_no_cache_key())
@@ -144,6 +157,7 @@ class TestOptionConformance (unittest.TestCase):
     def testIfNoneMatch(self):
         opt = IfNoneMatch()
         self.assertEqual(5, opt.number)
+        self.assertEqual('If-None-Match', opt.name)
         self.assertTrue(opt.is_critical())
         self.assertFalse(opt.is_unsafe())
         self.assertFalse(opt.is_no_cache_key())
@@ -158,6 +172,7 @@ class TestOptionConformance (unittest.TestCase):
     def testUriPort(self):
         opt = UriPort()
         self.assertEqual(7, opt.number)
+        self.assertEqual('Uri-Port', opt.name)
         self.assertTrue(opt.is_critical())
         self.assertTrue(opt.is_unsafe())
         self.assertFalse(opt.is_no_cache_key())
@@ -172,6 +187,7 @@ class TestOptionConformance (unittest.TestCase):
     def testLocationPath(self):
         opt = LocationPath()
         self.assertEqual(8, opt.number)
+        self.assertEqual('Location-Path', opt.name)
         self.assertFalse(opt.is_critical())
         self.assertFalse(opt.is_unsafe())
         self.assertFalse(opt.is_no_cache_key())
@@ -186,6 +202,7 @@ class TestOptionConformance (unittest.TestCase):
     def testUriPath(self):
         opt = UriPath()
         self.assertEqual(11, opt.number)
+        self.assertEqual('Uri-Path', opt.name)
         self.assertTrue(opt.is_critical())
         self.assertTrue(opt.is_unsafe())
         self.assertFalse(opt.is_no_cache_key())
@@ -200,6 +217,7 @@ class TestOptionConformance (unittest.TestCase):
     def testContentFormat(self):
         opt = ContentFormat()
         self.assertEqual(12, opt.number)
+        self.assertEqual('Content-Format', opt.name)
         self.assertFalse(opt.is_critical())
         self.assertFalse(opt.is_unsafe())
         self.assertFalse(opt.is_no_cache_key())
@@ -214,6 +232,7 @@ class TestOptionConformance (unittest.TestCase):
     def testMaxAge(self):
         opt = MaxAge()
         self.assertEqual(14, opt.number)
+        self.assertEqual('Max-Age', opt.name)
         self.assertFalse(opt.is_critical())
         self.assertTrue(opt.is_unsafe())
         self.assertFalse(opt.is_no_cache_key())
@@ -228,6 +247,7 @@ class TestOptionConformance (unittest.TestCase):
     def testUriQuery(self):
         opt = UriQuery()
         self.assertEqual(15, opt.number)
+        self.assertEqual('Uri-Query', opt.name)
         self.assertTrue(opt.is_critical())
         self.assertTrue(opt.is_unsafe())
         self.assertFalse(opt.is_no_cache_key())
@@ -242,6 +262,7 @@ class TestOptionConformance (unittest.TestCase):
     def testAccept(self):
         opt = Accept()
         self.assertEqual(17, opt.number)
+        self.assertEqual('Accept', opt.name)
         self.assertTrue(opt.is_critical())
         self.assertFalse(opt.is_unsafe())
         self.assertFalse(opt.is_no_cache_key())
@@ -256,6 +277,7 @@ class TestOptionConformance (unittest.TestCase):
     def testLocationQuery(self):
         opt = LocationQuery()
         self.assertEqual(20, opt.number)
+        self.assertEqual('Location-Query', opt.name)
         self.assertFalse(opt.is_critical())
         self.assertFalse(opt.is_unsafe())
         self.assertFalse(opt.is_no_cache_key())
@@ -270,20 +292,7 @@ class TestOptionConformance (unittest.TestCase):
     def testProxyUri(self):
         opt = ProxyUri()
         self.assertEqual(35, opt.number)
-        self.assertTrue(opt.is_critical())
-        self.assertTrue(opt.is_unsafe())
-        self.assertFalse(opt.is_no_cache_key())
-        self.assertTrue(opt.valid_in_request())
-        self.assertFalse(opt.valid_multiple_in_request())
-        self.assertFalse(opt.valid_in_response())
-        self.assertFalse(opt.valid_multiple_in_response())
-        self.assertTrue(isinstance(opt.format, format_string))
-        self.assertEqual(1, opt.format.min_length)
-        self.assertEqual(1034, opt.format.max_length)
-
-    def testProxyUri(self):
-        opt = ProxyUri()
-        self.assertEqual(35, opt.number)
+        self.assertEqual('Proxy-Uri', opt.name)
         self.assertTrue(opt.is_critical())
         self.assertTrue(opt.is_unsafe())
         self.assertFalse(opt.is_no_cache_key())
@@ -298,6 +307,7 @@ class TestOptionConformance (unittest.TestCase):
     def testProxyScheme(self):
         opt = ProxyScheme()
         self.assertEqual(39, opt.number)
+        self.assertEqual('Proxy-Scheme', opt.name)
         self.assertTrue(opt.is_critical())
         self.assertTrue(opt.is_unsafe())
         self.assertFalse(opt.is_no_cache_key())
@@ -312,6 +322,7 @@ class TestOptionConformance (unittest.TestCase):
     def testSize1(self):
         opt = Size1()
         self.assertEqual(60, opt.number)
+        self.assertEqual('Size1', opt.name)
         self.assertFalse(opt.is_critical())
         self.assertFalse(opt.is_unsafe())
         self.assertTrue(opt.is_no_cache_key())

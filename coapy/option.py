@@ -45,7 +45,7 @@ class OptionError (coapy.InfrastructureError):
 class OptionRegistryConflictError (OptionError):
     """Exception raised when option numbers collide.
 
-    CoAPy requires that each subclass of :py:class:`UrOption` has a
+    CoAPy requires that each subclass of :class:`UrOption` has a
     unique option number, enforced by registering the
     subclass when its type is defined.  Attempts to use the same
     number for multiple options produce this exception.
@@ -56,9 +56,11 @@ class OptionRegistryConflictError (OptionError):
 class InvalidOptionTypeError (OptionError):
     """Exception raised when an option is incorrectly defined.
 
-    Each subclass of :py:class:`UrOption` must override
-    :py:attr:`UrOption.number` with the integer option number,
-    and :py:attr:`UrOption.format` with the type of the option.
+    Each subclass of :class:`UrOption` must override
+    :attr:`UrOption.number` with the integer option number,
+    :attr:`UrOption.name` with the Unicode option name,
+    :attr:`UrOption.format` with the type of the option, and
+    :attr:`UrOption._repeatable` with repeatability information.
     Failure to do so will cause this exception to be raised.
     """
     pass
@@ -328,6 +330,8 @@ def _register_option(option_class):
         raise InvalidOptionTypeError(option_class)
     if not isinstance(option_class.number, int):
         raise InvalidOptionTypeError(option_class)
+    if not isinstance(option_class.name, unicode):
+        raise InvalidOptionTypeError(option_class)
     if not ((0 <= option_class.number) and (option_class.number <= 65535)):
         raise InvalidOptionTypeError(option_class)
     if not isinstance(option_class.format, _format_base):
@@ -347,7 +351,7 @@ def _register_option(option_class):
 def find_option(number):
     """Look up an option by number.
 
-    Returns the :py:class:`UrOption` subclass registered for *number*,
+    Returns the :class:`UrOption` subclass registered for *number*,
     or ``None`` if no such option has been registered.  *number* must
     be an :class:`int` in the range 0 through 65535.
     """
@@ -356,6 +360,11 @@ def find_option(number):
     if not ((0 <= number) and (number <= 65535)):
         raise ValueError(number)
     return _OptionRegistry.get(number, None)
+
+
+def all_options():
+    """Return an iterable producing all registered options."""
+    return _OptionRegistry.values()
 
 
 # Meta class used to enforce constraints on option types.  This serves
@@ -388,7 +397,7 @@ class _MetaUrOption(type):
 
     # The set of attributes in types that are to be made immutable if
     # the type provides a non-None value for the attribute.
-    __ReadOnlyAttrs = ('number', '_repeatable', 'format')
+    __ReadOnlyAttrs = ('number', '_repeatable', 'format', 'name')
 
     @classmethod
     def SetUrOption(cls, ur_option):
@@ -481,10 +490,10 @@ class UrOption (object):
     65000..65535   Reserved for experiments
     ============   ========
 
-    The attribute is read-only.  Each subclass of :py:class:`UrOption`
-    is registered during its definition.  :py:exc:`InvalidOptionType`
-    will be raised if a previously-registered option exists with the
-    same option number.
+    The attribute is read-only.  Each subclass of :class:`UrOption` is
+    registered during its definition.  :exc:`InvalidOptionType` will
+    be raised if a previously-registered option exists with the same
+    option number.
     """
 
     _repeatable = None
@@ -502,6 +511,12 @@ class UrOption (object):
     :class:`format_uint`, or :class:`format_string`.  The instance is
     used to check that the :attr:`value` is acceptable for the
     option."""
+
+    name = None
+    """A human-readable standard short name for the option, suitable
+    for diagnostics.  This is a read-only attribute with a Unicode
+    string value.
+    """
 
     def is_critical(self):
         """Passes ``self.number`` to :func:`is_critical_option`."""
@@ -756,6 +771,7 @@ class IfMatch (UrOption):
     number = 1
     _repeatable = (True, None)
     format = format_opaque(8)
+    name = 'If-Match'
 
 
 class UriHost (UrOption):
@@ -765,6 +781,7 @@ class UriHost (UrOption):
     number = 3
     _repeatable = (False, None)
     format = format_string(255, min_length=1)
+    name = 'Uri-Host'
 
 
 class ETag (UrOption):
@@ -774,6 +791,7 @@ class ETag (UrOption):
     number = 4
     _repeatable = (True, False)
     format = format_opaque(8, min_length=1)
+    name = 'ETag'
 
 
 class IfNoneMatch (UrOption):
@@ -783,6 +801,7 @@ class IfNoneMatch (UrOption):
     number = 5
     _repeatable = (False, None)
     format = format_empty()
+    name = 'If-None-Match'
 
     def __init__(self, unpacked_value=None, packed_value=None):
         if (unpacked_value is None) and (packed_value is None):
@@ -798,6 +817,7 @@ class UriPort (UrOption):
     number = 7
     _repeatable = (False, None)
     format = format_uint(2)
+    name = 'Uri-Port'
 
 
 class LocationPath (UrOption):
@@ -808,6 +828,7 @@ class LocationPath (UrOption):
     number = 8
     _repeatable = (None, True)
     format = format_string(255)
+    name = 'Location-Path'
 
 
 class UriPath (UrOption):
@@ -818,6 +839,7 @@ class UriPath (UrOption):
     number = 11
     _repeatable = (True, None)
     format = format_string(255)
+    name = 'Uri-Path'
 
 
 class ContentFormat (UrOption):
@@ -827,6 +849,7 @@ class ContentFormat (UrOption):
     number = 12
     _repeatable = (False, False)
     format = format_uint(2)
+    name = 'Content-Format'
 
 
 class MaxAge (UrOption):
@@ -836,6 +859,7 @@ class MaxAge (UrOption):
     number = 14
     _repeatable = (None, False)
     format = format_uint(4)
+    name = 'Max-Age'
 
 
 class UriQuery (UrOption):
@@ -846,6 +870,7 @@ class UriQuery (UrOption):
     number = 15
     _repeatable = (True, None)
     format = format_string(255)
+    name = 'Uri-Query'
 
 
 class Accept (UrOption):
@@ -855,6 +880,7 @@ class Accept (UrOption):
     number = 17
     _repeatable = (False, None)
     format = format_uint(2)
+    name = 'Accept'
 
 
 class LocationQuery (UrOption):
@@ -865,6 +891,7 @@ class LocationQuery (UrOption):
     number = 20
     _repeatable = (None, True)
     format = format_string(255)
+    name = 'Location-Query'
 
 
 class ProxyUri (UrOption):
@@ -878,6 +905,7 @@ class ProxyUri (UrOption):
     number = 35
     _repeatable = (False, None)
     format = format_string(1034, min_length=1)
+    name = 'Proxy-Uri'
 
 
 class ProxyScheme (UrOption):
@@ -890,6 +918,7 @@ class ProxyScheme (UrOption):
     number = 39
     _repeatable = (False, None)
     format = format_string(255, min_length=1)
+    name = 'Proxy-Scheme'
 
 
 class Size1 (UrOption):
@@ -900,3 +929,4 @@ class Size1 (UrOption):
     number = 60
     _repeatable = (False, False)
     format = format_uint(4)
+    name = 'Size1'

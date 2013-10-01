@@ -6,9 +6,10 @@ coapy.option
 .. automodule:: coapy.option
    :no-members:
 
-Operations on Options
----------------------
+Operations
+----------
 
+.. autofunction:: all_options
 .. autofunction:: find_option
 .. autofunction:: is_critical_option
 .. autofunction:: is_unsafe_option
