@@ -189,6 +189,24 @@ class _format_base (object):
         """
         raise NotImplementedError
 
+    def to_text(self, value):
+        """Convert an :attr:`unpacked_type` *value* to a text
+        (unicode) string holding a user-readable representation of the
+        value.
+
+        This function does not validate length constraints on the
+        value.
+        """
+        if not isinstance(value, self.unpacked_type):
+            raise TypeError(value)
+        return self._to_text(value)
+
+    def _to_text(self, value):
+        """'Virtual' method implemented by subclasses to represent the
+        given value known to be in type :attr:`unpacked_type`.  Return
+        the text value as required by :meth:`to_text`.
+        """
+        raise NotImplementedError
 
 class format_empty (_format_base):
     """Support options with no value.
@@ -208,6 +226,9 @@ class format_empty (_format_base):
     def _from_packed(self, value):
         return value
 
+    def _to_text(self, value):
+        return ''
+
 
 class format_opaque (_format_base):
     """Support options with opaque values.
@@ -226,6 +247,10 @@ class format_opaque (_format_base):
 
     def _from_packed(self, value):
         return value
+
+    def _to_text(self, value):
+        import binascii
+        return binascii.hexlify(value)
 
 
 class format_uint (_format_base):
@@ -293,6 +318,9 @@ class format_uint (_format_base):
             return (13 + self.from_packed(data[:1]), data[1:])
         return (ov, data)
 
+    def _to_text(self, value):
+        return '{0:d}'.format(value)
+
 
 class format_string (_format_base):
     """Supports options with text values.
@@ -319,6 +347,8 @@ class format_string (_format_base):
         rv = value.decode('utf-8')
         return rv
 
+    def _to_text(self, value):
+        return value
 
 _OptionRegistry = {}
 
@@ -575,6 +605,15 @@ class UrOption (object):
     def packed_value(self):
         """The :attr:`value` of the option in its packed representation."""
         return self.format.to_packed(self.value)
+
+    def __unicode__(self):
+        if isinstance(self.format, format_empty):
+            return self.name
+        if self.value is not None:
+            value = self.format.to_text(self.value)
+            return '{0}: {1}'.format(self.name, value)
+        return '{0}: <??>'.format(self.name)
+    __str__ = __unicode__
 
 
 # Register the UrOption so subclasses can
