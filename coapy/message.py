@@ -27,7 +27,6 @@ from __future__ import division
 import logging
 _log = logging.getLogger(__name__)
 
-
 import random
 import struct
 import coapy

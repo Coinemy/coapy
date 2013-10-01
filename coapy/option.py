@@ -32,7 +32,6 @@ from __future__ import division
 import logging
 _log = logging.getLogger(__name__)
 
-
 import coapy
 import struct
 import unicodedata
