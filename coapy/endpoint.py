@@ -136,6 +136,15 @@ class Endpoint (object):
         """
         return self.__uri_host
 
+    @property
+    def base_uri(self):
+        """The base CoAP URI for resources on this endpoint.
+
+        This is used by :meth:`uri_to_options` to avoid the need to
+        specify the protocol and netloc when creating option lists.
+        """
+        return self.__base_uri
+
     @staticmethod
     def _get_addr_info(host, port):
         try:
@@ -180,6 +189,7 @@ class Endpoint (object):
         # None of these arguments are used here; they apply in
         # __new__.
         super(Endpoint, self).__init__()
+        self.__base_uri = self.uri_from_options([])
 
     def is_same_host(self, host):
         """Determine whether *host* resolves to the same address as
@@ -217,7 +227,6 @@ class Endpoint (object):
         * :class:`coapy.option.UriQuery`, absent if there is no query
           part, otherwise occurs once per ``&``-separated query
           element.
-
         """
 
         if base_uri is not None:
@@ -228,12 +237,12 @@ class Endpoint (object):
         if (not res.scheme) \
            or ((res.netloc is None) and (res.path is None)) \
            or res.fragment:
-            raise coapy.URIError('not absolute', uri)
+            raise URIError('not absolute', uri)
         # 6.4.2. Make this user's job or done by urljoin
         # 6.4.3. Check scheme
         scheme = res.scheme.lower()
         if not (scheme in ('coap', 'coaps')):
-            raise coapy.URIError('invalid scheme', res.scheme)
+            raise URIError('invalid scheme', res.scheme)
         # 6.4.4. Unnecessary: fragments aren't allowed in absolute-URIs,
         # or in the restrictions for coap-URI and coaps-URI.
 
@@ -299,7 +308,7 @@ class Endpoint (object):
         for opt in filter(lambda _o: isinstance(_o, coapy.option.UriHost), opts):
             host = opt.value
             if host is None:
-                raise coapy.URIError('empty Uri-Host')
+                raise URIError('empty Uri-Host')
             if host and ('[' != host[0]):
                 host = urllib.quote(host.encode('utf-8'))
             break
@@ -309,7 +318,7 @@ class Endpoint (object):
         for opt in filter(lambda _o: isinstance(_o, coapy.option.UriPort), opts):
             port = opt.value
             if port is None:
-                raise coapy.URIError('empty Uri-Port')
+                raise URIError('empty Uri-Port')
         if port == self._port_for_scheme(scheme):
             netloc = host
         else:

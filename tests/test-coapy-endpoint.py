@@ -56,7 +56,7 @@ class TestURLParse (unittest.TestCase):
     def testJoin(self):
         ep = Endpoint(host='::1')
         base = ep.uri_from_options([])
-        self.assertEqual('coap://[::1]/', base)
+        self.assertEqual('coap://[::1]/', ep.base_uri)
         self.assertEqual('coap://[::1]/path', urlparse.urljoin(base, '/path'))
         self.assertEqual('coap://[::1]/other', urlparse.urljoin(base + 'path/', '../other'))
 
@@ -127,6 +127,39 @@ class TestURLConversion (unittest.TestCase):
         for i in xrange(len(opts)):
             self.assertEqual(type(opts[i]), type(uopts[i]))
             self.assertEqual(opts[i].value, uopts[i].value)
+
+    def testBasic(self):
+        ep = Endpoint(host='::1')
+        rel = '/.well-known/core'
+        with self.assertRaises(URIError) as cm:
+            opts = ep.uri_to_options(rel)
+        self.assertEqual(cm.exception.args[0], 'not absolute')
+        self.assertEqual(cm.exception.args[1], rel)
+        opts = ep.uri_to_options(rel, ep.base_uri)
+        self.assertTrue(isinstance(opts, list))
+        self.assertEqual(2, len(opts))
+        opt = opts[0]
+        self.assertTrue(isinstance(opt, coapy.option.UriPath))
+        self.assertEqual('.well-known', opt.value)
+        opt = opts[1]
+        self.assertTrue(isinstance(opt, coapy.option.UriPath))
+        self.assertEqual('core', opt.value)
+
+    def testInvalidToOpts(self):
+        ep = Endpoint(host='::1')
+        with self.assertRaises(URIError) as cm:
+            ep.uri_to_options('http://localhost/path')
+        self.assertEqual(cm.exception.args[0], 'invalid scheme')
+        self.assertEqual(cm.exception.args[1], 'http')
+
+    def testInvalidFromOpts(self):
+        ep = Endpoint(host='::1')
+        with self.assertRaises(URIError) as cm:
+            ep.uri_from_options([coapy.option.UriHost()])
+        self.assertEqual(cm.exception.args[0], 'empty Uri-Host')
+        with self.assertRaises(URIError) as cm:
+            ep.uri_from_options([coapy.option.UriPort()])
+        self.assertEqual(cm.exception.args[0], 'empty Uri-Port')
 
 
 if __name__ == '__main__':
