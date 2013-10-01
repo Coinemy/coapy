@@ -36,6 +36,7 @@ _log = logging.getLogger(__name__)
 import coapy
 import struct
 import unicodedata
+import coapy.util
 
 
 class OptionError (coapy.InfrastructureError):
@@ -208,6 +209,7 @@ class _format_base (object):
         """
         raise NotImplementedError
 
+
 class format_empty (_format_base):
     """Support options with no value.
 
@@ -339,9 +341,7 @@ class format_string (_format_base):
         super(format_string, self).__init__(max_length, min_length)
 
     def _to_packed(self, value):
-        # At first blush, this is Net-Unicode.
-        rv = unicodedata.normalize('NFC', value).encode('utf-8')
-        return rv
+        return coapy.util.to_net_unicode(value)
 
     def _from_packed(self, value):
         rv = value.decode('utf-8')

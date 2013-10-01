@@ -76,5 +76,20 @@ class TestReadOnlyMeta (unittest.TestCase):
         self.assertRaises(AttributeError, self.setZero, s2, 3)
 
 
+class TestNetUnicode (unittest.TestCase):
+
+    def testBasic(self):
+        import urllib
+
+        path = 'こんにちは'
+        path_nu = to_net_unicode(path)
+        self.assertEqual('%E3%81%93%E3%82%93%E3%81%AB%E3%81%A1%E3%81%AF',
+                         urllib.quote(path_nu))
+        dpath_nu = urllib.unquote(bytes(urllib.quote(path_nu)))
+        self.assertEqual(path_nu, dpath_nu)
+        dpath = path_nu.decode('utf-8')
+        self.assertEqual(path, dpath)
+
+
 if __name__ == '__main__':
     unittest.main()

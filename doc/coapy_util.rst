@@ -1,7 +1,7 @@
 .. coapy_util:
 
 coapy.util
-=============
+==========
 
 .. automodule:: coapy.util
    :no-members:
@@ -11,3 +11,5 @@ coapy.util
 
 .. autoclass:: ClassReadOnly
    :no-show-inheritance:
+
+.. autofunction:: to_net_unicode

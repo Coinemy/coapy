@@ -27,6 +27,8 @@ from __future__ import division
 import logging
 _log = logging.getLogger(__name__)
 
+import unicodedata
+
 
 class ClassReadOnly (object):
     """A marker to indicate an attribute of a class should be
@@ -80,3 +82,18 @@ class ReadOnlyMeta (type):
                 nsdup[n] = mp
                 setattr(ReadOnly, n, mp)
         return super(ReadOnlyMeta, cls).__new__(ReadOnly, name, bases, nsdup)
+
+
+def to_net_unicode(text):
+    """Convert text to Net-Unicode (:rfc:`5198`) data.
+
+    This normalizes the text to ensure all characters are their own
+    canonical equivalent in the NFC form (section 3 of :rfc:`5198`).
+    The result is encoded in UTF-8 and returned.
+
+    The operation currently does not handle newline normalization
+    (section 2 item 2), since its use in CoAP is currently limited to
+    values of options with format :class:`coapy.option.format_string`.
+    """
+    # At first blush, this is Net-Unicode.
+    return unicodedata.normalize('NFC', text).encode('utf-8')
