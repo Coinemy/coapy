@@ -198,5 +198,33 @@ class TestURLConversion (unittest.TestCase):
         self.assertEqual(cm.exception.args[0], 'empty Uri-Port')
 
 
+class TestEndpointInterface (unittest.TestCase):
+    def testNextMessageID(self):
+        ep = Endpoint(host='::1')
+        ep._reset_next_messageID(621)
+        self.assertEqual(621, ep.next_messageID())
+        self.assertEqual(622, ep.next_messageID())
+        self.assertEqual(623, ep.next_messageID())
+        ep._reset_next_messageID(65534)
+        self.assertEqual(65534, ep.next_messageID())
+        self.assertEqual(65535, ep.next_messageID())
+        self.assertEqual(0, ep.next_messageID())
+        self.assertEqual(1, ep.next_messageID())
+
+    def testCreateRequest(self):
+        ep = Endpoint(host='::1')
+        m = ep.create_request('/path')
+        self.assertTrue(isinstance(m, coapy.message.Request))
+        self.assertEqual(coapy.message.Request.GET, m.code)
+        self.assertFalse(m.messageID is None)
+        self.assertEqual(m.token, b'')
+        opts = m.options
+        self.assertTrue(isinstance(opts, list))
+        self.assertEqual(1, len(opts))
+        opt = opts[0]
+        self.assertTrue(isinstance(opt, coapy.option.UriPath))
+        self.assertEqual('path', opt.value)
+        self.assertTrue(m.payload is None)
+
 if __name__ == '__main__':
     unittest.main()

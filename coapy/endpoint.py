@@ -25,10 +25,13 @@ from __future__ import division
 import logging
 _log = logging.getLogger(__name__)
 
-import coapy
 import socket
 import urlparse
 import urllib
+import random
+import itertools
+import coapy
+import coapy.message
 
 
 class URIError (coapy.CoAPyException):
@@ -295,6 +298,18 @@ class Endpoint (object):
                 instance.__uri_host = host
         return instance
 
+    def next_messageID(self):
+        """Return a new messageID suitable for a message to this endpoint.
+
+        This is sequentially generated starting from an initial value
+        that was randomly generated when the endpoint was created.
+        """
+        return next(self.__messageID_iter)
+
+    def _reset_next_messageID(self, start):
+        # Back-door for unit testing.
+        self.__messageID_iter = itertools.imap(lambda _v: _v % 65536, itertools.count(start))
+
     def __init__(self, sockaddr=None, family=socket.AF_UNSPEC,
                  security_mode=None,
                  host=None, port=coapy.COAP_PORT):
@@ -302,6 +317,7 @@ class Endpoint (object):
         # __new__.
         super(Endpoint, self).__init__()
         self.__base_uri = self.uri_from_options([])
+        self._reset_next_messageID(random.randint(0, 65535))
 
     def get_peer_endpoint(self, sockaddr=None, host=None, port=coapy.COAP_PORT):
         """Find the endpoint at *sockaddr* that this endpoint can talk to.
@@ -485,3 +501,39 @@ class Endpoint (object):
             elts.append(qseg)
         query = '&'.join(elts)
         return urlparse.urlunsplit((scheme, netloc, path, query, None))
+
+    def create_request(self, uri,
+                       confirmable=False,
+                       code=coapy.message.Request.GET,
+                       messageID=None,
+                       token=None,
+                       options=None,
+                       payload=None):
+        """Create and return a :class:`Request<coapy.message.Request>`
+        instance to retrieve *uri* from this endpoint.
+
+        *uri* should generally be a relative URI hosted on the
+        endpoint.
+
+        By default this creates a non-confirmable
+        :attr:`GET<coapy.message.Request.GET>` message.  These
+        features can be overridden with *confirmable* and *code*.
+        *messageID* will default to :meth:`next_messageID`.  The
+        caller may specify a token; if none is provided, an empty
+        token will be used.  Any *options* are appended to the options
+        derived from *uri*, and *payload* is as in the
+        :class:`coapy.message.Message` constructor.
+        """
+        uri_options = []
+        if uri is not None:
+            uri_options = self.uri_to_options(uri)
+        if messageID is None:
+            messageID = self.next_messageID()
+        if token is None:
+            token = b''
+        if options is not None:
+            uri_options.extend(options)
+        return coapy.message.Request(confirmable=confirmable,
+                                     code=code, messageID=messageID,
+                                     token=token, options=uri_options,
+                                     payload=payload)
