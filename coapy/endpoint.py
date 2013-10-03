@@ -303,14 +303,21 @@ class Endpoint (object):
         super(Endpoint, self).__init__()
         self.__base_uri = self.uri_from_options([])
 
-    def get_peer_endpoint(self, sockaddr):
+    def get_peer_endpoint(self, sockaddr=None, host=None, port=coapy.COAP_PORT):
         """Find the endpoint at *sockaddr* that this endpoint can talk to.
 
         This invokes :class:`Endpoint` with *family* and
         *security_mode* set to the parameters used by this endpoint.
         It is used to identify the source endpoint of a message
-        received by :meth:`python:socket.socket.recvfrom`.
+        received by :meth:`python:socket.socket.recvfrom`.  *sockaddr*
+        will be constructed from *host* and *port* if not provided
+        explicitly; at least one of *sockaddr* and *host* must be
+        given.
         """
+        if sockaddr is None:
+            if host is None:
+                raise ValueError
+            sockaddr = (host, port)
         return type(self)(sockaddr=sockaddr, family=self.family, security_mode=self.security_mode)
 
     def is_same_host(self, host):

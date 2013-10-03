@@ -40,6 +40,8 @@ class TestEndpoint (unittest.TestCase):
         self.assertEqual(1234, ep2.port)
         self.assertEqual(ep.family, ep2.family)
         self.assertEqual(ep.security_mode, ep2.security_mode)
+        ep3 = ep.get_peer_endpoint(host='2001:db8:0::2:2', port=1234)
+        self.assertTrue(ep3 is ep2)
 
     def testBasic4(self):
         ep = Endpoint(host='10.0.1.2', port=1234)
@@ -55,6 +57,12 @@ class TestEndpoint (unittest.TestCase):
         self.assertEqual(52342, ep2.port)
         self.assertEqual(ep.family, ep2.family)
         self.assertEqual(ep.security_mode, ep2.security_mode)
+        ep3 = ep.get_peer_endpoint(host=ep.uri_host)
+        self.assertFalse(ep is ep3)
+        self.assertEqual(ep.in_addr, ep3.in_addr)
+        self.assertEqual(coapy.COAP_PORT, ep3.port)
+        self.assertEqual(ep.family, ep3.family)
+        self.assertEqual(ep.security_mode, ep3.security_mode)
 
     def testNotAnInetAddr(self):
         naa = 'not an address'
