@@ -342,8 +342,10 @@ class Endpoint (object):
         """Convert a URI to a list of CoAP options relative to this endpoint.
 
         *uri* should be an :rfc:`3986` conformant absolute URI.  For
-        convenience, if *base_uri* is not None the value of *uri*
-        will be recalculated assuming it is relative to *base_uri*.
+        convenience, if *base_uri* is not None the value of *uri* will
+        be recalculated assuming it is relative to *base_uri*.
+        *base_uri* itself will default to :attr:`base_uri` if no
+        non-``None`` value is provided.
 
         The scheme part of *uri* must be either "coap" or "coaps".
 
@@ -360,6 +362,8 @@ class Endpoint (object):
           element.
         """
 
+        if base_uri is None:
+            base_uri = self.base_uri
         if base_uri is not None:
             uri = urlparse.urljoin(base_uri, uri)
         res = urlparse.urlsplit(uri)

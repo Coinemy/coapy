@@ -86,8 +86,9 @@ class TestEndpoint (unittest.TestCase):
 class TestURLParse (unittest.TestCase):
     def testJoin(self):
         ep = Endpoint(host='::1')
-        base = ep.uri_from_options([])
         self.assertEqual('coap://[::1]/', ep.base_uri)
+        base = ep.uri_from_options([])
+        self.assertEqual('coap://[::1]/', base)
         self.assertEqual('coap://[::1]/path', urlparse.urljoin(base, '/path'))
         self.assertEqual('coap://[::1]/other', urlparse.urljoin(base + 'path/', '../other'))
 
@@ -162,11 +163,7 @@ class TestURLConversion (unittest.TestCase):
     def testBasic(self):
         ep = Endpoint(host='::1')
         rel = '/.well-known/core'
-        with self.assertRaises(URIError) as cm:
-            opts = ep.uri_to_options(rel)
-        self.assertEqual(cm.exception.args[0], 'not absolute')
-        self.assertEqual(cm.exception.args[1], rel)
-        opts = ep.uri_to_options(rel, ep.base_uri)
+        opts = ep.uri_to_options(rel)
         self.assertTrue(isinstance(opts, list))
         self.assertEqual(2, len(opts))
         opt = opts[0]
