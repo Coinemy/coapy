@@ -54,13 +54,28 @@ class Endpoint (object):
     :coapsect:`default values for options<5.10.1>`, and re-usability
     of message IDs, are associated with specific endpoints.
 
-    *host* specifies the host of the endpoint, and should be something
-    that resolves to an INET domain address using
-    :func:`python:socket.getaddrinfo`.  If it is unresolvable,
-    :attr:`family` will be ``None``, :attr:`ip_addr` will be the
-    binary value of *host* encoded in UTF-8.
+    *sockaddr*, if not ``None``, must be a tuple the first two
+    elements of which are ``host, port`` which override the
+    user-provided *host* and *port*.
 
-    *port* should be the transport-layer port of the endpoint.  This
+    *host* specifies the host of the endpoint as a Unicode string,
+    representing a host name, an IP address literal, or other unique
+    key.
+
+    *family* is by default :data:`python:socket.AF_UNSPEC` supporting
+    resolution of *host* to any address family.  A non-``None`` value
+    is passed to :func:`python:socket.getaddrinfo` when attempting to
+    resolve *host* as an address; the actual *family* value will be
+    the one selected by the resolution process (normally
+    :data:`python:socket.AF_INET` or :data:`python:socket.AF_INET6`)
+    Failure to successfully resolve *host* will raise
+    :exc:`python:socket.gaierror`.  If you want a dummy endpoint
+    associated with *host* but that does not have an IP host
+    associated with it, make sure that *family* is ``None`` so that
+    *host* is left unresolved and instead serves as an *name* as
+    described in :attr:`sockaddr`.
+
+    *port* is the integer transport-layer port of the endpoint.  This
     would normally be either :const:`coapy.COAP_PORT` or
     :const:`coapy.COAPS_PORT`.
 
@@ -77,18 +92,21 @@ class Endpoint (object):
 
     @property
     def sockaddr(self):
-        """The Python :class:`python:socket.socket` address of the
-        endpoint.
+        """The Python :mod:`python:socket` address of the endpoint.
 
-        When :attr:`family` is :data:`python:socket.AF_INET` this is the
-        tuple ``(host, port)``.
+        When :attr:`family` is :data:`python:socket.AF_INET` this is
+        the tuple ``(host, port)``.
 
         When :attr:`family` is :data:`python:socket.AF_INET6` this is
         the tuple ``(host, port, flowinfo, scopeid)``.
 
-        When :attr:`family` is ``None`` this is the tuple ``(host,
-        port)`` (but *host* probably cannot be resolved so this isn't
-        very useful).
+        When :attr:`family` is ``None`` this is the tuple ``(name,
+        port)``.  *name* functions like *host* but is not a resolvable
+        host name.
+
+        *host* will be the text representation of :attr:`in_addr`; it
+        will not be a host name.  *port* will be a numeric port
+        *number*.
         """
         return self.__sockaddr
 
@@ -96,17 +114,30 @@ class Endpoint (object):
     def family(self):
         """The address family used for :attr:`sockaddr`.
 
-        This is normally :data:`python:socket.AF_INET` or :data:`python:socket.AF_INET6`.
+        This is normally :data:`python:socket.AF_INET` or
+        :data:`python:socket.AF_INET6`.  It may be ``None`` for
+        testing situations where the actual endpoint does not
+        correspond to an network node.
         """
         return self.__family
 
     @property
-    def ip_addr(self):
-        """The IP address of the endpoint as data in network byte order.
+    def in_addr(self):
+        """The address of the endpoint.
 
-        The value can be decoded using :func:`python:socket.inet_pton` and :attr:`family`.
+        The representation is binary data encoding part of
+        :attr:`sockaddr`.  Decoding it depends on :attr:`family`:
+
+        When :attr:`family` is :data:`python:socket.AF_INET` this is
+        the IPv4 address in network byte order.
+
+        When :attr:`family` is :data:`python:socket.AF_INET6` this is
+        the IPv6 address in network byte order.
+
+        When :attr:`family` is ``None`` this is the *name* in
+        Net-Unicode format.
         """
-        return self.__ip_addr
+        return self.__in_addr
 
     @property
     def port(self):
@@ -156,51 +187,151 @@ class Endpoint (object):
     __EndpointRegistry = {}
     __nonInetIndex = 0
 
-    def __new__(cls, host, port=coapy.COAP_PORT, security_mode=None):
-        if not isinstance(host, unicode):
-            raise TypeError
-        address = cls._get_addr_info(host, port)
-        (family, socktype, proto, canonname, sockaddr) = address
-        # Ignore flowinfo and scopeid for IPv6
-        (host, port) = sockaddr[:2]
+    @staticmethod
+    def _key_for_sockaddr(sockaddr, family, security_mode=None):
+        """Create the key used to look up endpoints.
+
+        *sockaddr* must be a tuple the first two elements of which are
+        ``(host, port)``.  Unless *family* is ``None``, *host* must be
+        a text representation of an IP address that can be converted
+        with :func:`python:socket.inet_pton`, not a hostname.  *port*
+        must be a numeric port number.
+        """
+        if not isinstance(sockaddr, tuple):
+            raise TypeError(sockaddr)
+        ip_literal = sockaddr[0]
         if family is None:
-            ip_addr = host.encode('utf-8')
+            in_addr = coapy.util.to_net_unicode(ip_literal)
         else:
-            ip_addr = socket.inet_pton(family, host)
-        key = (family, ip_addr, port, security_mode)
-        instance = cls.__EndpointRegistry.get(key)
+            # Use the network-byte-order binary representation of the
+            # IP address, to having to deal with non-canonical IPv6
+            # text representations.  See RFC5952 for why this is
+            # necessary.
+            in_addr = socket.inet_pton(family, ip_literal)
+        return (family, in_addr, sockaddr[1], security_mode)
+
+    @staticmethod
+    def _canonical_sockinfo(sockaddr=None, family=socket.AF_UNSPEC,
+                            security_mode=None,
+                            host=None, port=coapy.COAP_PORT):
+        """Get canonical socket information for an endpoint.
+
+        Returns a tuple ``(family, sockaddr)`` where *sockaddr* is a
+        an :attr:`address<sockaddr>` as constrained by *family*.
+
+        Failure to resolve the socket *host* to a numeric IP literal
+        within *family* (if required) will raise
+        :exc:`python:socket.gaierror`.
+        """
+        if sockaddr is not None:
+            key = Endpoint._key_for_sockaddr(sockaddr, family, security_mode)
+            ep = Endpoint.__EndpointRegistry.get(key)
+            if ep is not None:
+                return (ep.family, ep.sockaddr)
+            if not isinstance(sockaddr, tuple):
+                raise TypeError(sockaddr)
+            (host, port) = sockaddr[:2]
+        if host is None:
+            raise ValueError(host)
+        if family is None:
+            gai = (family, None, None, host, (host, port))
+        else:
+            gais = socket.getaddrinfo(host, port, family, socket.SOCK_DGRAM, 0,
+                                      (socket.AI_ADDRCONFIG | socket.AI_V4MAPPED
+                                       | socket.AI_NUMERICHOST | socket.AI_NUMERICSERV))
+            gai = gais.pop(0)
+        return (gai[0], gai[4])
+
+    @classmethod
+    def lookup_endpoint(cls, sockaddr=None, family=socket.AF_UNSPEC,
+                        security_mode=None,
+                        host=None, port=coapy.COAP_PORT):
+        """Look up an endpoint using the same algorithm as endpoint
+        creation.
+
+        Returns ``None`` if passing these parameters to
+        class:`Endpoint` would result in creation of a new endpoint.
+        """
+        instance = None
+        if sockaddr is not None:
+            key = Endpoint._key_for_sockaddr(sockaddr, family, security_mode)
+            instance = Endpoint.__EndpointRegistry.get(key)
+        if instance is None:
+            (family, sockaddr) = Endpoint._canonical_sockinfo(sockaddr, family,
+                                                              security_mode, host, port)
+            key = Endpoint._key_for_sockaddr(sockaddr, family, security_mode)
+            instance = Endpoint.__EndpointRegistry.get(key)
+        return instance
+
+    def __new__(cls, sockaddr=None, family=socket.AF_UNSPEC,
+                security_mode=None,
+                host=None, port=coapy.COAP_PORT):
+        instance = None
+        if sockaddr is not None:
+            key = Endpoint._key_for_sockaddr(sockaddr, family, security_mode)
+            instance = Endpoint.__EndpointRegistry.get(key)
+        if instance is None:
+            (family, sockaddr) = Endpoint._canonical_sockinfo(sockaddr, family,
+                                                              security_mode, host, port)
+            key = Endpoint._key_for_sockaddr(sockaddr, family, security_mode)
+            instance = Endpoint.__EndpointRegistry.get(key)
         if instance is None:
             instance = super(Endpoint, cls).__new__(cls)
+            host = sockaddr[0]
+            port = sockaddr[1]
             cls.__EndpointRegistry[key] = instance
             instance.__family = family
-            instance.__ip_addr = ip_addr
+            instance.__in_addr = key[1]
             instance.__port = port
             instance.__security_mode = security_mode
             instance.__sockaddr = sockaddr
             if socket.AF_INET == family:
-                instance.__uri_host = '{0}'.format(socket.inet_ntop(family, ip_addr))
+                instance.__uri_host = '{0}'.format(socket.inet_ntop(instance.family,
+                                                                    instance.in_addr))
             elif socket.AF_INET6 == family:
-                instance.__uri_host = '[{0}]'.format(socket.inet_ntop(family, ip_addr))
+                instance.__uri_host = '[{0}]'.format(socket.inet_ntop(instance.family,
+                                                                      instance.in_addr))
             else:
                 instance.__uri_host = host
         return instance
 
-    def __init__(self, host, port=coapy.COAP_PORT, security_mode=None):
+    def __init__(self, sockaddr=None, family=socket.AF_UNSPEC,
+                 security_mode=None,
+                 host=None, port=coapy.COAP_PORT):
         # None of these arguments are used here; they apply in
         # __new__.
         super(Endpoint, self).__init__()
         self.__base_uri = self.uri_from_options([])
 
+    def get_peer_endpoint(self, sockaddr):
+        """Find the endpoint at *sockaddr* that this endpoint can talk to.
+
+        This invokes :class:`Endpoint` with *family* and
+        *security_mode* set to the parameters used by this endpoint.
+        It is used to identify the source endpoint of a message
+        received by :meth:`python:socket.socket.recvfrom`.
+        """
+        return type(self)(sockaddr=sockaddr, family=self.family, security_mode=self.security_mode)
+
     def is_same_host(self, host):
         """Determine whether *host* resolves to the same address as
         this endpoint.  Used to determine that a
         :class:`UriHost<coapy.option.UriHost>` option may be elided in
-        favor of the default derived from an endpoint.
+        favor of the default derived from an endpoint.  Note that this
+        only verifies that :attr:`in_addr` and :attr:`family` would be
+        the same for an endpoint involving *host*; differences in
+        security mode or port are not relevant.
         """
-        address = self._get_addr_info(host, self.port)
-        family = address[0]
-        sockaddr = address[4]
-        return (self.family == family) and (self.sockaddr == sockaddr)
+        try:
+            (family, sockaddr) = self._canonical_sockinfo(family=self.family, host=host)
+        except socket.gaierror as e:
+            # If we can't look up the host using the same family,
+            # it's not the same host.  Other errors are real errors.
+            if socket.EAI_NONAME != e.args[0]:
+                raise
+            return False
+        (family, addr, port, security_mode) = self._key_for_sockaddr(sockaddr, family)
+        return (self.family == family) and (self.in_addr == addr)
 
     @staticmethod
     def _port_for_scheme(scheme):
@@ -219,7 +350,7 @@ class Endpoint (object):
         Options will be returned in a list in the following order.
 
         * :class:`coapy.option.UriHost`, absent if the URI host
-          matches the endpoint :attr:`family` and :attr:`ip_addr`;
+          matches the endpoint :attr:`family` and :attr:`in_addr`;
         * :class:`coapy.option.UriPort`, absent if the URI port
           matches the endpoint :attr:`port`;
         * :class:`coapy.option.UriPath`, absent if the path is empty,

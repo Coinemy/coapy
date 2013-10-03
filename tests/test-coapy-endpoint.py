@@ -28,28 +28,59 @@ class TestEndpoint (unittest.TestCase):
     def testBasic6(self):
         ep = Endpoint(host='2001:db8:0::2:1')
         self.assertEqual(b'\x20\x01\x0d\xb8\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x01',
-                         ep.ip_addr)
+                         ep.in_addr)
         self.assertEqual('[2001:db8::2:1]', ep.uri_host)
         self.assertEqual(5683, ep.port)
+        ep2 = Endpoint(host='2001:db8:0::2:1')
+        self.assertTrue(ep is ep2)
+        ep2 = ep.get_peer_endpoint(('2001:db8:0::2:2', 1234))
+        self.assertFalse(ep is ep2)
+        self.assertEqual(b'\x20\x01\x0d\xb8\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x02',
+                         ep2.in_addr)
+        self.assertEqual(1234, ep2.port)
+        self.assertEqual(ep.family, ep2.family)
+        self.assertEqual(ep.security_mode, ep2.security_mode)
 
     def testBasic4(self):
         ep = Endpoint(host='10.0.1.2', port=1234)
-        self.assertEqual(b'\x0a\x00\x01\x02', ep.ip_addr)
+        self.assertEqual(b'\x0a\x00\x01\x02', ep.in_addr)
         self.assertEqual('10.0.1.2', ep.uri_host)
         self.assertEqual(1234, ep.port)
         ep2 = Endpoint(host='10.0.1.2', port=1234)
         self.assertTrue(ep is ep2)
+        ep2 = ep.get_peer_endpoint(('10.0.1.5', 52342))
+        self.assertFalse(ep is ep2)
+        self.assertEqual(b'\x0a\x00\x01\x05', ep2.in_addr)
+        self.assertEqual('10.0.1.5', ep2.uri_host)
+        self.assertEqual(52342, ep2.port)
+        self.assertEqual(ep.family, ep2.family)
+        self.assertEqual(ep.security_mode, ep2.security_mode)
 
     def testNotAnInetAddr(self):
         naa = 'not an address'
-        ep = Endpoint(naa)
-        ep2 = Endpoint(naa)
+        with self.assertRaises(socket.gaierror) as cm:
+            ep = Endpoint.lookup_endpoint(host=naa)
+        ep = Endpoint.lookup_endpoint(host=naa, family=None)
+        self.assertTrue(ep is None)
+        with self.assertRaises(socket.gaierror) as cm:
+            ep = Endpoint(host=naa)
+        ep = Endpoint(host=naa, family=None)
+        lep = Endpoint.lookup_endpoint(host=naa, family=None)
+        self.assertTrue(lep is ep)
+        ep2 = Endpoint(host=naa, family=None)
         self.assertTrue(ep is ep2)
         self.assertTrue(ep.family is None)
-        self.assertEqual(ep.ip_addr, naa.encode('utf-8'))
+        self.assertEqual(ep.in_addr, naa.encode('utf-8'))
         self.assertEqual(ep.port, coapy.COAP_PORT)
         self.assertTrue(ep.security_mode is None)
-        self.assertEqual(('not an address', coapy.COAP_PORT), ep.sockaddr)
+        ana = 'another non-address'
+        self.assertEqual((naa, coapy.COAP_PORT), ep.sockaddr)
+        ep2 = ep.get_peer_endpoint((ana, 24))
+        self.assertFalse(ep is ep2)
+        self.assertEqual(ana, ep2.uri_host)
+        self.assertEqual(24, ep2.port)
+        self.assertEqual(ep.family, ep2.family)
+        self.assertEqual(ep.security_mode, ep2.security_mode)
 
 
 class TestURLParse (unittest.TestCase):
