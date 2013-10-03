@@ -180,13 +180,17 @@ class TestMessage (unittest.TestCase):
     def testToken(self):
         m = Message()
         self.assertTrue(m.token is None)
+        m.token = b''
+        self.assertEqual(b'', m.token)
         m.token = b'123'
         self.assertEqual(b'123', m.token)
-        m.token = None
-        self.assertTrue(m.token is None)
+        m = Message(token=b'234')
+        self.assertEqual(b'234', m.token)
+        self.assertRaises(TypeError, self.setToken, m, None)
         self.assertRaises(TypeError, self.setToken, m, 'text')
-        self.assertRaises(ValueError, self.setToken, m, b'')
+        self.assertRaises(TypeError, Message, token='text')
         self.assertRaises(ValueError, self.setToken, m, b'123456789')
+        self.assertRaises(ValueError, Message, token=b'123456789')
 
     def testOptions(self):
         m = Message()
@@ -234,6 +238,9 @@ class TestMessage (unittest.TestCase):
             Message.Type_RST = 23
 
     def testStringize(self):
+        m = Message()
+        self.assertEqual(unicode(m), '''[*INVALID None*] NON ?.?? (*INVALID None*)
+Token: **INVALID None**''')
         m = Message(confirmable=True, token=b'123', messageID=12345, code=Request.GET,
                     options=[coapy.option.UriPath('sensor'),
                              coapy.option.UriPath('temp')],
@@ -323,7 +330,7 @@ class TestMessageEncodeDecode (unittest.TestCase):
         self.assertEqual(m.payload, m2.payload)
 
     def testDiagnosticEmpty(self):
-        empty_diag = '4.1: bytes after Message ID'
+        empty_diag = 'bytes after Message ID'
         with self.assertRaises(MessageFormatError) as cm:
             Message.from_packed(b'\x42\x00\x00\x00')
         self.assertEqual(cm.exception.args[0], empty_diag)
@@ -343,6 +350,10 @@ class TestMessageEncodeDecode (unittest.TestCase):
         with self.assertRaises(MessageFormatError) as cm:
             Message.from_packed(packed)
         self.assertEqual(cm.exception.args[0], 'empty payload')
+        packed = b'\x49\x01\x12\x34'
+        with self.assertRaises(MessageFormatError) as cm:
+            Message.from_packed(packed)
+        self.assertEqual(cm.exception.args[0], 'invalid token length')
 
     def testUnrecognizedCodes(self):
         m = Message.from_packed(b'\x40\x8A\x12\x34')

@@ -57,8 +57,14 @@ class Message(object):
     created as a non-confirmable message.
 
     *code*, *messageID*, *token*, *options*, and *payload* all
-    initialize the corresponding attributes of this class and must be
-    acceptable values for those attributes.
+    initialize the corresponding attributes of this class and if
+    provided must be acceptable values for those attributes.
+
+    .. note::
+       The default values for *code*, *messageID*, and *token* are not
+       valid for :attr:`code`, :attr:`messageID`, and :attr:`token`
+       respectively.  Valid values must be assigned before the message
+       is used.
     """
 
     __metaclass__ = coapy.util.ReadOnlyMeta
@@ -296,18 +302,16 @@ class Message(object):
         """The :coapsect:`token<5.3.1>` associated with the message.
 
         Tokens are used to :coapsect:`match<5.3.2>` requests with
-        responses.  ``None`` is used for a message that has no token.
-        Otherwise the token must be a :class:`bytes` instance with
-        length between 1 and 8 octets, inclusive.
+        responses.  The token must be a :class:`bytes` instance with
+        length between 0 and 8 octets, inclusive.
         """
         return self.__token
 
     def _set_token(self, token):
-        if token is not None:
-            if not isinstance(token, bytes):
-                raise TypeError(token)
-            if not ((1 <= len(token)) and (len(token) <= 8)):
-                raise ValueError(token)
+        if not isinstance(token, bytes):
+            raise TypeError(token)
+        if len(token) > 8:
+            raise ValueError(token)
         self.__token = token
 
     token = property(_get_token, _set_token)
@@ -376,7 +380,10 @@ class Message(object):
             self.__messageID = None
         else:
             self.messageID = messageID
-        self.token = token
+        if token is None:
+            self.__token = None
+        else:
+            self.token = token
         self.__options = []
         if options is not None:
             self.options = options
@@ -389,12 +396,10 @@ class Message(object):
         """
 
         vttkl = (1 << 6) | (self.__type << 4)
-        if self.__token is not None:
-            vttkl |= 0x0F & len(self.__token)
+        vttkl |= 0x0F & len(self.__token)
         elements = []
         elements.append(struct.pack(str('!BBH'), vttkl, self.packed_code, self.messageID))
-        if self.__token is not None:
-            elements.append(self.__token)
+        elements.append(self.__token)
         if self.options:
             elements.append(coapy.option.encode_options(self.options))
         if self.__payload:
@@ -432,11 +437,12 @@ class Message(object):
         message_id = (message_id << 8) | data.pop(0)
         dkw = {'code': code,
                'messageID': message_id}
+        if 9 <= tkl:
+            raise MessageFormatError('invalid token length', dkw)
         if ((cls.Empty == code) and ((0 != tkl) or (0 < len(data)))):
-            raise MessageFormatError('4.1: bytes after Message ID', dkw)
-        token = None
+            raise MessageFormatError('bytes after Message ID', dkw)
+        token = bytes(data[:tkl])
         if 0 < tkl:
-            token = bytes(data[:tkl])
             data[:tkl] = b''
         try:
             (options, remainder) = coapy.option.decode_options(bytes(data))
@@ -474,17 +480,26 @@ class Message(object):
 
     def __unicode__(self):
         elt = []
-        elt.append('[{m.messageID:d}] {m.messageTypeName} {m.code[0]}.{m.code[1]:02d}'.format(m=self))  # nopep8
-        cs = self.code_support()
-        if cs is not None:
-            elt.append(' ({cs.name})'.format(cs=cs))
-        elt.append('\n')
-        if self.token is not None:
-            elt.append('Token: {m.token!s}\n'.format(m=self))
+        if self.messageID is None:
+            elt.append('[*INVALID None*]')
+        else:
+            elt.append('[{m.messageID:d}]'.format(m=self))
+        elt.append(' {m.messageTypeName}'.format(m=self))
+        if self.code is None:
+            elt.append(' ?.?? (*INVALID None*)')
+        else:
+            elt.append(' {m.code[0]}.{m.code[1]:02d}'.format(m=self))
+            cs = self.code_support()
+            if cs is not None:
+                elt.append(' ({cs.name})'.format(cs=cs))
+        if self.token is None:
+            elt.append('\nToken: **INVALID None**')
+        elif 0 < len(self.token):
+            elt.append('\nToken: {m.token!s}'.format(m=self))
         for opt in self._sort_options():
-            elt.append('Option {0!s}\n'.format(opt))
+            elt.append('\nOption {0!s}'.format(opt))
         if self.payload is not None:
-            elt.append('Payload: {m.payload}'.format(m=self))
+            elt.append('\nPayload: {m.payload}'.format(m=self))
         return ''.join(elt)
     __str__ = __unicode__
 
