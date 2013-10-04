@@ -90,6 +90,25 @@ class TestEndpoint (unittest.TestCase):
         self.assertEqual(ep.family, ep2.family)
         self.assertEqual(ep.security_mode, ep2.security_mode)
 
+    def testUnspecFamily(self):
+        ep = Endpoint.lookup_endpoint(('::1', 1234))
+        ep = Endpoint(('::1', 1234))
+        ep2 = Endpoint.lookup_endpoint(('::1', 1234))
+        self.assertEqual(ep, ep2)
+        ep = Endpoint.lookup_endpoint(('192.168.0.1', 1234))
+        ep = Endpoint(('192.168.0.1', 1234))
+        ep2 = Endpoint.lookup_endpoint(('192.168.0.1', 1234))
+        self.assertEqual(ep, ep2)
+
+    def testStringize(self):
+        naa = 'not an address'
+        ep = Endpoint(host=naa, family=None)
+        self.assertEqual('not an address:5683', unicode(ep))
+        ep = Endpoint(host='::1', port=1234)
+        self.assertEqual('[::1]:1234', unicode(ep))
+        ep = Endpoint(sockaddr=('192.168.0.1', 12345))
+        self.assertEqual('192.168.0.1:12345', unicode(ep))
+
 
 class TestURLParse (unittest.TestCase):
     def testJoin(self):

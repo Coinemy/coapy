@@ -197,14 +197,20 @@ class Endpoint (object):
         *sockaddr* must be a tuple the first two elements of which are
         ``(host, port)``.  Unless *family* is ``None``, *host* must be
         a text representation of an IP address that can be converted
-        with :func:`python:socket.inet_pton`, not a hostname.  *port*
-        must be a numeric port number.
+        with :func:`python:socket.inet_pton` using *family*, not a
+        hostname.  *port* must be a numeric port number.
+
+        If *family* is :data:`python:socket.AF_UNSPEC` a
+        :exc:`python:exception.ValueError` exception will be raised as
+        the system does not know how to decode the *host*.
         """
         if not isinstance(sockaddr, tuple):
             raise TypeError(sockaddr)
         ip_literal = sockaddr[0]
         if family is None:
             in_addr = coapy.util.to_net_unicode(ip_literal)
+        elif family is socket.AF_UNSPEC:
+            raise ValueError
         else:
             # Use the network-byte-order binary representation of the
             # IP address, to having to deal with non-canonical IPv6
@@ -227,12 +233,17 @@ class Endpoint (object):
         :exc:`python:socket.gaierror`.
         """
         if sockaddr is not None:
-            key = Endpoint._key_for_sockaddr(sockaddr, family, security_mode)
-            ep = Endpoint.__EndpointRegistry.get(key)
-            if ep is not None:
-                return (ep.family, ep.sockaddr)
+            try:
+                key = Endpoint._key_for_sockaddr(sockaddr, family, security_mode)
+                ep = Endpoint.__EndpointRegistry.get(key)
+                if ep is not None:
+                    return (ep.family, ep.sockaddr)
+            except:
+                pass
             if not isinstance(sockaddr, tuple):
                 raise TypeError(sockaddr)
+            if 2 > len(sockaddr):
+                raise ValueError(sockaddr)
             (host, port) = sockaddr[:2]
         if host is None:
             raise ValueError(host)
@@ -257,8 +268,11 @@ class Endpoint (object):
         """
         instance = None
         if sockaddr is not None:
-            key = Endpoint._key_for_sockaddr(sockaddr, family, security_mode)
-            instance = Endpoint.__EndpointRegistry.get(key)
+            try:
+                key = Endpoint._key_for_sockaddr(sockaddr, family, security_mode)
+                instance = Endpoint.__EndpointRegistry.get(key)
+            except:
+                pass
         if instance is None:
             (family, sockaddr) = Endpoint._canonical_sockinfo(sockaddr, family,
                                                               security_mode, host, port)
@@ -271,8 +285,11 @@ class Endpoint (object):
                 host=None, port=coapy.COAP_PORT):
         instance = None
         if sockaddr is not None:
-            key = Endpoint._key_for_sockaddr(sockaddr, family, security_mode)
-            instance = Endpoint.__EndpointRegistry.get(key)
+            try:
+                key = Endpoint._key_for_sockaddr(sockaddr, family, security_mode)
+                instance = Endpoint.__EndpointRegistry.get(key)
+            except:
+                pass
         if instance is None:
             (family, sockaddr) = Endpoint._canonical_sockinfo(sockaddr, family,
                                                               security_mode, host, port)
@@ -537,3 +554,7 @@ class Endpoint (object):
                                      code=code, messageID=messageID,
                                      token=token, options=uri_options,
                                      payload=payload)
+
+    def __unicode__(self):
+        return '{s.uri_host}:{s.port:d}'.format(s=self)
+    __str__ = __unicode__
