@@ -245,5 +245,30 @@ class TestEndpointInterface (unittest.TestCase):
         self.assertEqual('path', opt.value)
         self.assertTrue(m.payload is None)
 
+
+class TestBoundEndpoints (unittest.TestCase):
+    def testBasic(self):
+        localhost = '127.0.0.1'
+        ep = Endpoint.create_bound_endpoint(host=localhost, port=0)
+        self.assertEqual(socket.AF_INET, ep.family)
+        self.assertNotEqual(0, ep.port)
+        self.assertFalse(ep.bound_socket is None)
+        self.assertEqual(ep.sockaddr, ep.bound_socket.getsockname())
+        ep2 = Endpoint(host=localhost)
+        self.assertTrue(ep2.bound_socket is None)
+        self.assertFalse(ep is ep2)
+        s = socket.socket(ep.family, socket.SOCK_DGRAM)
+        with self.assertRaises(ValueError):
+            ep.set_bound_socket(s)
+        s.close()
+        s = ep.bound_socket
+        obs = ep.set_bound_socket(None)
+        self.assertTrue(s is obs)
+        self.assertTrue(ep.bound_socket is None)
+        obs = ep.set_bound_socket(s)
+        self.assertTrue(obs is None)
+        self.assertTrue(s is ep.bound_socket)
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -113,6 +113,93 @@ class Endpoint (object):
         """
         return self.__sockaddr
 
+    __bound_socket = None
+
+    def set_bound_socket(self, socket):
+        """Set the :attr:`bound_socket`.
+
+        *socket* may be ``None``, in which case the endpoint is
+        disassociated from any socket.
+
+        If *socket* is not ``None`` it must be an object suitable for
+        assignment to :attr:`bound_socket`.  The endpoint adopts the
+        socket, in that if/when the endpoint is destroyed the socket
+        will be closed if it remains bound to the endpoint.  (Since
+        :class:`Endpoint` instances are almost impossible to destroy,
+        this has little relevance at this time.)
+
+        In either case if the assignment succeed the previous value of
+        :attr:`bound_socket` is returned, with the caller taking
+        responsibility to close it when finished.
+
+        .. note::
+           For simulation and testing purposes *socket* might not be
+           a :func:`socket object<python:socket.socket>`, but it must
+           act like one with respect to the methods CoAPy expects it
+           to provide, including but not limited to:
+
+           * :meth:`getsockname()<python:socket.socket.getsockname>`
+           * :meth:`sendto()<python:socket.socket.sendto>`
+        """
+        obs = self.__bound_socket
+        if (socket is not None) and (self.sockaddr != socket.getsockname()):
+            raise ValueError(socket)
+        self.__bound_socket = socket
+        return obs
+
+    @property
+    def bound_socket(self):
+        """Return a :func:`socket object<python:socket.socket>`
+        instance that is bound to :attr:`sockaddr`.
+
+        This may only be set for endpoints that are local to the host.
+        It may set to ``None`` to disassociate the endpoint from a
+        socket, and may be changed from ``None`` to an object that
+        returns :attr:`sockaddr` when
+        :meth:`socket.getsockname<python:socket.socket.getsockname>`
+        is invoked on it.
+
+        See :meth:`create_bound_endpoint` and
+        :meth:`set_bound_socket`.
+        """
+        return self.__bound_socket
+
+    @classmethod
+    def create_bound_endpoint(cls, sockaddr=None, family=socket.AF_UNSPEC,
+                              security_mode=None,
+                              host=None, port=coapy.COAP_PORT):
+        """Create an endpoint with a local socket bound to it.
+
+        *sockaddr*, *family*, *security_mode*, *host*, and *port* are
+        all as used with :class:`Endpoint`.
+
+        For use with a CoAP service on the local host (*host* as
+        ``127.0.0.1`` or ``::1``), *port* may be 0 in this call.  This
+        allows the bind operation to select an unused local port.
+
+        Returns the created endpoint with :attr:`bound_socket`
+        initialized and ready to send and receive messages.
+        """
+        # First, figure out the resolved family and host/port part of
+        # the socket address.
+        (family, sockaddr) = cls._canonical_sockinfo(sockaddr=sockaddr,
+                                                     family=family,
+                                                     security_mode=security_mode,
+                                                     host=host,
+                                                     port=port)
+        if (family is None) or (family is socket.AF_UNSPEC):
+            raise ValueError
+        # Create a socket, bind it to the proposed socket address, then use
+        # the result as the endpoint socket address: this is necessary because
+        # if port was passed as 0 the act of binding assigned a local port.
+        s = socket.socket(family, socket.SOCK_DGRAM)
+        s.bind(sockaddr)
+        sockaddr = s.getsockname()
+        # Now we can create the instance and associate the socket with it.
+        ep = cls(sockaddr=sockaddr, family=family, security_mode=security_mode)
+        ep.set_bound_socket(s)
+        return ep
+
     @property
     def family(self):
         """The address family used for :attr:`sockaddr`.
@@ -315,6 +402,23 @@ class Endpoint (object):
                 instance.__uri_host = host
         return instance
 
+    def __del__(self):
+        if self.__bound_socket is not None:
+            try:
+                self.__bound_socket.close()
+            except:
+                pass
+        super(Endpoint, self).__del__(self)
+
+    def __init__(self, sockaddr=None, family=socket.AF_UNSPEC,
+                 security_mode=None,
+                 host=None, port=coapy.COAP_PORT):
+        # None of these arguments are used here; they apply in
+        # __new__.
+        super(Endpoint, self).__init__()
+        self.__base_uri = self.uri_from_options([])
+        self._reset_next_messageID(random.randint(0, 65535))
+
     def next_messageID(self):
         """Return a new messageID suitable for a message to this endpoint.
 
@@ -326,15 +430,6 @@ class Endpoint (object):
     def _reset_next_messageID(self, start):
         # Back-door for unit testing.
         self.__messageID_iter = itertools.imap(lambda _v: _v % 65536, itertools.count(start))
-
-    def __init__(self, sockaddr=None, family=socket.AF_UNSPEC,
-                 security_mode=None,
-                 host=None, port=coapy.COAP_PORT):
-        # None of these arguments are used here; they apply in
-        # __new__.
-        super(Endpoint, self).__init__()
-        self.__base_uri = self.uri_from_options([])
-        self._reset_next_messageID(random.randint(0, 65535))
 
     def get_peer_endpoint(self, sockaddr=None, host=None, port=coapy.COAP_PORT):
         """Find the endpoint at *sockaddr* that this endpoint can talk to.
