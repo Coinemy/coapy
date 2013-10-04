@@ -254,7 +254,11 @@ Token: **INVALID None**''')
                     options=[coapy.option.UriPath('sensor'),
                              coapy.option.UriPath('temp')],
                     payload=b'20 C')
+        m.source_endpoint = Endpoint(host='2001:db8:0::2:1')
+        m.destination_endpoint = Endpoint(host='2001:db8:0::2:2')
         self.assertEqual(unicode(m), '''[12345] CON 0.01 (GET)
+Source: [2001:db8::2:1]:5683
+Destination: [2001:db8::2:2]:5683
 Token: 123
 Option Uri-Path: sensor
 Option Uri-Path: temp

@@ -599,6 +599,10 @@ class Message(object):
             cs = self.code_support()
             if cs is not None:
                 elt.append(' ({cs.name})'.format(cs=cs))
+        if self.source_endpoint is not None:
+            elt.append('\nSource: {m.source_endpoint!s}'.format(m=self))
+        if self.destination_endpoint is not None:
+            elt.append('\nDestination: {m.destination_endpoint!s}'.format(m=self))
         if self.token is None:
             elt.append('\nToken: **INVALID None**')
         elif 0 < len(self.token):
