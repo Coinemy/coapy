@@ -338,13 +338,12 @@ class TestMessageEncodeDecode (unittest.TestCase):
         self.assertEqual(m.payload, m2.payload)
 
     def testDiagnosticEmpty(self):
-        empty_diag = 'bytes after Message ID'
         with self.assertRaises(MessageFormatError) as cm:
             Message.from_packed(b'\x42\x00\x00\x00')
-        self.assertEqual(cm.exception.args[0], empty_diag)
+        self.assertEqual(cm.exception.args[0], MessageFormatError.EMPTY_MESSAGE_NOT_EMPTY)
         with self.assertRaises(MessageFormatError) as cm:
             Message.from_packed(b'\x40\x00\x00\x00\x01')
-        self.assertEqual(cm.exception.args[0], empty_diag)
+        self.assertEqual(cm.exception.args[0], MessageFormatError.EMPTY_MESSAGE_NOT_EMPTY)
 
     def testInvalid(self):
         self.assertRaises(TypeError, Message.from_packed, 'text')
@@ -353,24 +352,31 @@ class TestMessageEncodeDecode (unittest.TestCase):
         packed = b'\x43\x01\x12\x34123\xF0'
         with self.assertRaises(MessageFormatError) as cm:
             Message.from_packed(packed)
-        self.assertEqual(cm.exception.args[0], 'option decode error')
+        self.assertEqual(cm.exception.args[0], MessageFormatError.INVALID_OPTION)
         packed = b'\x43\x01\x12\x34123\xFF'
         with self.assertRaises(MessageFormatError) as cm:
             Message.from_packed(packed)
-        self.assertEqual(cm.exception.args[0], 'empty payload')
+        self.assertEqual(cm.exception.args[0], MessageFormatError.ZERO_LENGTH_PAYLOAD)
         packed = b'\x49\x01\x12\x34'
         with self.assertRaises(MessageFormatError) as cm:
             Message.from_packed(packed)
-        self.assertEqual(cm.exception.args[0], 'invalid token length')
+        self.assertEqual(cm.exception.args[0], MessageFormatError.TOKEN_TOO_LONG)
 
     def testUnrecognizedCodes(self):
         m = Message.from_packed(b'\x40\x8A\x12\x34')
         self.assertEqual((4, 10), m.code)
         self.assertTrue(isinstance(m, ClientErrorResponse))
+        self.assertEqual(0x1234, m.messageID)
+
+        m = Message.from_packed(b'\x40\x6A\x12\x34')
+        self.assertEqual((3, 10), m.code)
+        self.assertTrue(isinstance(m, Class3Response))
+        self.assertEqual(0x1234, m.messageID)
+
         with self.assertRaises(MessageFormatError) as cm:
-            m = Message.from_packed(b'\x40\x6A\x12\x34')
-        self.assertEqual(cm.exception.args[0], 'unrecognized code')
-        self.assertEqual(cm.exception.args[1]['code'], (3, 10))
+            m = Message.from_packed(b'\x40\x2A\x12\x34')
+        self.assertEqual(cm.exception.args[0], MessageFormatError.UNRECOGNIZED_CODE_CLASS)
+        self.assertEqual(cm.exception.args[1]['code'], (1, 10))
         self.assertEqual(cm.exception.args[1]['messageID'], 0x1234)
 
     def testLibCoapRoot(self):

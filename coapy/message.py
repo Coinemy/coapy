@@ -42,11 +42,44 @@ class MessageFormatError (MessageError):
     """Exception raised by :meth:`Message.from_packed` when the
     message cannot be decoded.  :attr:`args` will be ``(diagnostic,
     dkw)`` where *diagnostic* is a human-readonable description of the
-    failure cause, and *dkw* is a dictionary with entries for
-    :attr:`code<Message.code>` and
+    failure cause matching one of the codes in this class, and *dkw*
+    is a dictionary with entries for :attr:`code<Message.code>` and
     :attr:`messageID<Message.messageID>`.
+
+    Justification for the diagnosis can be found in :coapsect:`3`.
     """
-    pass
+
+    TOKEN_TOO_LONG = 'token too long'
+    """*diagnostic* value when the TKL field of the message is greater
+    than 8.
+    """
+
+    ZERO_LENGTH_PAYLOAD = 'zero-length payload'
+    """*diagnostic* value when a Payload Marker is present but not
+    followed by data.
+    """
+
+    INVALID_OPTION = 'option decode error'
+    """*diagnostic* value when an Option Delta is 15 in a value that
+    is not a Payload Marker, or an Option Delta is 15 in a value that
+    is not a Payload Marker.
+    """
+
+    EMPTY_MESSAGE_NOT_EMPTY = 'excess content in Empty message'
+    """*diagnostic* value when a message with code
+    :attr:`Empty<Message.Empty>` has bytes after the Message ID
+    field.
+    """
+
+    UNRECOGNIZED_CODE_CLASS = 'unrecognized code class'
+    """*diagnostic* when the :attr:`code<Message.code>` has no generic
+    handler (e.g. the message code class is 1, 6, and 7 which are
+    currently reserved).
+
+    Technically this is not a message format error, but CoAP requires
+    that it be treated the same way wherever the possibility is
+    explicitly recognized (:coapsect:`4.2` and :coapsect:`4.3`).
+    """
 
 
 class Message(object):
@@ -101,6 +134,18 @@ class Message(object):
     # with that code.
     __CodeRegistry = {}
 
+    @classmethod
+    def RegisterClassCode(cls, clazz, constructor=None):
+        """Register a fallback-constructor for messages in a code
+        *class*.
+
+        This is used when no more specific information can be resolved
+        by using the *details* field of the message code.
+        """
+        if not isinstance(clazz, int):
+            raise TypeError
+        cls.__CodeClassRegistry[clazz] = cls
+
     # Registry from code classes to the primary Python type used for
     # messages in that class.  This is for fall-backs when the details
     # is unrecognized but we still have to do class-specific actions
@@ -137,7 +182,7 @@ class Message(object):
             if code[0] != cls.CodeClass:
                 raise ValueError(code)
             if code[0] not in cls.__CodeClassRegistry:
-                cls.__CodeClassRegistry[code[0]] = cls
+                cls.RegisterClassCode(cls.CodeClass, cls)
         cls.__CodeRegistry[code] = cls._CodeSupport(code, name, constructor)
 
     @classmethod
@@ -438,9 +483,9 @@ class Message(object):
         dkw = {'code': code,
                'messageID': message_id}
         if 9 <= tkl:
-            raise MessageFormatError('invalid token length', dkw)
+            raise MessageFormatError(MessageFormatError.TOKEN_TOO_LONG, dkw)
         if ((cls.Empty == code) and ((0 != tkl) or (0 < len(data)))):
-            raise MessageFormatError('bytes after Message ID', dkw)
+            raise MessageFormatError(MessageFormatError.EMPTY_MESSAGE_NOT_EMPTY, dkw)
         token = bytes(data[:tkl])
         if 0 < tkl:
             data[:tkl] = b''
@@ -450,16 +495,16 @@ class Message(object):
             # This can be an invalid delta or length in the first byte,
             # or a value field that does not conform to the requirements.
             # @todo@ refine this
-            raise MessageFormatError('option decode error', dkw)
+            raise MessageFormatError(MessageFormatError.INVALID_OPTION, dkw)
         payload = None
         if 0 < len(remainder):
             data = bytearray(remainder)
             if 0xFF != data[0]:
                 # This should have been interpreted as an option decode error
-                raise MessageFormatError('invalid payload marker', dkw)
+                raise MessageFormatError(MessageFormatError.INVALID_OPTION, dkw)
             payload = remainder[1:]
             if 0 == len(payload):
-                raise MessageFormatError('empty payload', dkw)
+                raise MessageFormatError(MessageFormatError.ZERO_LENGTH_PAYLOAD, dkw)
         kw = {'confirmable': (cls.Type_CON == message_type),
               'acknowledgement': (cls.Type_ACK == message_type),
               'reset': (cls.Type_RST == message_type),
@@ -475,7 +520,7 @@ class Message(object):
         else:
             constructor = code_support.constructor
         if constructor is None:
-            raise MessageFormatError('unrecognized code', dkw)
+            raise MessageFormatError(MessageFormatError.UNRECOGNIZED_CODE_CLASS, dkw)
         return constructor(**kw)
 
     def __unicode__(self):
@@ -601,6 +646,21 @@ SuccessResponse.RegisterCode(SuccessResponse.Deleted, 'Deleted')
 SuccessResponse.RegisterCode(SuccessResponse.Valid, 'Valid')
 SuccessResponse.RegisterCode(SuccessResponse.Changed, 'Changed')
 SuccessResponse.RegisterCode(SuccessResponse.Content, 'Content')
+
+
+class Class3Response (Message):
+    """Subclass for messages that are responses but for which no
+    class-level has been provided.
+
+    :coapsect:`12.1.2` specifies that class 3 is a response class, but
+    fails to define any unreserved code in the class.
+    """
+
+    CodeClass = coapy.util.ClassReadOnly(3)
+    """The :attr:`Message.code` *class* component for
+    :class:`Class3Response` messages.
+    """
+Class3Response.RegisterClassCode(Class3Response.CodeClass, Class3Response)
 
 
 class ClientErrorResponse (Response):
