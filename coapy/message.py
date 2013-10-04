@@ -833,6 +833,10 @@ class TransmissionParameters(object):
                                    transmission_parameters=self)
 
 
+# Back-fill default transmission parameters
+coapy.transmissionParameters = TransmissionParameters()
+
+
 class RetransmissionState (object):
     """An iterable that provides the time to the next retransmission.
 

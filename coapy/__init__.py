@@ -47,3 +47,41 @@ class CoAPyException (Exception):
 
 class InfrastructureError (CoAPyException):
     pass
+
+
+transmissionParameters = None
+"""The default instance of
+:class:`TransmissionParameters<coapy.message.TransmissionParameters>`
+for the system.
+
+This is initialized when :mod:`coapy.message` is first loaded.
+"""
+
+
+import time
+clock = time.time
+"""The system clock.
+
+This is a callable that returns a non-decreasing ordinal (probably a
+:class:`python:float` but possibly an :class:`python:int`).  The
+integer part increments in "seconds".  It is used for
+:class:`Max-Age<coapy.option.MaxAge>`, state related to
+:coapsect:`congestion control<4.7>` and :coapsect:`message
+retransmission<4.2>`, and other time-related phenomena.
+
+.. note::
+   The default value is :func:`python:time.time`, but this may be
+   overridden for the purposes of simulation or testing.  Unless
+   you're doing this sort of thing, you should assume it increments in
+   lock step with real-world time.
+"""
+
+
+# In sphinx 1.2 use :novalue: to prevent the documentation from
+# claiming this is a constant 1380879789.119847 or similar silliness.
+epoch = clock()
+"""The value of :data:`clock()<clock>` at a point corresponding to
+"system start".
+
+Set implicitly when the :mod:`coapy` module is first loaded.
+"""

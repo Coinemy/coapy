@@ -24,8 +24,7 @@ from coapy.message import *
 
 
 class TestTransmissionParameters (unittest.TestCase):
-    def testDefaults(self):
-        tp = TransmissionParameters()
+    def checkIsDefault(self, tp):
         self.assertEqual(tp.ACK_TIMEOUT, 2)
         self.assertEqual(tp.ACK_RANDOM_FACTOR, 1.5)
         self.assertEqual(tp.MAX_RETRANSMIT, 4)
@@ -33,7 +32,7 @@ class TestTransmissionParameters (unittest.TestCase):
         self.assertEqual(tp.DEFAULT_LEISURE, 5)
         self.assertEqual(tp.PROBING_RATE, 1)
 
-    def checkDerived(self, tp):
+    def checkIsDerivedDefault(self, tp):
         self.assertEqual(tp.MAX_TRANSMIT_SPAN, 45)
         self.assertEqual(tp.MAX_TRANSMIT_WAIT, 93)
         self.assertEqual(tp.MAX_LATENCY, 100)
@@ -42,18 +41,27 @@ class TestTransmissionParameters (unittest.TestCase):
         self.assertEqual(tp.EXCHANGE_LIFETIME, 247)
         self.assertEqual(tp.NON_LIFETIME, 145)
 
+    def testDefaults(self):
+        tp = TransmissionParameters()
+        self.checkIsDefault(tp)
+        self.checkIsDerivedDefault(tp)
+
+    def testGlobalDefaults(self):
+        self.checkIsDefault(coapy.transmissionParameters)
+        self.checkIsDerivedDefault(coapy.transmissionParameters)
+
     def testDerived(self):
         tp = TransmissionParameters()
-        self.checkDerived(tp)
+        self.checkIsDefault(tp)
         tp.recalculate_derived()
-        self.checkDerived(tp)
+        self.checkIsDerivedDefault(tp)
 
     def testIterator(self):
         tp = TransmissionParameters()
         delays = list(tp.timeout_control(3))
         self.assertEqual([3, 6, 12, 24], delays)
 
-    def testDefaults(self):
+    def testTimeoutControl(self):
         tp = TransmissionParameters()
         rs = tp.timeout_control()
         self.assertEqual(rs.retransmissions_remaining, tp.MAX_RETRANSMIT)

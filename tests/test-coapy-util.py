@@ -28,6 +28,10 @@ class TestCoAPy (unittest.TestCase):
     def testConstants(self):
         self.assertEqual(5683, coapy.COAP_PORT)
 
+    def testClock(self):
+        cv = coapy.clock()
+        self.assertTrue(cv > coapy.epoch)
+
 
 class TestReadOnlyMeta (unittest.TestCase):
 
