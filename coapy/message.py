@@ -534,6 +534,57 @@ class Message(object):
             raise MessageFormatError(MessageFormatError.UNRECOGNIZED_CODE_CLASS, dkw)
         return constructor(**kw)
 
+    __source_endpoint = None
+
+    def _set_source_endpoint(self, ep):
+        import coapy.endpoint
+        if not isinstance(ep, coapy.endpoint.Endpoint):
+            raise TypeError
+        if (self.__source_endpoint is not None) and (self.__source_endpoint is not ep):
+            raise ValueError
+        self.__source_endpoint = ep
+
+    def _get_source_endpoint(self):
+        """Return the :coapsect:`source endpoint<1.2>` of the message.
+
+        This is the :class:`coapy.endpoint.Endpoint` instance that
+        sent (or will send) the message.  It starts as ``None``, and
+        can be assigned a value once after which it is immutable.
+        Generally the infrastructure should be responsible for
+        assigning a source endpoint to a message.
+
+        See also :attr:`destination_endpoint`.
+        """
+        return self.__source_endpoint
+
+    source_endpoint = property(_get_source_endpoint, _set_source_endpoint)
+
+    __destination_endpoint = None
+
+    def _set_destination_endpoint(self, ep):
+        import coapy.endpoint
+        if not isinstance(ep, coapy.endpoint.Endpoint):
+            raise TypeError
+        if (self.__destination_endpoint is not None) and (self.__destination_endpoint is not ep):
+            raise ValueError
+        self.__destination_endpoint = ep
+
+    def _get_destination_endpoint(self):
+        """Return the :coapsect:`destination endpoint<1.2>` of the message.
+
+        This is the :class:`coapy.endpoint.Endpoint` instance to which
+        the message was (or will be) sent, i.e. the one on which it
+        was (or should be) received.  It starts as ``None``, and can
+        be assigned a value once after which it is immutable.
+        Generally the infrastructure should be responsible for
+        assigning a destination endpoint to a message.
+
+        See also :attr:`source_endpoint`.
+        """
+        return self.__destination_endpoint
+
+    destination_endpoint = property(_get_destination_endpoint, _set_destination_endpoint)
+
     def __unicode__(self):
         elt = []
         if self.messageID is None:

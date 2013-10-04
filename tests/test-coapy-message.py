@@ -21,6 +21,7 @@ from __future__ import division
 
 import unittest
 from coapy.message import *
+from coapy.endpoint import Endpoint
 
 
 class TestTransmissionParameters (unittest.TestCase):
@@ -258,6 +259,33 @@ Token: 123
 Option Uri-Path: sensor
 Option Uri-Path: temp
 Payload: 20 C''')
+
+
+class TestMessageEndpoints (unittest.TestCase):
+    def testBasic(self):
+        ep1 = Endpoint(host='ep1', family=None)
+        ep2 = Endpoint(host='ep2', family=None)
+        m = Message()
+        self.assertTrue(m.source_endpoint is None)
+        self.assertTrue(m.destination_endpoint is None)
+        m.source_endpoint = ep1
+        self.assertTrue(m.source_endpoint is ep1)
+        self.assertTrue(m.destination_endpoint is None)
+        m.destination_endpoint = ep2
+        self.assertTrue(m.source_endpoint is ep1)
+        self.assertTrue(m.destination_endpoint is ep2)
+        # OK to re-assign same value
+        m.source_endpoint = ep1
+        m.destination_endpoint = ep2
+        # Not ok to assign different value or remove value
+        with self.assertRaises(TypeError):
+            m.source_endpoint = None
+        with self.assertRaises(ValueError):
+            m.source_endpoint = ep2
+        with self.assertRaises(TypeError):
+            m.destination_endpoint = None
+        with self.assertRaises(ValueError):
+            m.destination_endpoint = ep1
 
 
 class TestRequest (unittest.TestCase):
