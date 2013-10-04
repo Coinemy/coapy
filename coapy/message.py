@@ -43,7 +43,8 @@ class MessageFormatError (MessageError):
     message cannot be decoded.  :attr:`args` will be ``(diagnostic,
     dkw)`` where *diagnostic* is a human-readonable description of the
     failure cause matching one of the codes in this class, and *dkw*
-    is a dictionary with entries for :attr:`code<Message.code>` and
+    is a dictionary with entries for
+    :attr:`type<Message.messageType>`, :attr:`code<Message.code>` and
     :attr:`messageID<Message.messageID>`.
 
     Justification for the diagnosis can be found in :coapsect:`3`.
@@ -458,12 +459,21 @@ class Message(object):
         packed representation of a message, per :coapsect:`3`.
 
         This will return ``None`` if the first four octets cannot be
-        successfully decoded (yielding at minimum the :attr:`code` and
-        :attr:`messageID` values).  It will raise a
-        :exc:`MessageFormatError` for cases where the content cannot
-        be fully extracted.  Otherwise
-        it will return an instance of :class:`Message` or a refined
-        subclass based on the :attr:`code` within the packed
+        successfully decoded; such messages should be silently ignored.
+
+        It will raise a :exc:`MessageFormatError` when
+        :attr:`type<messageType>`, :attr:`code` and :attr:`messageID`
+        information can be extracted but the message as a whole is
+        malformatted. :coapsect:`4` specifies the receiver MUST
+        (:attr:`CON<Type_CON>`) or may (:attr:`NON<Type_NON>`) or MUST
+        NOT (:attr:`ACK<Type_ACK>`, :attr:`RST<Type_RST>`) reply with
+        a Reset message, and otherwise the message is ignored (from a
+        protocol perspective; the receiver may use the failure as a
+        cue to perform some other action; see :coapsect:`5.7.1` for
+        example).
+
+        Otherwise it will return an instance of :class:`Message` or a
+        refined subclass based on the :attr:`code` within the packed
         representation.
         """
 
@@ -480,7 +490,8 @@ class Message(object):
         code = cls.code_as_tuple(data.pop(0))
         message_id = data.pop(0)
         message_id = (message_id << 8) | data.pop(0)
-        dkw = {'code': code,
+        dkw = {'type': message_type,
+               'code': code,
                'messageID': message_id}
         if 9 <= tkl:
             raise MessageFormatError(MessageFormatError.TOKEN_TOO_LONG, dkw)

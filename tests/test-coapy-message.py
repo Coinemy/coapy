@@ -349,10 +349,16 @@ class TestMessageEncodeDecode (unittest.TestCase):
         self.assertRaises(TypeError, Message.from_packed, 'text')
         m = Message.from_packed(b'\x80')
         self.assertTrue(m is None)
-        packed = b'\x43\x01\x12\x34123\xF0'
+        packed = b'\x53\x01\x12\x34123\xF0'
         with self.assertRaises(MessageFormatError) as cm:
             Message.from_packed(packed)
         self.assertEqual(cm.exception.args[0], MessageFormatError.INVALID_OPTION)
+        self.assertEqual(cm.exception.args[1]['type'], Message.Type_NON)
+        packed = b'\x63\x01\x12\x34123\xF0'
+        with self.assertRaises(MessageFormatError) as cm:
+            Message.from_packed(packed)
+        self.assertEqual(cm.exception.args[0], MessageFormatError.INVALID_OPTION)
+        self.assertEqual(cm.exception.args[1]['type'], Message.Type_ACK)
         packed = b'\x43\x01\x12\x34123\xFF'
         with self.assertRaises(MessageFormatError) as cm:
             Message.from_packed(packed)
@@ -376,6 +382,7 @@ class TestMessageEncodeDecode (unittest.TestCase):
         with self.assertRaises(MessageFormatError) as cm:
             m = Message.from_packed(b'\x40\x2A\x12\x34')
         self.assertEqual(cm.exception.args[0], MessageFormatError.UNRECOGNIZED_CODE_CLASS)
+        self.assertEqual(cm.exception.args[1]['type'], Message.Type_CON)
         self.assertEqual(cm.exception.args[1]['code'], (1, 10))
         self.assertEqual(cm.exception.args[1]['messageID'], 0x1234)
 
