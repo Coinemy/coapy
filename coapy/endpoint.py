@@ -634,7 +634,10 @@ class Endpoint (object):
         caller may specify a token; if none is provided, an empty
         token will be used.  Any *options* are appended to the options
         derived from *uri*, and *payload* is as in the
-        :class:`coapy.message.Message` constructor.
+        :class:`coapy.message.Message` constructor.  The message
+        :attr:`destination_endpoint<coapy.message.Message.destination_endpoint>`
+        is set to *self*, and finally the message is returned to the
+        caller.
         """
         uri_options = []
         if uri is not None:
@@ -645,10 +648,12 @@ class Endpoint (object):
             token = b''
         if options is not None:
             uri_options.extend(options)
-        return coapy.message.Request(confirmable=confirmable,
-                                     code=code, messageID=messageID,
-                                     token=token, options=uri_options,
-                                     payload=payload)
+        m = coapy.message.Request(confirmable=confirmable,
+                                  code=code, messageID=messageID,
+                                  token=token, options=uri_options,
+                                  payload=payload)
+        m.destination_endpoint = self
+        return m
 
     def __unicode__(self):
         return '{s.uri_host}:{s.port:d}'.format(s=self)

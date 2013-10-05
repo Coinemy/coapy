@@ -235,6 +235,7 @@ class TestEndpointInterface (unittest.TestCase):
         m = ep.create_request('/path')
         self.assertTrue(isinstance(m, coapy.message.Request))
         self.assertEqual(coapy.message.Request.GET, m.code)
+        self.assertTrue(m.destination_endpoint is ep)
         self.assertFalse(m.messageID is None)
         self.assertEqual(m.token, b'')
         opts = m.options
