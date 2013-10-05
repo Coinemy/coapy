@@ -326,12 +326,14 @@ class Endpoint (object):
             (host, port) = sockaddr[:2]
         if host is None:
             raise ValueError(host)
+        if not isinstance(port, int):
+            raise TypeError(port)
         if family is None:
             gai = (family, None, None, host, (host, port))
         else:
             gais = socket.getaddrinfo(host, port, family, socket.SOCK_DGRAM, 0,
                                       (socket.AI_ADDRCONFIG | socket.AI_V4MAPPED
-                                       | socket.AI_NUMERICHOST | socket.AI_NUMERICSERV))
+                                       | socket.AI_NUMERICSERV))
             gai = gais.pop(0)
         return (gai[0], gai[4])
 
@@ -437,28 +439,28 @@ class Endpoint (object):
         if sockaddr is None:
             if host is None:
                 raise ValueError
+            if not isinstance(port, int):
+                raise TypeError
             sockaddr = (host, port)
         return type(self)(sockaddr=sockaddr, family=self.family, security_mode=self.security_mode)
 
     def is_same_host(self, host):
         """Determine whether *host* resolves to the same address as
-        this endpoint.  Used to determine that a
-        :class:`UriHost<coapy.option.UriHost>` option may be elided in
-        favor of the default derived from an endpoint.  Note that this
-        only verifies that :attr:`in_addr` and :attr:`family` would be
-        the same for an endpoint involving *host*; differences in
-        security mode or port are not relevant.
+        this endpoint.
+
+        This is used for the algorithm in :coapsect:`6.4` to determine
+        that a :class:`UriHost<coapy.option.UriHost>` option may be
+        elided in favor of the default derived from an endpoint.  This
+        can only be done if *host* is an ``IP-literal`` or
+        ``IPv4address`` equivalent to :attr:`in_addr` in
+        :attr:`family`.  DNS resolution is not used.
         """
         try:
-            (family, sockaddr) = self._canonical_sockinfo(family=self.family, host=host)
-        except socket.gaierror as e:
-            # If we can't look up the host using the same family,
-            # it's not the same host.  Other errors are real errors.
-            if socket.EAI_NONAME != e.args[0]:
-                raise
-            return False
-        (family, addr, port, security_mode) = self._key_for_sockaddr(sockaddr, family)
-        return (self.family == family) and (self.in_addr == addr)
+            in_addr = socket.inet_pton(self.family, host)
+            return self.in_addr == in_addr
+        except socket.error:
+            pass
+        return False
 
     @staticmethod
     def _port_for_scheme(scheme):

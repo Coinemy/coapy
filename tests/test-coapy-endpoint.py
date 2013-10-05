@@ -109,6 +109,14 @@ class TestEndpoint (unittest.TestCase):
         ep = Endpoint(sockaddr=('192.168.0.1', 12345))
         self.assertEqual('192.168.0.1:12345', unicode(ep))
 
+    def testIsSameHost(self):
+        ep = Endpoint(host='127.0.0.1')
+        self.assertEqual(ep.family, socket.AF_INET)
+        ep2 = Endpoint(host='localhost')
+        self.assertTrue(ep is ep2)
+        self.assertTrue(ep.is_same_host('127.0.0.1'))
+        self.assertFalse(ep.is_same_host('localhost'))
+
 
 class TestURLParse (unittest.TestCase):
     def testJoin(self):
