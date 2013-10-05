@@ -266,14 +266,6 @@ class Endpoint (object):
         """
         return self.__base_uri
 
-    @staticmethod
-    def _get_addr_info(host, port):
-        try:
-            gai = socket.getaddrinfo(host, port, 0, socket.SOCK_DGRAM)
-            return gai.pop(0)
-        except socket.gaierror as e:
-            return (None, None, None, host, (host, port))
-
     __EndpointRegistry = {}
     __nonInetIndex = 0
 
