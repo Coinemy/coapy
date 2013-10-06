@@ -89,6 +89,7 @@ class TestOptionInfrastructure (unittest.TestCase):
     def testUnrecognizedOption(self):
         instance = UnrecognizedOption(IfMatch.number)
         self.assertEqual(instance.number, IfMatch.number)
+        self.assertEqual(unicode(instance), 'UnrecognizedOption<1>: <??>')
         with self.assertRaises(TypeError):
             instance = UnrecognizedOption(None)
         with self.assertRaises(ValueError):
@@ -101,8 +102,10 @@ class TestOptionInfrastructure (unittest.TestCase):
         uopt = UnrecognizedOption.from_option(opt)
         self.assertTrue(isinstance(opt, ETag))
         self.assertFalse(isinstance(opt, UnrecognizedOption))
+        self.assertEqual(unicode(opt), 'ETag: 31323334')
         self.assertFalse(isinstance(uopt, ETag))
         self.assertTrue(isinstance(uopt, UnrecognizedOption))
+        self.assertEqual(unicode(uopt), 'UnrecognizedOption<4>: 31323334')
         popt = encode_options([opt])
         puopt = encode_options([uopt])
         self.assertEqual(popt, puopt)

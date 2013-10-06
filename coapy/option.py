@@ -782,6 +782,10 @@ class UnrecognizedOption (UrOption):
         return self.__number
     number = property(_get_number)
 
+    @property
+    def name(self):
+        return 'UnrecognizedOption<{0:d}>'.format(self.number)
+
     def __init__(self, number, unpacked_value=None, packed_value=None):
         if not isinstance(number, int):
             raise TypeError(number)
