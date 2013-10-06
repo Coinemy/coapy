@@ -608,6 +608,35 @@ class Endpoint (object):
         query = '&'.join(elts)
         return urlparse.urlunsplit((scheme, netloc, path, query, None))
 
+    def finalize_message(self, message):
+        """Final checks and refinements for *message* relative to this
+        endpoint.
+
+        The *message* is
+        :meth:`validated<coapy.message.Message.validate>`, then the
+        following final cleanup in its
+        :attr:`options<coapy.message.Message.options>` is done:
+
+        * A :class:`coapy.option.UriHost` that is the :meth:`same
+          host<is_same_host>` as the endpoint will be removed.
+        * A :class:`coapy.option.UriPort` that is the same port as the
+          endpoint is removed.
+
+        The finalized message is returned.
+        """
+        message.validate()
+        nopt = []
+        for oi in xrange(len(message.options)):
+            opt = message.options[oi]
+            if isinstance(opt, coapy.option.UriHost) and self.is_same_host(opt.value):
+                continue
+            elif isinstance(opt, coapy.option.UriPort) and (opt.value == self.port):
+                continue
+            nopt.append(opt)
+        if len(nopt) != len(message.options):
+            message.options = nopt
+        return message
+
     def create_request(self, uri,
                        confirmable=False,
                        code=coapy.message.Request.GET,

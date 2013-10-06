@@ -38,10 +38,55 @@ class MessageError (coapy.CoAPyException):
     pass
 
 
+class MessageValidationError (MessageError):
+    """Exception raised by :meth:`Message.validate`.  :attr:`args`
+    will be ``(diagnostic, message)`` where *diagnostic* is a
+    human-readable description of the failure cause matching one of
+    the codes in this class, and *message* is the invalid message.
+    """
+    CODE_UNDEFINED = 'missing code'
+    """*diagnostic* value when caller failed to assign a value to
+    :attr:`Message.code`
+    """
+
+    CODE_INSTANCE_CONFLICT = 'code inconsistent with message class'
+    """*diagnostic* value when the *class* in :attr:`Message.code` is
+    not compatible with the Python class of the message instance.
+    """
+
+    CODE_TYPE_CONFLICT = 'code and messageType conflict'
+    """*diagnostic* value when :attr:`Message.code` and
+    :attr:`Message.messageType` are not consistent:
+
+    * :attr:`CON<Message.Type_CON>` and :attr:`NON<Message.Type_NON>`
+      allowed only in :class:`Request` and :class:`Response` messages.
+
+    * :attr:`ACK<Message.Type_ACK>` allowed only for
+      :attr:`Empty<Message.Empty>` and :class:`Response` messages.
+
+    * :attr:`RST<Message.Type_RST>` allowed only for
+      :attr:`Empty<Message.Empty>` messages.
+    """
+
+    EMPTY_MESSAGE_NOT_EMPTY = 'excess content in Empty message'
+    """*diagnostic* value when a message with code
+    :attr:`Empty<Message.Empty>` has a non-empty
+    :attr:`Message.token`, :attr:`Message.options`, or
+    :attr:`Message.payload` attribute.
+    """
+
+    PROXY_URI_CONFLICT = 'Proxy-Uri mixed with Uri-*'
+    """*diagnostic* value when *message* has both
+    :class:`coapy.option.ProxyUri` and at least one of
+    :class:`coapy.option.UriHost`, :class:`coapy.option.UriPort`,
+    :class:`coapy.option.UriPath`, or :class:`coapy.option.UriQuery`.
+    """
+
+
 class MessageFormatError (MessageError):
     """Exception raised by :meth:`Message.from_packed` when the
     message cannot be decoded.  :attr:`args` will be ``(diagnostic,
-    dkw)`` where *diagnostic* is a human-readonable description of the
+    dkw)`` where *diagnostic* is a human-readable description of the
     failure cause matching one of the codes in this class, and *dkw*
     is a dictionary with entries for
     :attr:`type<Message.messageType>`, :attr:`code<Message.code>` and
@@ -195,7 +240,7 @@ class Message(object):
         cs = cls._code_support(code)
         if cs is not None:
             return cs.constructor
-        return None
+        return cls.__CodeClassRegistry.get(code[0])
 
     def code_support(self):
         return self._code_support(self.code)
@@ -216,6 +261,19 @@ class Message(object):
     """Type for a :meth:`acknowledgement (ACK)<is_acknowledgement>` message."""
     Type_RST = coapy.util.ClassReadOnly(3)
     """Type for a :meth:`reset (RST)<is_reset>` message."""
+
+    def source_defines_messageID(self):
+        """True if this message is :attr:`CON<Type_CON>` or :attr:`NON<Type_NON>`.
+
+        :attr:`CON<Type_CON>` and :attr:`NON<Type_NON>` messages are
+        responsible for selecting a :attr:`messageID` at the
+        :attr:`source_endpoint`.
+
+        :attr:`ACK<Type_ACK>` and :attr:`RST<Type_RST>` messages are
+        message-level responses to a :attr:`messageID` that was
+        selected by their :attr:`destination_endpoint`.
+        """
+        return 0 == (0x02 & self.__type)
 
     def is_confirmable(self):
         """True if this message is :coapsect:`confirmable<2.1>`,
@@ -525,11 +583,7 @@ class Message(object):
               'options': options,
               'payload': payload
               }
-        code_support = cls.__CodeRegistry.get(code)
-        if code_support is None:
-            constructor = cls.__CodeClassRegistry.get(code[0])
-        else:
-            constructor = code_support.constructor
+        constructor = cls._type_for_code(code)
         if constructor is None:
             raise MessageFormatError(MessageFormatError.UNRECOGNIZED_CODE_CLASS, dkw)
         return constructor(**kw)
@@ -584,6 +638,58 @@ class Message(object):
         return self.__destination_endpoint
 
     destination_endpoint = property(_get_destination_endpoint, _set_destination_endpoint)
+
+    def validate(self):
+        """Validate a message against generic CoAP requirements.
+
+        A :exc:`MessageValidationError` exception is raised if the
+        validation fails.
+
+        Diagnostics will be emitted for any
+        :class:`coapy.option.UnrecognizedOption` remaining in the
+        message after validation.
+        """
+
+        if self.code is None:
+            raise MessageValidationError(MessageValidationError.CODE_UNDEFINED, self)
+
+        if self.Empty == self.code:
+            # Empty OK for all message types.
+            # Empty OK for all message subclasses.
+            if self.token or self.options or self.payload:
+                raise MessageValidationError(MessageValidationError.EMPTY_MESSAGE_NOT_EMPTY, self)
+        else:
+            # Is code consistent with message (CoAP) type?
+            if self.is_reset():
+                raise MessageValidationError(MessageValidationError.CODE_TYPE_CONFLICT, self)
+            elif self.is_acknowledgement():
+                if not isinstance(self, Response):
+                    raise MessageValidationError(MessageValidationError.CODE_TYPE_CONFLICT, self)
+            else:
+                if not isinstance(self, (Response, Request)):
+                    raise MessageValidationError(MessageValidationError.CODE_TYPE_CONFLICT, self)
+            # Is code consistent with message (Python) class?
+            ctor = self._type_for_code(self.code)
+            if (ctor is not None) and not isinstance(self, ctor):
+                raise MessageValidationError(MessageValidationError.CODE_INSTANCE_CONFLICT, self)
+
+        if isinstance(self, (Response, Request)):
+            self.options[:] = coapy.option.replace_unacceptable_options(self.options,
+                                                                        isinstance(self, Request))
+        opts = self._sort_options()
+        if isinstance(self, Request):
+            for opt in filter(lambda _o: isinstance(_o, coapy.option.ProxyUri), opts):
+                if 0 < len(list(filter(lambda _o: isinstance(_o,
+                                                             (coapy.option.UriHost,
+                                                              coapy.option.UriPort,
+                                                              coapy.option.UriPath,
+                                                              coapy.option.UriQuery,
+                                                              )), opts))):
+                    raise MessageValidationError(MessageValidationError.PROXY_URI_CONFLICT, self)
+                break
+        for opt in opts:
+            if isinstance(opt, coapy.option.UnrecognizedOption):
+                _log.warn('Unrecognized option in message: {0!s}'.format(opt))
 
     def __unicode__(self):
         elt = []

@@ -117,6 +117,18 @@ class TestEndpoint (unittest.TestCase):
         self.assertTrue(ep.is_same_host('127.0.0.1'))
         self.assertFalse(ep.is_same_host('localhost'))
 
+    def testFinalize(self):
+        ep = Endpoint(host='localhost')
+        m = ep.create_request('/path')
+        m.options.append(coapy.option.UriHost(ep.uri_host))
+        m.options.append(coapy.option.UriPort(ep.port))
+        self.assertEqual(3, len(m.options))
+        ep.finalize_message(m)
+        self.assertEqual(1, len(m.options))
+        opt = m.options[0]
+        self.assertTrue(isinstance(opt, coapy.option.UriPath))
+        self.assertTrue(m.destination_endpoint is ep)
+
 
 class TestURLParse (unittest.TestCase):
     def testJoin(self):
