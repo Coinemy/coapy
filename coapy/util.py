@@ -27,7 +27,9 @@ from __future__ import division
 import logging
 _log = logging.getLogger(__name__)
 
+import coapy
 import unicodedata
+import functools
 
 
 class ClassReadOnly (object):
@@ -82,6 +84,42 @@ class ReadOnlyMeta (type):
                 nsdup[n] = mp
                 setattr(ReadOnly, n, mp)
         return super(ReadOnlyMeta, cls).__new__(ReadOnly, name, bases, nsdup)
+
+
+@functools.total_ordering
+class TimeDueOrdinal(object):
+    """Base class for elements that are sorted by time.
+
+    The intent is that information related to an activity that should
+    occur at or after a particular time be held in a subclass of
+    :class:`TimeDueOrdinal`.  The priority queue of upcoming activity
+    is implemented using a sorted list, as instances of (subclasses
+    of) :class:`TimeDueOrdinal` are ordered by increasing value of
+    :attr:`time_due` using the features of :mod:`python:bisect`.
+
+    *time_due* is the initial value of :attr:`time_due`.
+    """
+
+    time_due = None
+    """The time at which the subclass instance becomes relevant.
+
+    This is a value in the ordinal space defined by
+    :func:`coapy.clock`.
+    """
+
+    def __init__(self, time_due=None):
+        super(TimeDueOrdinal, self).__init__()
+        self.time_due = time_due
+
+    def __eq__(self, other):
+        return self.time_due == other.time_due
+
+    # total_ordering doesn't handle eq/ne inference, so need both
+    def __ne__(self, other):
+        return self.time_due != other.time_due
+
+    def __lt__(self, other):
+        return self.time_due < other.time_due
 
 
 def to_net_unicode(text):

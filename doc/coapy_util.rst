@@ -12,4 +12,7 @@ coapy.util
 .. autoclass:: ClassReadOnly
    :no-show-inheritance:
 
+.. autoclass:: TimeDueOrdinal
+   :no-show-inheritance:
+
 .. autofunction:: to_net_unicode

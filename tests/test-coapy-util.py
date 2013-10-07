@@ -101,5 +101,24 @@ class TestNetUnicode (unittest.TestCase):
         self.assertEqual(path, dpath)
 
 
+import bisect
+
+
+class TestTimeDueOrdinal (unittest.TestCase):
+    def testBasic(self):
+        now = coapy.clock()
+        td1 = TimeDueOrdinal(now)
+        td0 = TimeDueOrdinal(time_due=now-1)
+        self.assertTrue(td0 < td1)
+        td2 = TimeDueOrdinal(time_due=now+1)
+        queue = []
+        bisect.insort(queue, td2)
+        bisect.insort(queue, td1)
+        bisect.insort(queue, td0)
+        self.assertTrue(queue[0] is td0)
+        self.assertTrue(queue[1] is td1)
+        self.assertTrue(queue[2] is td2)
+
+
 if __name__ == '__main__':
     unittest.main()
