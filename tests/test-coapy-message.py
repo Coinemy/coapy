@@ -507,30 +507,32 @@ class TestMessageIDCache (unittest.TestCase):
         with self.assertRaises(KeyError):
             v = c[1]
         now = coapy.clock()
-        e1 = MessageIDCacheEntry(message_id=1, time_due=now+5)
-        e2 = MessageIDCacheEntry(message_id=2, time_due=now)
-        e3 = MessageIDCacheEntry(message_id=3, time_due=now+2)
-        c.add(e1)
-        c.add(e2)
-        c.add(e3)
+        e1 = MessageIDCacheEntry(cache=c, message_id=1, time_due=now+5)
+        e2 = MessageIDCacheEntry(cache=c, message_id=2, time_due=now)
+        e3 = MessageIDCacheEntry(cache=c, message_id=3, time_due=now+2)
         self.assertEqual(3, len(c))
         self.assertTrue(c[1] is e1)
         self.assertTrue(c[2] is e2)
         self.assertTrue(c[3] is e3)
+
         self.assertTrue(c.peek_oldest() is e2)
+        self.assertTrue(e2.cache is c)
         self.assertTrue(c.pop_oldest() is e2)
+        self.assertTrue(e2.cache is None)
         self.assertEqual(2, len(c))
+
         self.assertTrue(c[1] is e1)
         with self.assertRaises(KeyError):
             v = c[2]
         self.assertTrue(c[3] is e3)
+
         self.assertTrue(c.peek_oldest() is e3)
-        e1b = MessageIDCacheEntry(message_id=1, time_due=now-5)
-        c[e1b.message_id] = e1b
-        self.assertEqual(2, len(c))
-        self.assertTrue(c[1] is e1b)
+        e1.time_due = e3.time_due - 1
+        self.assertTrue(c.peek_oldest() is e1)
+
+        self.assertTrue(c[1] is e1)
         self.assertTrue(c[3] is e3)
-        self.assertTrue(c.peek_oldest() is e1b)
+        self.assertEqual(2, len(c))
 
 
 if __name__ == '__main__':

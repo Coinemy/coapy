@@ -138,12 +138,53 @@ class MessageIDCacheEntry (coapy.util.TimeDueOrdinal):
 
     Keyword parameters recognized:
 
+    * *cache* identifies the
+      :class:`MessageIDCache` instance to which this entry will
+      belong.
     * *message* is a :class:`Message` instance from which :attr:`Message.messageID`
       is used to initialize :attr:`message_id`
     * *message_id* is used to initialize :attr:`message_id` if
       *message* is absent
     * *time_due* is used to initialize :attr:`coapy.util.TimeDueOrdinal.time_due`
+
+    *cache* is a required keyword parameter.  One of *message* and
+     *message_id* must also be provided.  The created cache entry is
+     automatically inserted into the cache upon creation.
     """
+
+    __cache = None
+
+    def _dissociate(self):
+        """Remove the connection between the instance and the cache.
+
+        This is invoked by :class:`MessageIDCache` operations that
+        remove the entry from its cache.
+        """
+        self.__cache = None
+
+    @property
+    def cache(self):
+        """The :class:`MessageIDCache` to which this entry belongs.
+        This is a read-only property, set when the entry is created
+        and cleared when it has been removed from its cache.
+        """
+        return self.__cache
+
+    def _get_time_due(self):
+        """See :attr:`coapy.util.TimeDueOrdinal.time_due`.  In this
+        class, modification of the value has the side-effect of moving
+        the entry within the :attr:`cache` queue.
+        """
+        return self.__time_due
+
+    def _set_time_due(self, value):
+        self.__time_due = value
+        # If we're in the superclass constructor the cache has not
+        # yet been assigned (nor has the message_id that must be
+        # assigned prior to insertion).  So don't do anything yet.
+        if self.__cache is not None:
+            self.__cache._reposition(self)
+    time_due = property(_get_time_due, _set_time_due)
 
     message_id = None
     """The :attr:`Message.messageID` value associated with the cache
@@ -151,13 +192,20 @@ class MessageIDCacheEntry (coapy.util.TimeDueOrdinal):
     """
 
     def __init__(self, **kw):
+        cache = kw.pop('cache', None)
         message = kw.pop('message', None)
         message_id = kw.pop('message_id', None)
         super(MessageIDCacheEntry, self).__init__(**kw)
         if isinstance(message, Message):
             self.message_id = message.messageID
-        else:
+        elif isinstance(message_id, int):
             self.message_id = message_id
+        else:
+            raise TypeError(message_id)
+        if not isinstance(cache, MessageIDCache):
+            raise TypeError(cache)
+        self.__cache = cache
+        cache._add(self)
 
 
 class MessageIDCache (object):
@@ -169,8 +217,17 @@ class MessageIDCache (object):
     cache based on age.
 
     Elements in the cache are expected to be instances of
-    :class:`MessageIDCacheEntry`.  Most operations supported by
-    :class:`python:dict` are supported.
+    :class:`MessageIDCacheEntry`.  Most lookup :class:`python:dict`
+    operations are supported.
+
+    Cache entries are placed in the cache when they are created.  It
+    is an error to create a new cache entry when one with the same
+    :attr:`MessageIDCacheEntry.message_id` is already present.
+
+    Entries are removed from the cache by using :meth:`pop_oldest`.
+
+    Entry content may be updated while in the cache, but once removed
+    from the cache an entry cannot be re-inserted.
     """
     __queue = None
     __dict = None
@@ -193,6 +250,17 @@ class MessageIDCache (object):
         # copy
         # update
 
+    def queue(self):
+        """The queue of cache entries sorted by :attr:`MessageIDCacheEntry.time_due`.
+
+        .. warning::
+           This method returns a reference to the underlying sorted
+           list.  Callers are expected to refrain from changing the
+           list in any way other than through methods exposed on the
+           cache itself.
+        """
+        return self.__queue
+
     def peek_oldest(self):
         """Return the oldest item in the cache without removing it."""
         return self.__queue[0]
@@ -201,41 +269,32 @@ class MessageIDCache (object):
         """Return the oldest item in the cache after removing it."""
         rv = self.__queue.pop(0)
         del self.__dict[rv.message_id]
+        rv._dissociate()
         return rv
 
-    def add(self, value):
-        """Add *value* to the cache.  This replaces the previous entry
-        with the same :attr:`MessageIDCacheEntry.message_id`.
+    def _add(self, value):
+        """Add *value* to the cache.
         """
         if not isinstance(value, MessageIDCacheEntry):
             raise ValueError(value)
-        self[value.message_id] = value
+        if value.message_id in self.__dict:
+            raise ValueError(value)
+        bisect.insort(self.__queue, value)
+        self.__dict[value.message_id] = value
 
-    def update(self, values):
-        """Short-hand for :meth:`add` on each member of *values*."""
-        for v in values:
-            self.add(v)
+    def _reposition(self, value):
+        """Re-place *value* at its correct location in the queue.
+
+        This must be invoked whenever the underlying
+        :attr:`coapy.util.TimeDueOrdinal.time_due` attribute value is
+        changed."""
+        bisect.insort(self.__queue, self.__queue.pop(self.__queue.index(value)))
 
     def __len__(self):
         return len(self.__queue)
 
     def __getitem__(self, key):
         return self.__dict[key]
-
-    def __setitem__(self, key, value):
-        if not isinstance(value, MessageIDCacheEntry):
-            raise ValueError(value)
-        ov = self.__dict.get(key)
-        if ov is not None:
-            self.__queue.remove(ov)
-        bisect.insort(self.__queue, value)
-        self.__dict[key] = value
-
-    def __delitem__(self, key):
-        ov = self.__dict.get(key)
-        if ov is not None:
-            self.__queue.remove(ov)
-        del self.__dict[key]
 
     def __contains__(self, key):
         return key in self.__dict
