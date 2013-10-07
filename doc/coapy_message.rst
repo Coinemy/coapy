@@ -28,6 +28,12 @@ The following message types are available:
 .. autoclass:: ClientErrorResponse
 .. autoclass:: ServerErrorResponse
 
+Message Caches
+--------------
+
+.. autoclass:: MessageIDCacheEntry
+.. autoclass:: MessageIDCache
+
 Utility Classes
 ---------------
 

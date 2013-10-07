@@ -29,6 +29,7 @@ _log = logging.getLogger(__name__)
 
 import random
 import struct
+import bisect
 import coapy
 import coapy.option
 import coapy.util
@@ -126,6 +127,118 @@ class MessageFormatError (MessageError):
     that it be treated the same way wherever the possibility is
     explicitly recognized (:coapsect:`4.2` and :coapsect:`4.3`).
     """
+
+
+class MessageIDCacheEntry (coapy.util.TimeDueOrdinal):
+    """A class holding data stored in a :class:`MessageIDCache`.
+
+    Instances sort based on
+    :attr:`coapy.util.TimeDueOrdinal.time_due`, and may be looked up
+    based on :attr:`message_id`.
+
+    Keyword parameters recognized:
+
+    * *message* is a :class:`Message` instance from which :attr:`Message.messageID`
+      is used to initialize :attr:`message_id`
+    * *message_id* is used to initialize :attr:`message_id` if
+      *message* is absent
+    * *time_due* is used to initialize :attr:`coapy.util.TimeDueOrdinal.time_due`
+    """
+
+    message_id = None
+    """The :attr:`Message.messageID` value associated with the cache
+    entry.
+    """
+
+    def __init__(self, **kw):
+        message = kw.pop('message', None)
+        message_id = kw.pop('message_id', None)
+        super(MessageIDCacheEntry, self).__init__(**kw)
+        if isinstance(message, Message):
+            self.message_id = message.messageID
+        else:
+            self.message_id = message_id
+
+
+class MessageIDCache (object):
+    """Dual-view collection used for caches based on :attr:`Message.messageID`.
+
+    This class implements a cache.  It simulates a dictionary allowing
+    lookup of items using :attr:`Message.messageID` values as keys.  It also
+    simulates a priority queue, allowing items to be removed from the
+    cache based on age.
+
+    Elements in the cache are expected to be instances of
+    :class:`MessageIDCacheEntry`.  Most operations supported by
+    :class:`python:dict` are supported.
+    """
+    __queue = None
+    __dict = None
+
+    def __init__(self):
+        self.__queue = []
+        self.__dict = {}
+        self.keys = self.__dict.keys
+        self.values = self.__dict.values
+        self.items = self.__dict.items
+        self.has_key = self.__dict.has_key
+        self.get = self.__dict.get
+        # clear
+        # setdefault
+        self.iterkeys = self.__dict.iterkeys
+        self.itervalues = self.__dict.itervalues
+        self.iteritems = self.__dict.iteritems
+        # pop
+        # popitem
+        # copy
+        # update
+
+    def peek_oldest(self):
+        """Return the oldest item in the cache without removing it."""
+        return self.__queue[0]
+
+    def pop_oldest(self):
+        """Return the oldest item in the cache after removing it."""
+        rv = self.__queue.pop(0)
+        del self.__dict[rv.message_id]
+        return rv
+
+    def add(self, value):
+        """Add *value* to the cache.  This replaces the previous entry
+        with the same :attr:`MessageIDCacheEntry.message_id`.
+        """
+        if not isinstance(value, MessageIDCacheEntry):
+            raise ValueError(value)
+        self[value.message_id] = value
+
+    def update(self, values):
+        """Short-hand for :meth:`add` on each member of *values*."""
+        for v in values:
+            self.add(v)
+
+    def __len__(self):
+        return len(self.__queue)
+
+    def __getitem__(self, key):
+        return self.__dict[key]
+
+    def __setitem__(self, key, value):
+        if not isinstance(value, MessageIDCacheEntry):
+            raise ValueError(value)
+        ov = self.__dict.get(key)
+        if ov is not None:
+            self.__queue.remove(ov)
+        bisect.insort(self.__queue, value)
+        self.__dict[key] = value
+
+    def __delitem__(self, key):
+        ov = self.__dict.get(key)
+        if ov is not None:
+            self.__queue.remove(ov)
+        del self.__dict[key]
+
+    def __contains__(self, key):
+        return key in self.__dict
 
 
 class Message(object):

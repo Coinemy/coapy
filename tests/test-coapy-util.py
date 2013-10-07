@@ -107,7 +107,7 @@ import bisect
 class TestTimeDueOrdinal (unittest.TestCase):
     def testBasic(self):
         now = coapy.clock()
-        td1 = TimeDueOrdinal(now)
+        td1 = TimeDueOrdinal(time_due=now)
         td0 = TimeDueOrdinal(time_due=now-1)
         self.assertTrue(td0 < td1)
         td2 = TimeDueOrdinal(time_due=now+1)

@@ -297,7 +297,8 @@ Payload: 20 C''')
                 m = Message(code=Message.Empty, **{k: v})
                 with self.assertRaises(MessageValidationError) as cm:
                     m.validate()
-                self.assertEqual(cm.exception.args[0], MessageValidationError.EMPTY_MESSAGE_NOT_EMPTY)
+                self.assertEqual(cm.exception.args[0],
+                                 MessageValidationError.EMPTY_MESSAGE_NOT_EMPTY)
 
             m = Message(reset=True, code=SuccessResponse.Created)
             with self.assertRaises(MessageValidationError) as cm:
@@ -330,7 +331,8 @@ Payload: 20 C''')
             m.validate()
             logmsgs = list(lh.records())
             self.assertEqual(1, len(logmsgs))
-            self.assertEqual(logmsgs[0], 'Unrecognized option in message: UnrecognizedOption<3>: 626f677573')
+            self.assertEqual(logmsgs[0],
+                             'Unrecognized option in message: UnrecognizedOption<3>: 626f677573')
         finally:
             lh.detach()
 
@@ -495,6 +497,40 @@ class TestMessageEncodeDecode (unittest.TestCase):
 Option Content-Format: 0
 Option Max-Age: 196607
 Payload: This is a test server''')
+
+
+class TestMessageIDCache (unittest.TestCase):
+
+    def testDictionary(self):
+        c = MessageIDCache()
+        self.assertEqual(0, len(c))
+        with self.assertRaises(KeyError):
+            v = c[1]
+        now = coapy.clock()
+        e1 = MessageIDCacheEntry(message_id=1, time_due=now+5)
+        e2 = MessageIDCacheEntry(message_id=2, time_due=now)
+        e3 = MessageIDCacheEntry(message_id=3, time_due=now+2)
+        c.add(e1)
+        c.add(e2)
+        c.add(e3)
+        self.assertEqual(3, len(c))
+        self.assertTrue(c[1] is e1)
+        self.assertTrue(c[2] is e2)
+        self.assertTrue(c[3] is e3)
+        self.assertTrue(c.peek_oldest() is e2)
+        self.assertTrue(c.pop_oldest() is e2)
+        self.assertEqual(2, len(c))
+        self.assertTrue(c[1] is e1)
+        with self.assertRaises(KeyError):
+            v = c[2]
+        self.assertTrue(c[3] is e3)
+        self.assertTrue(c.peek_oldest() is e3)
+        e1b = MessageIDCacheEntry(message_id=1, time_due=now-5)
+        c[e1b.message_id] = e1b
+        self.assertEqual(2, len(c))
+        self.assertTrue(c[1] is e1b)
+        self.assertTrue(c[3] is e3)
+        self.assertTrue(c.peek_oldest() is e1b)
 
 
 if __name__ == '__main__':

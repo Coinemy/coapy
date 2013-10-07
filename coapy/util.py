@@ -97,7 +97,8 @@ class TimeDueOrdinal(object):
     of) :class:`TimeDueOrdinal` are ordered by increasing value of
     :attr:`time_due` using the features of :mod:`python:bisect`.
 
-    *time_due* is the initial value of :attr:`time_due`.
+    *time_due* as a keyword parameter is the initial value of
+    :attr:`time_due`.
     """
 
     time_due = None
@@ -107,8 +108,9 @@ class TimeDueOrdinal(object):
     :func:`coapy.clock`.
     """
 
-    def __init__(self, time_due=None):
-        super(TimeDueOrdinal, self).__init__()
+    def __init__(self, **kw):
+        time_due = kw.pop('time_due', None)
+        super(TimeDueOrdinal, self).__init__(**kw)
         self.time_due = time_due
 
     def __eq__(self, other):
