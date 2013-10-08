@@ -20,23 +20,9 @@ from __future__ import division
 
 
 import unittest
-import logging
-import logging.handlers
+import tests.support
 from coapy.message import *
 from coapy.endpoint import Endpoint
-
-
-class TestHandler (logging.handlers.BufferingHandler):
-    def __init__(self, capacity, module_under_test):
-        super(TestHandler, self).__init__(capacity)
-        self.__log = logging.getLogger(module_under_test.__name__)
-        self.__log.addHandler(self)
-
-    def detach(self):
-        self.__log.removeHandler(self)
-
-    def records(self):
-        return map(self.format, self.buffer)
 
 
 class TestTransmissionParameters (unittest.TestCase):
@@ -287,58 +273,57 @@ Option Uri-Path: sensor
 Option Uri-Path: temp
 Payload: 20 C''')
 
+
+class TestMessageValidation (tests.support.LogHandler_mixin,
+                             unittest.TestCase):
+
     def testValidation(self):
-        lh = TestHandler(8192, coapy.message)
-        try:
-            m = Request()
-            with self.assertRaises(MessageValidationError) as cm:
-                m.validate()
-            self.assertEqual(cm.exception.args[0], MessageValidationError.CODE_UNDEFINED)
-
-            for (k, v) in {'token': b'tok',
-                           'payload': b'payload',
-                           'options': [coapy.option.ETag(b'tag')]}.iteritems():
-                m = Message(code=Message.Empty, **{k: v})
-                with self.assertRaises(MessageValidationError) as cm:
-                    m.validate()
-                self.assertEqual(cm.exception.args[0],
-                                 MessageValidationError.EMPTY_MESSAGE_NOT_EMPTY)
-
-            m = Message(reset=True, code=SuccessResponse.Created)
-            with self.assertRaises(MessageValidationError) as cm:
-                m.validate()
-            self.assertEqual(cm.exception.args[0], MessageValidationError.CODE_TYPE_CONFLICT)
-            m = Message(acknowledgement=True, code=Request.GET)
-            with self.assertRaises(MessageValidationError) as cm:
-                m.validate()
-            self.assertEqual(cm.exception.args[0], MessageValidationError.CODE_TYPE_CONFLICT)
-            m = Message(code=Request.GET)
-            with self.assertRaises(MessageValidationError) as cm:
-                m.validate()
-            self.assertEqual(cm.exception.args[0], MessageValidationError.CODE_TYPE_CONFLICT)
-            m = Request(code=SuccessResponse.Created)
-            with self.assertRaises(MessageValidationError) as cm:
-                m.validate()
-            self.assertEqual(cm.exception.args[0], MessageValidationError.CODE_INSTANCE_CONFLICT)
-
-            m = Request(code=Request.GET, options=[coapy.option.ProxyUri('coap://localhost/foo'),
-                                                   coapy.option.UriHost('localhost')])
-            with self.assertRaises(MessageValidationError) as cm:
-                m.validate()
-            self.assertEqual(cm.exception.args[0], MessageValidationError.PROXY_URI_CONFLICT)
-
-            m = Request(code=Request.GET, options=[coapy.option.UriHost('localhost'),
-                                                   coapy.option.UriHost('bogus')])
-            lh.flush()
-            logmsgs = list(lh.records())
-            self.assertEqual(0, len(logmsgs))
+        m = Request()
+        with self.assertRaises(MessageValidationError) as cm:
             m.validate()
-            logmsgs = list(lh.records())
-            self.assertEqual(1, len(logmsgs))
-            self.assertEqual(logmsgs[0],
-                             'Unrecognized option in message: UnrecognizedOption<3>: 626f677573')
-        finally:
-            lh.detach()
+        self.assertEqual(cm.exception.args[0], MessageValidationError.CODE_UNDEFINED)
+
+        for (k, v) in {'token': b'tok',
+                       'payload': b'payload',
+                       'options': [coapy.option.ETag(b'tag')]}.iteritems():
+            m = Message(code=Message.Empty, **{k: v})
+            with self.assertRaises(MessageValidationError) as cm:
+                m.validate()
+            self.assertEqual(cm.exception.args[0],
+                             MessageValidationError.EMPTY_MESSAGE_NOT_EMPTY)
+
+        m = Message(reset=True, code=SuccessResponse.Created)
+        with self.assertRaises(MessageValidationError) as cm:
+            m.validate()
+        self.assertEqual(cm.exception.args[0], MessageValidationError.CODE_TYPE_CONFLICT)
+        m = Message(acknowledgement=True, code=Request.GET)
+        with self.assertRaises(MessageValidationError) as cm:
+            m.validate()
+        self.assertEqual(cm.exception.args[0], MessageValidationError.CODE_TYPE_CONFLICT)
+        m = Message(code=Request.GET)
+        with self.assertRaises(MessageValidationError) as cm:
+            m.validate()
+        self.assertEqual(cm.exception.args[0], MessageValidationError.CODE_TYPE_CONFLICT)
+        m = Request(code=SuccessResponse.Created)
+        with self.assertRaises(MessageValidationError) as cm:
+            m.validate()
+        self.assertEqual(cm.exception.args[0], MessageValidationError.CODE_INSTANCE_CONFLICT)
+
+        m = Request(code=Request.GET, options=[coapy.option.ProxyUri('coap://localhost/foo'),
+                                               coapy.option.UriHost('localhost')])
+        with self.assertRaises(MessageValidationError) as cm:
+            m.validate()
+        self.assertEqual(cm.exception.args[0], MessageValidationError.PROXY_URI_CONFLICT)
+
+        m = Request(code=Request.GET, options=[coapy.option.UriHost('localhost'),
+                                               coapy.option.UriHost('bogus')])
+        self.log_handler.flush()
+        logmsgs = self.log_handler.buffer
+        self.assertEqual(0, len(logmsgs))
+        m.validate()
+        self.assertEqual(1, len(logmsgs))
+        self.assertEqual(logmsgs[0].msg,
+                         'Unrecognized option in message: UnrecognizedOption<3>: 626f677573')
 
 
 class TestMessageEndpoints (unittest.TestCase):

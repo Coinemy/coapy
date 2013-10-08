@@ -24,11 +24,58 @@ from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
 
-import logging
-_log = logging.getLogger(__name__)
-
 import coapy
 import unittest
+import logging.handlers
+
+
+class LogHandler_mixin(object):
+    """Extension that registers a
+    :class:`python:logging.handlers.BufferingHandler` for loggers used
+    in CoAPy modules to capture the log messages for diagnostic
+    verification.
+
+    This implementation currently assumes that only the root logger
+    has set the log message level.  For the duration of the test, this
+    level is reset to 1 (enabling capture of records at all levels).
+    """
+
+    LOG_CAPACITY = 128
+    """The number of records that the associated :attr:`log_handler`
+    should be able to retain.
+    """
+
+    @property
+    def log_handler(self):
+        """Read-only reference to the
+        :class:`python:logging.handlers.BufferingHandler` that is
+        hooked into the logging infrastructure while the unit test is
+        running.  The test case may access the log handler's
+        :attr:`buffer<python:logging.handlers.BufferingHandler.buffer>`
+        attribute to access the generated :class:`log
+        records<python:logging.LogRecord>`.
+        """
+        return self.__log_handler
+
+    def setUp(self):
+        """Cooperative super-calling support to install managed clock."""
+        super(LogHandler_mixin, self).setUp()
+        self.__log_handler = logging.handlers.BufferingHandler(self.LOG_CAPACITY)
+        self.__log_handler.setLevel(1)
+        self.__log_formatter = logging.Formatter()
+        self.__log_handler.setFormatter(self.__log_formatter)
+        self.__root_logger = logging.getLogger()
+        self.__root_logger_level = self.__root_logger.getEffectiveLevel()
+        self.__root_logger.setLevel(1)
+        self.__root_logger.addHandler(self.__log_handler)
+
+    def tearDown(self):
+        """Cooperative super-calling support to remove
+        :attr:`log_handler`.
+        """
+        self.__root_logger.removeHandler(self.__log_handler)
+        self.__root_logger.setLevel(self.__root_logger_level)
+        super(LogHandler_mixin, self).tearDown()
 
 
 class ManagedClock_mixin(object):

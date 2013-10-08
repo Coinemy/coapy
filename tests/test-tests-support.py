@@ -18,6 +18,8 @@ from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
 
+import logging
+_log = logging.getLogger(__name__)
 
 import unittest
 import coapy
@@ -39,6 +41,24 @@ class TestDeterministicBEBO (tests.support.DeterministicBEBO_mixin, unittest.Tes
         clk = coapy.clock
         self.assertTrue(isinstance(clk, coapy.RealTimeClock))
         self.assertEqual(1.0, coapy.transmissionParameters.ACK_RANDOM_FACTOR)
+
+
+class TestLogHandler (tests.support.LogHandler_mixin, unittest.TestCase):
+    def testBasic(self):
+        self.assertTrue(self.log_handler is not None)
+        hdl = self.log_handler
+        self.assertTrue(isinstance(hdl.buffer, list))
+        self.assertEqual(0, len(hdl.buffer))
+        self.assertTrue(_log.isEnabledFor(logging.ERROR))
+        self.assertTrue(_log.isEnabledFor(logging.DEBUG))
+        _log.debug('hi there')
+        self.assertEqual(1, len(hdl.buffer))
+        rec = hdl.buffer[0]
+        self.assertEqual(rec.levelno, logging.DEBUG)
+        self.assertEqual(rec.msg, 'hi there')
+        self.assertEqual(rec.funcName, 'testBasic')
+        hdl.flush()
+        self.assertEqual(0, len(hdl.buffer))
 
 
 if __name__ == '__main__':
