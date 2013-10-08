@@ -287,6 +287,11 @@ class MessageIDCache (object):
             rv.append(self.__queue.pop(0))
         return rv
 
+    def clear(self):
+        """Remove all entries in the cache."""
+        while self.__queue:
+            self.pop_oldest()
+
     def _add(self, value):
         """Add *value* to the cache.
         """

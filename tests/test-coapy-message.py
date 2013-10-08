@@ -547,6 +547,11 @@ class TestMessageIDCache (unittest.TestCase):
         self.assertTrue(rv[0] is e1)
         self.assertEqual(1, len(c))
         self.assertTrue(c[3] is e3)
+        self.assertTrue(e3.cache is c)
+
+        c.clear()
+        self.assertTrue(e3.cache is None)
+        self.assertEqual(0, len(c))
 
 
 if __name__ == '__main__':
