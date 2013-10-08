@@ -398,12 +398,24 @@ class Endpoint (object):
         return instance
 
     def __del__(self):
+        self._reset()
+        super(Endpoint, self).__del__(self)
+
+    def _reset(self):
+        """Return all data to its initial state.
+
+        This is a back-door for unit-testing from a known state.  It's
+        also used when a new Endpoint is constructed for the first
+        time.  Only mutable state is reset; immutable values like
+        :attr:`family` and :attr:`sockaddr` are not affected.
+        """
+        self._reset_next_messageID(random.randint(0, 65535))
         if self.__bound_socket is not None:
             try:
                 self.__bound_socket.close()
             except:
                 pass
-        super(Endpoint, self).__del__(self)
+            self.__bound_socket = None
 
     def __init__(self, sockaddr=None, family=socket.AF_UNSPEC,
                  security_mode=None,
@@ -414,7 +426,7 @@ class Endpoint (object):
         # Note: Only re-initialize if the instance was newly created.
         if self.__base_uri is None:
             self.__base_uri = self.uri_from_options([])
-            self._reset_next_messageID(random.randint(0, 65535))
+            self._reset()
 
     def next_messageID(self):
         """Return a new messageID suitable for a message to this endpoint.

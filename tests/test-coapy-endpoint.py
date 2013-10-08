@@ -129,6 +129,12 @@ class TestEndpoint (unittest.TestCase):
         self.assertTrue(isinstance(opt, coapy.option.UriPath))
         self.assertTrue(m.destination_endpoint is ep)
 
+    def testReset(self):
+        ep = Endpoint.create_bound_endpoint(host='127.0.0.1', port=0)
+        self.assertFalse(ep.bound_socket is None)
+        ep._reset()
+        self.assertTrue(ep.bound_socket is None)
+
 
 class TestURLParse (unittest.TestCase):
     def testJoin(self):
