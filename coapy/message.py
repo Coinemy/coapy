@@ -449,6 +449,26 @@ class Message(object):
     Type_RST = coapy.util.ClassReadOnly(3)
     """Type for a :meth:`reset (RST)<is_reset>` message."""
 
+    @staticmethod
+    def source_originates_type(mtype):
+        """True if *mtype* is :attr:`CON<Type_CON>` or :attr:`NON<Type_NON>`.
+
+        CoAP defines a message layer where messages from a source to a
+        destination may elicit message-layer responses from the
+        destination to the source.  This is completely distinct from
+        the transaction layer requests that elicit transaction-layer
+        responses.
+
+        :attr:`CON<Type_CON>` and :attr:`NON<Type_NON>` type messages
+        are message-layer initial messages.  These messages require
+        cache entries for the source endpoint at the receiving node.
+
+        :attr:`ACK<Type_ACK>` and :attr:`RST<Type_RST>` messages are
+        message-layer responses.  These messages are processed
+        relative to the destination endpoint at the receiving node.
+        """
+        return 0 == (0x02 & mtype)
+
     def source_defines_messageID(self):
         """True if this message is :attr:`CON<Type_CON>` or :attr:`NON<Type_NON>`.
 
@@ -460,7 +480,7 @@ class Message(object):
         message-level responses to a :attr:`messageID` that was
         selected by their :attr:`destination_endpoint`.
         """
-        return 0 == (0x02 & self.__type)
+        return self.source_originates_type(self.__type)
 
     def is_confirmable(self):
         """True if this message is :coapsect:`confirmable<2.1>`,

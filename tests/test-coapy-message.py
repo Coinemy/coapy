@@ -122,6 +122,10 @@ class TestCodeSupport (unittest.TestCase):
 
 class TestMessage (unittest.TestCase):
     def testType(self):
+        self.assertTrue(Message.source_originates_type(Message.Type_CON))
+        self.assertTrue(Message.source_originates_type(Message.Type_NON))
+        self.assertFalse(Message.source_originates_type(Message.Type_ACK))
+        self.assertFalse(Message.source_originates_type(Message.Type_RST))
         m = Message()
         self.assertEqual(m.messageType, Message.Type_NON)
         self.assertTrue(m.source_defines_messageID())
