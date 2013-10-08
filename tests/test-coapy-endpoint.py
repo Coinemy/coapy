@@ -297,5 +297,20 @@ class TestBoundEndpoints (unittest.TestCase):
         self.assertTrue(s is ep.bound_socket)
 
 
+class TestSocketSendRecv (unittest.TestCase):
+    def testBasic(self):
+        import socket
+        import errno
+        ep1 = Endpoint.create_bound_endpoint(host='localhost', port=0)
+        ep1.bound_socket.setblocking(0)
+        with self.assertRaises(socket.error) as cm:
+            (data, sep) = ep1.rawrecvfrom(2048)
+        e = cm.exception
+        self.assertEqual(e.args[0], errno.EAGAIN)
+        self.assertEqual(e.args[1], 'Resource temporarily unavailable')
+        s1 = ep1.set_bound_socket(None)
+        s1.close()
+
+
 if __name__ == '__main__':
     unittest.main()

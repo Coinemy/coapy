@@ -25,8 +25,55 @@ from __future__ import absolute_import
 from __future__ import division
 
 import coapy
+import coapy.endpoint
+import socket
+import errno
 import unittest
 import logging.handlers
+
+
+class FIFOEndpoint (coapy.endpoint.Endpoint):
+    """A specialized endpoint for unit testing.
+
+    Each instance of this class is assigned a unique name.  The
+    underlying :meth:`coapy.endpoint.Endpoint.rawsendto` and
+    :meth:`coapy.endpoint.Endpoint.rawrecvfrom` operations are
+    replaced to directly deliver to another instance of this class.
+    """
+
+    @property
+    def fifo(self):
+        """Access to the FIFO holding undelivered messages to this
+        endpoint.  Elements on the FIFO are tuples ``(data,
+        source_endpoint)`` where *data* is a byte string and
+        *source_endpoint* is the endpoint from which *data* was
+        received.
+
+        The contents of the fifo may be inspected and manipulated to
+        test endpoint network delivery without involving real sockets.
+        """
+        return self.__fifo
+
+    __fifo_idx = 0
+
+    def __new__(cls):
+        host = 'fifo # {0}'.format(cls.__fifo_idx)
+        cls.__fifo_idx += 1
+        return super(FIFOEndpoint, cls).__new__(cls, host=host, port=coapy.COAP_PORT, family=None)
+
+    def __init__(self):
+        super(FIFOEndpoint, self).__init__(sockaddr=self.sockaddr, family=self.family)
+        self.__fifo = []
+
+    def _rawsendto(self, data, destination_endpoint):
+        if not isinstance(destination_endpoint, FIFOEndpoint):
+            raise ValueError(destination_endpoint)
+        destination_endpoint.fifo.append((data, self))
+
+    def _rawrecvfrom(self, bufsize):
+        if 0 == len(self.fifo):
+            raise socket.error(errno.EAGAIN, 'Resource temporarily unavailable')
+        return self.fifo.pop(0)
 
 
 class LogHandler_mixin(object):

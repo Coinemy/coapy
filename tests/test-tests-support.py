@@ -61,5 +61,23 @@ class TestLogHandler (tests.support.LogHandler_mixin, unittest.TestCase):
         self.assertEqual(0, len(hdl.buffer))
 
 
+class TestFIFOEndpoint (unittest.TestCase):
+
+    def testBasic(self):
+        import socket
+        import errno
+        ep1 = tests.support.FIFOEndpoint()
+        ep2 = tests.support.FIFOEndpoint()
+        with self.assertRaises(socket.error) as cm:
+            (data, sep) = ep1.rawrecvfrom(2048)
+        e = cm.exception
+        self.assertEqual(e.args[0], errno.EAGAIN)
+        self.assertEqual(e.args[1], 'Resource temporarily unavailable')
+        ep1.rawsendto(b'hi there', ep2)
+        (rv, sep) = ep2.rawrecvfrom(2048)
+        self.assertTrue(sep is ep1)
+        self.assertEqual(b'hi there', rv)
+
+
 if __name__ == '__main__':
     unittest.main()

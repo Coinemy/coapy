@@ -164,6 +164,51 @@ class Endpoint (object):
         """
         return self.__bound_socket
 
+    def _rawsendto(self, data, destination_endpoint):
+        """Send *data* from this endpoint to *destination_endpoint*.
+
+        This invokes :meth:`sendto<python:socket.socket.sendto>` on
+        :attr:`bound_socket` to transmit *data* to the
+        *destination_endpoint* via its :attr:`sockaddr`.
+        """
+        return self.bound_socket.sendto(data, destination_endpoint.sockaddr)
+
+    def rawsendto(self, data, destination_endpoint):
+        """Send *data* from this endpoint to *destination_endpoint*.
+
+        Normally this is shorthand for invoking
+        :meth:`sendto<python:socket.socket.sendto>` on
+        :attr:`bound_socket` to transmit *data* to the
+        *destination_endpoint* via its :attr:`sockaddr`.  Subclasses
+        may override the implementation for the purposes of testing or
+        simulation.
+        """
+        return self._rawsendto(data, destination_endpoint)
+
+    def _rawrecvfrom(self, bufsize):
+        """Receive *data* from a *source_endpoint*.
+
+        Invokes :meth:`recvfrom<python:socket.socket.recvfrom>` on
+        :attr:`bound_socket` and replacing the returned source socket
+        address with the corresponding :class:`Endpoint` instance as
+        *source_endpoint*.  Returns ``(data, source_endpoint)``.
+        """
+        (data, addr) = self.bound_socket.recvfrom(bufsize)
+        return (data, Endpoint(sockaddr=addr, family=self.family))
+
+    def rawrecvfrom(self, bufsize):
+        """Receive *data* from a *source_endpoint*.
+
+        Returns ``(data, source_endpoint)``.  Normally this is simply
+        shorthand for invoking
+        :meth:`recvfrom<python:socket.socket.recvfrom>` on
+        :attr:`bound_socket` and replacing the returned source socket
+        address with the corresponding :class:`Endpoint` instance as
+        *source_endpoint*.  Subclasses may override the implementation
+        for the purposes of testing or simulation.
+        """
+        return self._rawrecvfrom(bufsize)
+
     @classmethod
     def create_bound_endpoint(cls, sockaddr=None, family=socket.AF_UNSPEC,
                               security_mode=None,
