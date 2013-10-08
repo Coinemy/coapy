@@ -265,6 +265,7 @@ class Endpoint (object):
         specify the protocol and netloc when creating option lists.
         """
         return self.__base_uri
+    __base_uri = None
 
     __EndpointRegistry = {}
     __nonInetIndex = 0
@@ -410,8 +411,10 @@ class Endpoint (object):
         # None of these arguments are used here; they apply in
         # __new__.
         super(Endpoint, self).__init__()
-        self.__base_uri = self.uri_from_options([])
-        self._reset_next_messageID(random.randint(0, 65535))
+        # Note: Only re-initialize if the instance was newly created.
+        if self.__base_uri is None:
+            self.__base_uri = self.uri_from_options([])
+            self._reset_next_messageID(random.randint(0, 65535))
 
     def next_messageID(self):
         """Return a new messageID suitable for a message to this endpoint.
