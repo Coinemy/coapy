@@ -13,3 +13,4 @@ API
    coapy_option.rst
    coapy_endpoint.rst
    coapy_util.rst
+   tests_support.rst
