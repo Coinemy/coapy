@@ -58,30 +58,78 @@ This is initialized when :mod:`coapy.message` is first loaded.
 """
 
 
-import time
-clock = time.time
+class _Clock(object):
+    """Base class for CoAPy clock abstraction.
+
+    An instance of (a subclass of) this class is made available
+    globally at :data:`coapy.clock`.
+
+    The current clock value is obtained by invoking the instance as a
+    callable object.
+    """
+
+    @property
+    def epoch(self):
+        """The value of this clock at a point corresponding to "system
+        start".
+
+        Set implicitly when the clock instance is created.
+        """
+        return self.__epoch
+
+    def __call__(self):
+        raise NotImplementedException
+
+    def __init__(self):
+        self.__epoch = self()
+
+
+class ManagedClock(_Clock):
+    """A clock that increments under program control.
+
+    An instance of this class may be placed in :data:`coapy.clock` to
+    ensure deterministic behavior for simulation and automated
+    testing.  The value of the clock is initially zero; it is changed
+    only through the :meth:`adjust` method.
+    """
+    def __init__(self):
+        self.__clock = 0.0
+        super(ManagedClock, self).__init__()
+
+    def __call__(self):
+        return self.__clock
+
+    def adjust(self, adj):
+        """Add *adj* to the clock value."""
+        self.__clock += adj
+
+
+class RealTimeClock(_Clock):
+    """A clock that increments in lock-step with real-time.
+
+    This uses :func:`python:time.time` to obtain the current time.
+    :attr:`epoch<_Clock.epoch>` is a record of the time at which the
+    clock was created.
+    """
+    def __call__(self):
+        import time
+        return time.time()
+
+
+clock = RealTimeClock()
 """The system clock.
 
-This is a callable that returns a non-decreasing ordinal (probably a
-:class:`python:float` but possibly an :class:`python:int`).  The
-integer part increments in "seconds".  It is used for
-:class:`Max-Age<coapy.option.MaxAge>`, state related to
+This is an instance of :class:`_Clock` that returns a non-decreasing
+ordinal when invoked (probably a :class:`python:float` but possibly an
+:class:`python:int`).  The integer part increments in "seconds".  It
+is used for :class:`Max-Age<coapy.option.MaxAge>`, state related to
 :coapsect:`congestion control<4.7>` and :coapsect:`message
 retransmission<4.2>`, and other time-related phenomena.
 
 .. note::
-   The default value is :func:`python:time.time`, but this may be
-   overridden for the purposes of simulation or testing.  Unless
-   you're doing this sort of thing, you should assume it increments in
-   lock step with real-world time.
-"""
-
-
-# In sphinx 1.2 use :novalue: to prevent the documentation from
-# claiming this is a constant 1380879789.119847 or similar silliness.
-epoch = clock()
-"""The value of :data:`clock()<clock>` at a point corresponding to
-"system start".
-
-Set implicitly when the :mod:`coapy` module is first loaded.
+   The default value is an instance of :class:`RealTimeClock`, but
+   this may be overridden with an instance of :class:`ManagedClock`
+   for the purposes of simulation or testing.  Unless you're doing
+   this sort of thing, you should assume the clock increments in lock
+   step with real-world time.
 """

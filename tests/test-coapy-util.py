@@ -30,7 +30,16 @@ class TestCoAPy (unittest.TestCase):
 
     def testClock(self):
         cv = coapy.clock()
-        self.assertTrue(cv > coapy.epoch)
+        self.assertTrue(cv > coapy.clock.epoch)
+
+    def testManagedClock(self):
+        clk = coapy.ManagedClock()
+        self.assertEqual(clk(), 0.0)
+        self.assertEqual(clk.epoch, 0.0)
+        clk.adjust(2.5)
+        self.assertEqual(clk(), 2.5)
+        clk.adjust(2.5)
+        self.assertEqual(clk(), 5.0)
 
 
 class TestReadOnlyMeta (unittest.TestCase):
