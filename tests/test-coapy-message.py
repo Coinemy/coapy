@@ -74,12 +74,12 @@ class TestTransmissionParameters (unittest.TestCase):
 
     def testIterator(self):
         tp = TransmissionParameters()
-        delays = list(tp.timeout_control(3))
+        delays = list(tp.make_bebo(3))
         self.assertEqual([3, 6, 12, 24], delays)
 
-    def testTimeoutControl(self):
+    def testBEBO(self):
         tp = TransmissionParameters()
-        rs = tp.timeout_control()
+        rs = tp.make_bebo()
         self.assertEqual(rs.retransmissions_remaining, tp.MAX_RETRANSMIT)
         ti = rs.timeout
         t0 = rs.next()

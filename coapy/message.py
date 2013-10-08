@@ -1266,7 +1266,10 @@ class TransmissionParameters(object):
         self.EXCHANGE_LIFETIME = self.MAX_TRANSMIT_SPAN + self.MAX_RTT
         self.NON_LIFETIME = self.MAX_TRANSMIT_SPAN + self.MAX_LATENCY
 
-    def timeout_control(self, initial_timeout=None, max_retransmissions=None):
+    def make_bebo(self, initial_timeout=None, max_retransmissions=None):
+        """Create a :class:`RetransmissionState` for binary
+        exponential back off (BEBO) transmission.
+        """
         return RetransmissionState(initial_timeout=initial_timeout,
                                    max_retransmissions=max_retransmissions,
                                    transmission_parameters=self)
