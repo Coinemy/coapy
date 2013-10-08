@@ -272,6 +272,21 @@ class MessageIDCache (object):
         rv._dissociate()
         return rv
 
+    def remove_expired(self, now=None):
+        """Remove and return any entries whose
+        :attr:`MessageIDCacheEntry.time_due` has passed.
+
+        The entries are returned in order in a list.
+        """
+        rv = []
+        if now is None:
+            now = coapy.clock()
+        while 0 < len(self.__queue):
+            if self.__queue[0].time_due > now:
+                break
+            rv.append(self.__queue.pop(0))
+        return rv
+
     def _add(self, value):
         """Add *value* to the cache.
         """
