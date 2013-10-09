@@ -689,7 +689,7 @@ class Message(object):
         else:
             self.messageID = messageID
         if token is None:
-            self.__token = None
+            self.__token = b''
         else:
             self.token = token
         self.__options = []
@@ -917,9 +917,7 @@ class Message(object):
             elt.append('\nSource: {m.source_endpoint!s}'.format(m=self))
         if self.destination_endpoint is not None:
             elt.append('\nDestination: {m.destination_endpoint!s}'.format(m=self))
-        if self.token is None:
-            elt.append('\nToken: **INVALID None**')
-        elif 0 < len(self.token):
+        if 0 < len(self.token):
             elt.append('\nToken: {m.token!s}'.format(m=self))
         for opt in self._sort_options():
             elt.append('\nOption {0!s}'.format(opt))

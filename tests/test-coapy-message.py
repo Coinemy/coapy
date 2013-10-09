@@ -197,7 +197,7 @@ class TestMessage (unittest.TestCase):
 
     def testToken(self):
         m = Message()
-        self.assertTrue(m.token is None)
+        self.assertEqual(m.token, b'')
         m.token = b''
         self.assertEqual(b'', m.token)
         m.token = b'123'
@@ -257,8 +257,7 @@ class TestMessage (unittest.TestCase):
 
     def testStringize(self):
         m = Message()
-        self.assertEqual(unicode(m), '''[*INVALID None*] NON ?.?? (*INVALID None*)
-Token: **INVALID None**''')
+        self.assertEqual(unicode(m), '''[*INVALID None*] NON ?.?? (*INVALID None*)''')
         m = Message(confirmable=True, token=b'123', messageID=12345, code=Request.GET,
                     options=[coapy.option.UriPath('sensor'),
                              coapy.option.UriPath('temp')],
