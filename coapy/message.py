@@ -267,25 +267,7 @@ class MessageIDCache (object):
 
     def pop_oldest(self):
         """Return the oldest item in the cache after removing it."""
-        rv = self.__queue.pop(0)
-        del self.__dict[rv.message_id]
-        rv._dissociate()
-        return rv
-
-    def remove_expired(self, now=None):
-        """Remove and return any entries whose
-        :attr:`MessageIDCacheEntry.time_due` has passed.
-
-        The entries are returned in order in a list.
-        """
-        rv = []
-        if now is None:
-            now = coapy.clock()
-        while 0 < len(self.__queue):
-            if self.__queue[0].time_due > now:
-                break
-            rv.append(self.__queue.pop(0))
-        return rv
+        return self._remove(self.__queue[0])
 
     def clear(self):
         """Remove all entries in the cache."""
@@ -301,6 +283,16 @@ class MessageIDCache (object):
             raise ValueError(value)
         bisect.insort(self.__queue, value)
         self.__dict[value.message_id] = value
+
+    def _remove(self, value):
+        """Remove *value* from the cache.
+        """
+        if not isinstance(value, MessageIDCacheEntry):
+            raise ValueError(value)
+        self.__queue.remove(value)
+        del self.__dict[value.message_id]
+        value._dissociate()
+        return value
 
     def _reposition(self, value):
         """Re-place *value* at its correct location in the queue.

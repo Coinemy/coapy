@@ -523,13 +523,8 @@ class TestMessageIDCache (unittest.TestCase):
         self.assertTrue(c[3] is e3)
         self.assertEqual(2, len(c))
 
-        rv = c.remove_expired(now=e1.time_due-1)
-        self.assertEqual(0, len(rv))
-        self.assertEqual(2, len(c))
-
-        rv = c.remove_expired(now=e1.time_due)
-        self.assertEqual(1, len(rv))
-        self.assertTrue(rv[0] is e1)
+        rv = c._remove(e1)
+        self.assertTrue(rv is e1)
         self.assertEqual(1, len(c))
         self.assertTrue(c[3] is e3)
         self.assertTrue(e3.cache is c)
