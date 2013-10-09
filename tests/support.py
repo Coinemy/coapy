@@ -85,6 +85,13 @@ class LogHandler_mixin(object):
     This implementation currently assumes that only the root logger
     has set the log message level.  For the duration of the test, this
     level is reset to 1 (enabling capture of records at all levels).
+
+    .. note::
+       Unit tests that make use of this feature should be sure to
+       invoke ``self.log_handler.flush()`` prior to exiting.  Any
+       unflushed messages left in the buffering handler will be
+       emitted to the console when the test cleanup is performed, so
+       that unexpected log messages do not slip by unnoticed.
     """
 
     LOG_CAPACITY = 128
@@ -120,6 +127,10 @@ class LogHandler_mixin(object):
         """Cooperative super-calling support to remove
         :attr:`log_handler`.
         """
+        if 0 < len(self.__log_handler.buffer):
+            print("\n>>>UNPROCESSED LOG MESSAGES:")
+            print(''.join(map(self.__log_handler.format, self.__log_handler.buffer)))
+            print("\n<<<END UNPROCESSED LOG MESSAGES")
         self.__root_logger.removeHandler(self.__log_handler)
         self.__root_logger.setLevel(self.__root_logger_level)
         super(LogHandler_mixin, self).tearDown()
