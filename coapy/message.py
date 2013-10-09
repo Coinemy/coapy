@@ -796,6 +796,8 @@ class Message(object):
 
     def _set_source_endpoint(self, ep):
         import coapy.endpoint
+        if (ep is None) and (self.__source_endpoint is None):
+            return
         if not isinstance(ep, coapy.endpoint.Endpoint):
             raise TypeError
         if (self.__source_endpoint is not None) and (self.__source_endpoint is not ep):
@@ -821,6 +823,8 @@ class Message(object):
 
     def _set_destination_endpoint(self, ep):
         import coapy.endpoint
+        if (ep is None) and (self.__destination_endpoint is None):
+            return
         if not isinstance(ep, coapy.endpoint.Endpoint):
             raise TypeError
         if (self.__destination_endpoint is not None) and (self.__destination_endpoint is not ep):

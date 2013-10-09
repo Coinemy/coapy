@@ -333,6 +333,11 @@ class TestMessageEndpoints (unittest.TestCase):
         m = Message()
         self.assertTrue(m.source_endpoint is None)
         self.assertTrue(m.destination_endpoint is None)
+
+        # OK to assign None if not already assigned
+        m.source_endpoint = None
+        m.destination_endpoint = None
+
         m.source_endpoint = ep1
         self.assertTrue(m.source_endpoint is ep1)
         self.assertTrue(m.destination_endpoint is None)
