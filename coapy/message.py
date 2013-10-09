@@ -129,6 +129,25 @@ class MessageFormatError (MessageError):
     """
 
 
+class MessageReplyError (MessageError):
+    """Exception raised when :meth:`Message.create_reply` is invoked improperly.
+
+    The *args* are ``(diagnostic, msg)`` where *diagnostic* is one of
+    the string values in this class, and *msg* is the message for
+    which a reply could not be created.
+    """
+
+    ACK_FOR_NON = 'ACK of NON-confirmable message'
+    """Per :coapsect:`4.3`, a non-confirmable message MUST NOT be
+    acknowledged.
+    """
+
+    INVALID_TYPE = 'Reply to unrepliable message'
+    """Attempt to create a reply to an :attr:`ACK<Message.Type_ACK>`
+    or :attr:`RST<Message.Type_RST>` message.
+    """
+
+
 class MessageIDCacheEntry (coapy.util.TimeDueOrdinal):
     """A class holding data stored in a :class:`MessageIDCache`.
 
@@ -451,7 +470,7 @@ class Message(object):
         """True if *mtype* is :attr:`CON<Type_CON>` or :attr:`NON<Type_NON>`.
 
         CoAP defines a message layer where messages from a source to a
-        destination may elicit message-layer responses from the
+        destination may elicit message-layer replies from the
         destination to the source.  This is completely distinct from
         the transaction layer requests that elicit transaction-layer
         responses.
@@ -459,10 +478,12 @@ class Message(object):
         :attr:`CON<Type_CON>` and :attr:`NON<Type_NON>` type messages
         are message-layer initial messages.  These messages require
         cache entries for the source endpoint at the receiving node.
+        This function returns ``True`` for these messages.
 
         :attr:`ACK<Type_ACK>` and :attr:`RST<Type_RST>` messages are
         message-layer responses.  These messages are processed
         relative to the destination endpoint at the receiving node.
+        This function returns ``False`` for these messages.
         """
         return 0 == (0x02 & mtype)
 
@@ -898,6 +919,33 @@ class Message(object):
         for opt in opts:
             if isinstance(opt, coapy.option.UnrecognizedOption):
                 _log.warn('Unrecognized option in message: {0!s}'.format(opt))
+
+    def create_reply(self, reset=False):
+        """Create a message-layer reply to this message.
+
+        This method creates an empty message of either type
+        :attr:`ACK<Type_ACK>` (by default) or :attr:`RST<Type_RST>`
+        (if *reset* is ``True``) with the same message ID as this
+        message.  The :attr:`source_endpoint` and
+        :attr:`destination_endpoint` of the returned message are set
+        appropriately.
+
+        :exc:`MessageReplyError` is raised if this message is
+        :meth:`non-confirmable<is_non_confirmable>` and *reset* is
+        false, or if *self* is an :attr:`ACK<Type_ACK>` or
+        :attr:`RST<Type_RST>` message.
+        """
+        if not self.source_originates_type(self.messageType):
+            raise MessageReplyError(MessageReplyError.INVALID_TYPE, self)
+        if (not reset) and not self.is_confirmable():
+            raise MessageReplyError(MessageReplyError.ACK_FOR_NON, self)
+        rm = Message(acknowledgement=not reset,
+                     reset=reset,
+                     code=self.Empty,
+                     messageID=self.messageID)
+        rm.source_endpoint = self.destination_endpoint
+        rm.destination_endpoint = self.source_endpoint
+        return rm
 
     def __unicode__(self):
         elt = []

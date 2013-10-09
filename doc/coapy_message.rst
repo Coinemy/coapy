@@ -49,3 +49,4 @@ Message-Related Exceptions
 .. autoexception:: MessageError
 .. autoexception:: MessageFormatError
 .. autoexception:: MessageValidationError
+.. autoexception:: MessageReplyError

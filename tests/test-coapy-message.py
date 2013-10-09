@@ -273,6 +273,64 @@ Option Uri-Path: temp
 Payload: 20 C''')
 
 
+class TestMessageReply (unittest.TestCase):
+    def testCON(self):
+        ep = Endpoint(host='localhost')
+        con = ep.create_request('/path', messageID=1, token=b'1', confirmable=True)
+        rep = con.create_reply()
+        self.assertEqual(rep.messageID, con.messageID)
+        self.assertEqual(rep.token, b'')
+        self.assertTrue(rep.is_acknowledgement())
+        self.assertTrue(rep.source_endpoint is con.destination_endpoint)
+        self.assertTrue(rep.destination_endpoint is con.source_endpoint)
+        data = rep.to_packed()
+        self.assertEqual(4, len(data))
+
+        rep = con.create_reply(reset=True)
+        self.assertEqual(rep.messageID, con.messageID)
+        self.assertEqual(rep.token, b'')
+        self.assertTrue(rep.is_reset())
+        self.assertTrue(rep.source_endpoint is con.destination_endpoint)
+        self.assertTrue(rep.destination_endpoint is con.source_endpoint)
+        data = rep.to_packed()
+        self.assertEqual(4, len(data))
+
+    def testNON(self):
+        ep = Endpoint(host='localhost')
+        non = ep.create_request('/path', messageID=2, token=b'2', confirmable=False)
+        with self.assertRaises(MessageReplyError) as cm:
+            non.create_reply()
+        exc = cm.exception
+        self.assertEqual(exc.args[0], MessageReplyError.ACK_FOR_NON)
+        self.assertEqual(exc.args[1], non)
+
+        rep = non.create_reply(reset=True)
+        self.assertEqual(rep.messageID, non.messageID)
+        self.assertEqual(rep.token, b'')
+        self.assertTrue(rep.is_reset())
+        self.assertTrue(rep.source_endpoint is non.destination_endpoint)
+        self.assertTrue(rep.destination_endpoint is non.source_endpoint)
+        data = rep.to_packed()
+        self.assertEqual(4, len(data))
+
+    def testACKRST(self):
+        msg = Message(acknowledgement=1, messageID=1)
+        self.assertEqual(msg.messageType, msg.Type_ACK)
+        with self.assertRaises(MessageReplyError) as cm:
+            msg.create_reply()
+        exc = cm.exception
+        self.assertEqual(exc.args[0], MessageReplyError.INVALID_TYPE)
+        self.assertEqual(exc.args[1], msg)
+
+        msg = Message(reset=1, messageID=1)
+        self.assertEqual(msg.messageType, msg.Type_RST)
+        with self.assertRaises(MessageReplyError) as cm:
+            msg.create_reply()
+        exc = cm.exception
+        self.assertEqual(exc.args[0], MessageReplyError.INVALID_TYPE)
+        self.assertEqual(exc.args[1], msg)
+
+
 class TestMessageValidation (tests.support.LogHandler_mixin,
                              unittest.TestCase):
 
