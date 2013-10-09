@@ -56,12 +56,12 @@ class FIFOEndpoint (coapy.endpoint.Endpoint):
 
     __fifo_idx = 0
 
-    def __new__(cls):
+    def __new__(cls, **kw):
         host = 'fifo # {0}'.format(cls.__fifo_idx)
         cls.__fifo_idx += 1
         return super(FIFOEndpoint, cls).__new__(cls, host=host, port=coapy.COAP_PORT, family=None)
 
-    def __init__(self):
+    def __init__(self, **kw):
         super(FIFOEndpoint, self).__init__(sockaddr=self.sockaddr, family=self.family)
         self.__fifo = []
 
