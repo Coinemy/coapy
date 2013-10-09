@@ -39,8 +39,14 @@ class TestDeterministicBEBO (tests.support.DeterministicBEBO_mixin, unittest.Tes
 
     def testBasic(self):
         clk = coapy.clock
+        tp = coapy.transmissionParameters
         self.assertTrue(isinstance(clk, coapy.RealTimeClock))
-        self.assertEqual(1.0, coapy.transmissionParameters.ACK_RANDOM_FACTOR)
+        self.assertEqual(1.0, tp.ACK_RANDOM_FACTOR)
+        bebo = tp.make_bebo()
+        to = tp.ACK_TIMEOUT
+        for w in bebo:
+            self.assertEqual(w, to)
+            to += to
 
 
 class TestLogHandler (tests.support.LogHandler_mixin, unittest.TestCase):

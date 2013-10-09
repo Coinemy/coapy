@@ -1312,7 +1312,7 @@ class RetransmissionState (object):
         if initial_timeout is None:
             initial_timeout = \
                 transmission_parameters.ACK_TIMEOUT \
-                + random.random() * transmission_parameters.ACK_RANDOM_FACTOR
+                + random.random() * (transmission_parameters.ACK_RANDOM_FACTOR - 1.0)
         if max_retransmissions is None:
             max_retransmissions = transmission_parameters.MAX_RETRANSMIT
         self.timeout = initial_timeout
