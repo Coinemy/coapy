@@ -247,6 +247,7 @@ import sys
 sys.path.insert(0, os.path.abspath('..'))
 
 autodoc_default_flags = ['members', 'show-inheritance']
+autodoc_default_flags.append('private-members')
 intersphinx_mapping = {'python': ('http://docs.python.org/2.7', None)}
 extlinks = {'coapsect': ('http://tools.ietf.org/html/draft-ietf-core-coap-18#section-%s',
                          'CoAP Section ')}
