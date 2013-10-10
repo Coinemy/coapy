@@ -143,6 +143,22 @@ class TimeDueOrdinal(object):
         """Remove this entry from *queue*."""
         queue.remove(self)
 
+    @staticmethod
+    def queue_ready_prefix(queue, now=None):
+        """Return the elements of *queue* that are due.
+
+        *queue* is a sorted list of :class:`TimeDueOrdinal` instances.
+        *now* is the timestamp, and defaults to :func:`coapy.clock`.
+        Elements are due when :attr:`time_due` <= *now*.
+        """
+
+        if now is None:
+            now = coapy.clock()
+        ub = 0
+        while ub < len(queue) and (queue[ub].time_due <= now):
+            ub += 1
+        return list(queue[:ub])
+
 
 def to_net_unicode(text):
     """Convert text to Net-Unicode (:rfc:`5198`) data.

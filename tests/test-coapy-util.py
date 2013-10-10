@@ -124,6 +124,9 @@ class TestTimeDueOrdinal (unittest.TestCase):
         self.assertTrue(queue[0] is td0)
         self.assertTrue(queue[1] is td1)
         self.assertTrue(queue[2] is td2)
+        self.assertEqual([], TimeDueOrdinal.queue_ready_prefix(queue, td0.time_due - 1))
+        self.assertEqual([td0], TimeDueOrdinal.queue_ready_prefix(queue, td0.time_due))
+        self.assertEqual(queue, TimeDueOrdinal.queue_ready_prefix(queue, td2.time_due + 1))
 
 
 if __name__ == '__main__':
