@@ -847,6 +847,43 @@ class Request (Message):
     DELETE = coapy.util.ClassReadOnly((0, 4))
     """Delete the resource identified by the request URI.
     See :coapsect:`5.8.4`."""
+
+    def create_response(self, rclass,
+                        piggy_backed=True,
+                        confirmable=False,
+                        **kw):
+        """Create a response to this request.
+
+        *rclass* is a subclass of :class:`Response` indicating the
+        type of the response.  (For non-response replies, see
+        :meth:`Message.create_reply`.)  If *piggy_backed* is ``True``
+        the response message will be an :attr:`ACK<Message.Type_ACK>`
+        to this message; otherwise it will be either a
+        :attr:`CON<Message.Type_CON>` or :attr:`NON<Message.Type_NON>`
+        message, depending on *confirmable*, and must be assigned its
+        own message ID.  In either case, the :attr:`token` value will
+        be copied from this message.  All other keyword parameters are
+        passed to the *rclass* constructor.  The
+        :attr:`source_endpoint` and :attr:`destination_endpoint`
+        attributes will be set from this message.
+        """
+        if not issubclass(rclass, Response):
+            raise ValueError(rclass)
+        kw.pop('reset', None)
+        kw.pop('confirmable', None)
+        if piggy_backed:
+            kw['acknowledgement'] = True
+            kw['messageID'] = self.messageID
+        else:
+            kw.pop('acknowledgement', None)
+            kw['confirmable'] = confirmable
+        kw['token'] = self.token
+        rm = rclass(**kw)
+        rm.source_endpoint = self.destination_endpoint
+        rm.destination_endpoint = self.source_endpoint
+        return rm
+
+
 Request.RegisterCode(Request.GET, 'GET')
 Request.RegisterCode(Request.POST, 'POST')
 Request.RegisterCode(Request.PUT, 'PUT')

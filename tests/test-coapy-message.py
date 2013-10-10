@@ -425,6 +425,37 @@ class TestMessageEndpoints (unittest.TestCase):
 
 
 class TestRequest (unittest.TestCase):
+    def testCreateResponse(self):
+        ep = Endpoint(host='localhost')
+        reqm = ep.create_request('/path', messageID=1, token=b'1', confirmable=True)
+        self.assertTrue(reqm.destination_endpoint is ep)
+
+        rspm = reqm.create_response(SuccessResponse, code=SuccessResponse.Content)
+        self.assertTrue(rspm.is_acknowledgement())
+        self.assertEqual(rspm.messageID, reqm.messageID)
+        self.assertEqual(rspm.token, reqm.token)
+        self.assertEqual(rspm.code, SuccessResponse.Content)
+        self.assertTrue(rspm.source_endpoint is ep)
+
+        rspm = reqm.create_response(SuccessResponse,
+                                    piggy_backed=False,
+                                    code=SuccessResponse.Content)
+        self.assertTrue(rspm.is_non_confirmable())
+        self.assertTrue(rspm.messageID is None)
+        self.assertEqual(rspm.token, reqm.token)
+        self.assertEqual(rspm.code, SuccessResponse.Content)
+        self.assertTrue(rspm.source_endpoint is ep)
+
+        rspm = reqm.create_response(SuccessResponse,
+                                    piggy_backed=False,
+                                    confirmable=True,
+                                    code=SuccessResponse.Content)
+        self.assertTrue(rspm.is_confirmable())
+        self.assertTrue(rspm.messageID is None)
+        self.assertEqual(rspm.token, reqm.token)
+        self.assertEqual(rspm.code, SuccessResponse.Content)
+        self.assertTrue(rspm.source_endpoint is ep)
+
     def testImmutable(self):
         req = Request()
         with self.assertRaises(AttributeError):
