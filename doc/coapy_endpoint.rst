@@ -8,3 +8,9 @@ coapy.endpoint
 
 .. autoclass:: Endpoint
    :no-show-inheritance:
+
+Message Caches
+--------------
+
+.. autoclass:: MessageIDCacheEntry
+.. autoclass:: MessageIDCache

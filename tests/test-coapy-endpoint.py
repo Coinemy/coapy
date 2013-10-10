@@ -312,5 +312,51 @@ class TestSocketSendRecv (unittest.TestCase):
         s1.close()
 
 
+class TestMessageIDCache (unittest.TestCase):
+
+    def testDictionary(self):
+        c = MessageIDCache()
+        self.assertEqual(0, len(c))
+        with self.assertRaises(KeyError):
+            v = c[1]
+        now = coapy.clock()
+        e1 = MessageIDCacheEntry(cache=c, message_id=1, time_due=now+5)
+        e2 = MessageIDCacheEntry(cache=c, message_id=2, time_due=now)
+        e3 = MessageIDCacheEntry(cache=c, message_id=3, time_due=now+2)
+        self.assertEqual(3, len(c))
+        self.assertTrue(c[1] is e1)
+        self.assertTrue(c[2] is e2)
+        self.assertTrue(c[3] is e3)
+
+        self.assertTrue(c.peek_oldest() is e2)
+        self.assertTrue(e2.cache is c)
+        self.assertTrue(c.pop_oldest() is e2)
+        self.assertTrue(e2.cache is None)
+        self.assertEqual(2, len(c))
+
+        self.assertTrue(c[1] is e1)
+        with self.assertRaises(KeyError):
+            v = c[2]
+        self.assertTrue(c[3] is e3)
+
+        self.assertTrue(c.peek_oldest() is e3)
+        e1.time_due = e3.time_due - 1
+        self.assertTrue(c.peek_oldest() is e1)
+
+        self.assertTrue(c[1] is e1)
+        self.assertTrue(c[3] is e3)
+        self.assertEqual(2, len(c))
+
+        rv = c._remove(e1)
+        self.assertTrue(rv is e1)
+        self.assertEqual(1, len(c))
+        self.assertTrue(c[3] is e3)
+        self.assertTrue(e3.cache is c)
+
+        c.clear()
+        self.assertTrue(e3.cache is None)
+        self.assertEqual(0, len(c))
+
+
 if __name__ == '__main__':
     unittest.main()
