@@ -715,6 +715,8 @@ class Endpoint (object):
         ``IPv4address`` equivalent to :attr:`in_addr` in
         :attr:`family`.  DNS resolution is not used.
         """
+        if self.family is None:
+            return self.uri_host == host
         try:
             in_addr = socket.inet_pton(self.family, host)
             return self.in_addr == in_addr
