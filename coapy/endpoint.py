@@ -45,8 +45,8 @@ class URIError (coapy.CoAPyException):
     pass
 
 
-class MessageIDCacheEntry (coapy.util.TimeDueOrdinal):
-    """A class holding data stored in a :class:`MessageIDCache`.
+class MessageCacheEntry (coapy.util.TimeDueOrdinal):
+    """A class holding data stored in a :class:`MessageCache`.
 
     Instances sort based on
     :attr:`coapy.util.TimeDueOrdinal.time_due`, and may be looked up
@@ -55,7 +55,7 @@ class MessageIDCacheEntry (coapy.util.TimeDueOrdinal):
     Keyword parameters recognized:
 
     * *cache* identifies the
-      :class:`MessageIDCache` instance to which this entry will
+      :class:`MessageCache` instance to which this entry will
       belong.
     * *message* is a :class:`Message` instance from which :attr:`Message.messageID`
       is used to initialize :attr:`message_id`
@@ -73,14 +73,14 @@ class MessageIDCacheEntry (coapy.util.TimeDueOrdinal):
     def _dissociate(self):
         """Remove the connection between the instance and the cache.
 
-        This is invoked by :class:`MessageIDCache` operations that
+        This is invoked by :class:`MessageCache` operations that
         remove the entry from its cache.
         """
         self.__cache = None
 
     @property
     def cache(self):
-        """The :class:`MessageIDCache` to which this entry belongs.
+        """The :class:`MessageCache` to which this entry belongs.
         This is a read-only property, set when the entry is created
         and cleared when it has been removed from its cache.
         """
@@ -111,20 +111,20 @@ class MessageIDCacheEntry (coapy.util.TimeDueOrdinal):
         cache = kw.pop('cache', None)
         message = kw.pop('message', None)
         message_id = kw.pop('message_id', None)
-        super(MessageIDCacheEntry, self).__init__(**kw)
+        super(MessageCacheEntry, self).__init__(**kw)
         if isinstance(message, coapy.message.Message):
             self.message_id = message.messageID
         elif isinstance(message_id, int):
             self.message_id = message_id
         else:
             raise TypeError(message_id)
-        if not isinstance(cache, MessageIDCache):
+        if not isinstance(cache, MessageCache):
             raise TypeError(cache)
         self.__cache = cache
         cache._add(self)
 
 
-class MessageIDCache (object):
+class MessageCache (object):
     """Dual-view collection used for caches based on :attr:`Message.messageID`.
 
     This class implements a cache.  It simulates a dictionary allowing
@@ -133,12 +133,12 @@ class MessageIDCache (object):
     cache based on age.
 
     Elements in the cache are expected to be instances of
-    :class:`MessageIDCacheEntry`.  Most lookup :class:`python:dict`
+    :class:`MessageCacheEntry`.  Most lookup :class:`python:dict`
     operations are supported.
 
     Cache entries are placed in the cache when they are created.  It
     is an error to create a new cache entry when one with the same
-    :attr:`MessageIDCacheEntry.message_id` is already present.
+    :attr:`MessageCacheEntry.message_id` is already present.
 
     Entries are removed from the cache by using :meth:`pop_oldest`.
 
@@ -167,7 +167,7 @@ class MessageIDCache (object):
         # update
 
     def queue(self):
-        """The queue of cache entries sorted by :attr:`MessageIDCacheEntry.time_due`.
+        """The queue of cache entries sorted by :attr:`MessageCacheEntry.time_due`.
 
         .. warning::
            This method returns a reference to the underlying sorted
@@ -193,7 +193,7 @@ class MessageIDCache (object):
     def _add(self, value):
         """Add *value* to the cache.
         """
-        if not isinstance(value, MessageIDCacheEntry):
+        if not isinstance(value, MessageCacheEntry):
             raise ValueError(value)
         if value.message_id in self.__dict:
             raise ValueError(value)
@@ -203,7 +203,7 @@ class MessageIDCache (object):
     def _remove(self, value):
         """Remove *value* from the cache.
         """
-        if not isinstance(value, MessageIDCacheEntry):
+        if not isinstance(value, MessageCacheEntry):
             raise ValueError(value)
         value.queue_remove(self.__queue)
 

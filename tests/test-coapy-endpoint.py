@@ -312,17 +312,17 @@ class TestSocketSendRecv (unittest.TestCase):
         s1.close()
 
 
-class TestMessageIDCache (unittest.TestCase):
+class TestMessageCache (unittest.TestCase):
 
     def testDictionary(self):
-        c = MessageIDCache()
+        c = MessageCache()
         self.assertEqual(0, len(c))
         with self.assertRaises(KeyError):
             v = c[1]
         now = coapy.clock()
-        e1 = MessageIDCacheEntry(cache=c, message_id=1, time_due=now+5)
-        e2 = MessageIDCacheEntry(cache=c, message_id=2, time_due=now)
-        e3 = MessageIDCacheEntry(cache=c, message_id=3, time_due=now+2)
+        e1 = MessageCacheEntry(cache=c, message_id=1, time_due=now+5)
+        e2 = MessageCacheEntry(cache=c, message_id=2, time_due=now)
+        e3 = MessageCacheEntry(cache=c, message_id=3, time_due=now+2)
         self.assertEqual(3, len(c))
         self.assertTrue(c[1] is e1)
         self.assertTrue(c[2] is e2)

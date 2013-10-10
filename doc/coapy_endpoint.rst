@@ -12,5 +12,5 @@ coapy.endpoint
 Message Caches
 --------------
 
-.. autoclass:: MessageIDCacheEntry
-.. autoclass:: MessageIDCache
+.. autoclass:: MessageCacheEntry
+.. autoclass:: MessageCache
