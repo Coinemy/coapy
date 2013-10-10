@@ -30,6 +30,7 @@ _log = logging.getLogger(__name__)
 import coapy
 import unicodedata
 import functools
+import bisect
 
 
 class ClassReadOnly (object):
@@ -96,9 +97,13 @@ class TimeDueOrdinal(object):
     is implemented using a sorted list, as instances of (subclasses
     of) :class:`TimeDueOrdinal` are ordered by increasing value of
     :attr:`time_due` using the features of :mod:`python:bisect`.
+    Insertion, removal, and repositioning of elements in the priority
+    queue may be accomplished using :meth:`queue_insert`,
+    :meth:`queue_remove`, and :meth:`queue_reposition`.
 
-    *time_due* as a keyword parameter is the initial value of
-    :attr:`time_due`.
+    *time_due* as a keyword parameter initializes :attr:`time_due` and
+    is removed from *kw*.  Any positional parameters and remaining
+    keyword parameters are passed to the next superclass.
     """
 
     time_due = None
@@ -108,13 +113,12 @@ class TimeDueOrdinal(object):
     :func:`coapy.clock`.
     """
 
-    def __init__(self, **kw):
-        time_due = kw.pop('time_due', None)
-        super(TimeDueOrdinal, self).__init__(**kw)
-        self.time_due = time_due
+    def __init__(self, *args, **kw):
+        self.time_due = kw.pop('time_due', None)
+        super(TimeDueOrdinal, self).__init__(*args, **kw)
 
     def __eq__(self, other):
-        return self.time_due == other.time_due
+        return (self.time_due is not None) and (self.time_due == other.time_due)
 
     # total_ordering doesn't handle eq/ne inference, so need both
     def __ne__(self, other):
@@ -122,6 +126,22 @@ class TimeDueOrdinal(object):
 
     def __lt__(self, other):
         return self.time_due < other.time_due
+
+    def queue_reposition(self, queue):
+        """Reposition this entry within *queue*.
+
+        *self* must already be in the queue; only its position changes
+        (if necessary).
+        """
+        bisect.insort(queue, queue.pop(queue.index(self)))
+
+    def queue_insert(self, queue):
+        """Insert this entry into *queue*."""
+        bisect.insort(queue, self)
+
+    def queue_remove(self, queue):
+        """Remove this entry from *queue*."""
+        queue.remove(self)
 
 
 def to_net_unicode(text):

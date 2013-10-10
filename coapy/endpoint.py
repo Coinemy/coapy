@@ -30,7 +30,6 @@ import urlparse
 import urllib
 import random
 import itertools
-import bisect
 import coapy
 import coapy.message
 
@@ -198,7 +197,7 @@ class MessageIDCache (object):
             raise ValueError(value)
         if value.message_id in self.__dict:
             raise ValueError(value)
-        bisect.insort(self.__queue, value)
+        value.queue_insert(self.__queue)
         self.__dict[value.message_id] = value
 
     def _remove(self, value):
@@ -206,7 +205,8 @@ class MessageIDCache (object):
         """
         if not isinstance(value, MessageIDCacheEntry):
             raise ValueError(value)
-        self.__queue.remove(value)
+        value.queue_remove(self.__queue)
+
         del self.__dict[value.message_id]
         value._dissociate()
         return value
@@ -217,7 +217,7 @@ class MessageIDCache (object):
         This must be invoked whenever the underlying
         :attr:`coapy.util.TimeDueOrdinal.time_due` attribute value is
         changed."""
-        bisect.insort(self.__queue, self.__queue.pop(self.__queue.index(value)))
+        value.queue_reposition(self.__queue)
 
     def __len__(self):
         return len(self.__queue)
