@@ -315,7 +315,8 @@ class TestSocketSendRecv (unittest.TestCase):
 class TestMessageCache (unittest.TestCase):
 
     def testDictionary(self):
-        c = MessageCache()
+        ep = Endpoint(host='localhost')
+        c = MessageCache(ep, True)
         self.assertEqual(0, len(c))
         with self.assertRaises(KeyError):
             v = c[1]

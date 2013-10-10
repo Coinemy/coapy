@@ -145,10 +145,27 @@ class MessageCache (object):
     Entry content may be updated while in the cache, but once removed
     from the cache an entry cannot be re-inserted.
     """
+
     __queue = None
     __dict = None
 
-    def __init__(self):
+    @property
+    def endpoint(self):
+        """The :class:`Endpoint` to which the cache belongs."""
+        return self.__endpoint
+
+    @property
+    def is_sent_cache(self):
+        """``True`` if this cache is the sent-message cache for its
+        :attr:`endpoint`.  ``False`` if this is the received-message
+        cache."""
+        return self.__is_sent_cache
+
+    def __init__(self, endpoint, is_sent_cache):
+        if not isinstance(endpoint, Endpoint):
+            raise ValueError(endpoint)
+        self.__endpoint = endpoint
+        self.__is_sent_cache = is_sent_cache
         self.__queue = []
         self.__dict = {}
         self.keys = self.__dict.keys
