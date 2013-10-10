@@ -221,6 +221,14 @@ class TestMessage (unittest.TestCase):
         self.assertTrue(isinstance(m.options[0], coapy.option.UriHost))
         self.assertTrue(isinstance(m.options[1], coapy.option.UriPath))
 
+    def testMaxAge(self):
+        m = Message()
+        self.assertTrue(m.maxAge() is None)
+        m = Response()
+        self.assertEqual(60, m.maxAge())
+        m.options.append(coapy.option.MaxAge(24))
+        self.assertEqual(24, m.maxAge())
+
     @staticmethod
     def setPayload(instance, value):
         instance.payload = value

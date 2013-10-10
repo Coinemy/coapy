@@ -486,6 +486,23 @@ class Message(object):
 
     options = property(_get_options, _set_options)
 
+    def maxAge(self):
+        """Return the :coapsect:`Max-Age<5.6.1>` value for the message.
+
+        This is the value of the :meth:`coapy.option.MaxAge` option if
+        present, or its default value of 60 (seconds) if the option is
+        missing.  The value ``None`` is returned if the message is
+        not one in which :meth:`coapy.option.MaxAge` may appear (i.e.,
+        not a :class:`Response` message).
+        """
+        if not isinstance(self, Response):
+            return None
+        max_age = 60
+        for opt in filter(lambda _o: isinstance(_o, coapy.option.MaxAge), self.options):
+            max_age = opt.value
+            break
+        return max_age
+
     def _get_payload(self):
         """The payload or content of the message.  This may be
         ``None`` if no payload exists; otherwise it must be a
