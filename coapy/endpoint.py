@@ -33,17 +33,16 @@ import itertools
 import coapy
 import coapy.message
 
-
-class URIError (coapy.CoAPyException):
-    pass
-
-
 # Gross Hack: Update urlparse so it knows about the coap and coaps
 # schemes, specifically that it should support joining relative URIs
 # and process netloc and query.
 urlparse.uses_relative.extend(['coap', 'coaps'])
 urlparse.uses_netloc.extend(['coap', 'coaps'])
 urlparse.uses_query.extend(['coap', 'coaps'])
+
+
+class URIError (coapy.CoAPyException):
+    pass
 
 
 class Endpoint (object):
