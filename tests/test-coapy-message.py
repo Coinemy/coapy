@@ -388,7 +388,7 @@ class TestMessageValidation (tests.support.LogHandler_mixin,
         m.validate()
         self.assertEqual(1, len(logmsgs))
         self.assertEqual(logmsgs[0].msg,
-                         'Unrecognized option in message: UnrecognizedOption<3>: 626f677573')
+                         'Unrecognized option in message: UnrecognizedOption<3>: bogus')
         self.log_handler.flush()
 
 

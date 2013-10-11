@@ -181,6 +181,36 @@ def to_net_unicode(text):
     return unicodedata.normalize('NFC', text).encode('utf-8')
 
 
+def to_display_text(data):
+    """Return *data* as human-readable text.
+
+    This is intended for diagnostic messages for values like tokens
+    and payloads that are sometimes text, and sometimes raw data.  If
+    *data* is :class:`bytes` but all its characters are
+    :data:`printable<python:string.printable>` return it as text,
+    otherwise return it as hex-encoded data (wrapped in square
+    brackets to distinguish the encoding, e.g.: ``[01020304]`` for
+    ``b'\\x01\\x02\\x03\\x04'``).
+
+    Non-bytes data is simply converted to Unicode and returned in that
+    format.  (If *data* is already text, even if it's Unicode, we
+    assume it's displayable.  If it isn't, select a better terminal
+    configuration.)
+    """
+    if isinstance(data, bytes):
+        import string
+        need_binascii = True
+        if sys.version_info < (3, 0):
+            need_binascii = not all(_c in string.printable for _c in data)
+        else:
+            need_binascii = not all(chr(_c) in string.printable for _c in data)
+        if need_binascii:
+            import binascii
+            return '[{0}]'.format(binascii.hexlify(data).decode('utf-8'))
+        data = data.decode('utf-8')
+    return unicode(data)
+
+
 def url_quote(text, safe='/'):
     """Perform URL percent encoding on *text*.
 
@@ -207,6 +237,7 @@ def url_quote(text, safe='/'):
     quoted = urllib.quote(text, safe)
     return quoted
 
+
 def url_unquote(quoted):
     """Perform URL percent decoding on *quoted*.
 
@@ -223,6 +254,7 @@ def url_unquote(quoted):
     else:
         text = urllib.unquote(quoted)
     return text
+
 
 def format_time(tval=None, format='iso'):
     """Convert a date/time value to a standard representation and

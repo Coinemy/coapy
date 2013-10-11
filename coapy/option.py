@@ -250,8 +250,7 @@ class format_opaque (_format_base):
         return value
 
     def _to_text(self, value):
-        import binascii
-        return binascii.hexlify(value)
+        return coapy.util.to_display_text(value)
 
 
 class format_uint (_format_base):

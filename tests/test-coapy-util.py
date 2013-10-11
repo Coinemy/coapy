@@ -109,6 +109,15 @@ class TestNetUnicode (unittest.TestCase):
         self.assertEqual(path, dpath)
 
 
+class TestToDisplayText (unittest.TestCase):
+    def testBasic(self):
+        self.assertEqual('hi', to_display_text('hi'))
+        self.assertEqual('3.5', to_display_text(3.5))
+        self.assertEqual('bytes', to_display_text(b'bytes'))
+        self.assertEqual('[01020304]', to_display_text(b'\x01\x02\x03\x04'))
+        self.assertEqual('こんにちは', to_display_text('こんにちは'))
+
+
 class TestTimeDueOrdinal (unittest.TestCase):
     def testBasic(self):
         now = coapy.clock()

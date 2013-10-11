@@ -15,6 +15,7 @@ coapy.util
 .. autoclass:: TimeDueOrdinal
    :no-show-inheritance:
 
+.. autofunction:: to_display_text
 .. autofunction:: to_net_unicode
 .. autofunction:: url_quote
 .. autofunction:: url_unquote

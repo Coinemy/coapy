@@ -801,11 +801,11 @@ class Message(object):
         if self.destination_endpoint is not None:
             elt.append('\nDestination: {m.destination_endpoint!s}'.format(m=self))
         if 0 < len(self.token):
-            elt.append('\nToken: {m.token!s}'.format(m=self))
+            elt.append('\nToken: {0}'.format(coapy.util.to_display_text(self.token)))
         for opt in self._sort_options():
             elt.append('\nOption {0!s}'.format(opt))
         if self.payload is not None:
-            elt.append('\nPayload: {m.payload}'.format(m=self))
+            elt.append('\nPayload: {0}'.format(coapy.util.to_display_text(self.payload)))
         return ''.join(elt)
     __str__ = __unicode__
 
