@@ -63,6 +63,16 @@ General Resources
   <http://www.ics.uci.edu/~fielding/pubs/dissertation/top.htm>`_, Roy
   Fielding's dissertation which defines the concepts underlying
   Representational State Transfer (REST).
+* `REST APIs must be hypertext-driven
+  <http://roy.gbiv.com/untangled/2008/rest-apis-must-be-hypertext-driven>`_,
+  a discussion of what it means to be a REST interface.
+* `Copper
+  <https://addons.mozilla.org/en-us/firefox/addon/copper-270430/>`_, a
+  `FireFox <https://addons.mozilla.org/en-us/firefox/>`_ browser plug-in
+  supporting CoAP.
+* `Draft Registry <http://svn.tools.ietf.org/svn/wg/core/registry.txt>`_
+  of CoAP-related IANA controlled values.  This includes some proposed
+  options, response codes, and content types.
 
 CoRE Internet Drafts
 ====================
