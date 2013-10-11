@@ -129,5 +129,28 @@ class TestTimeDueOrdinal (unittest.TestCase):
         self.assertEqual(queue, TimeDueOrdinal.queue_ready_prefix(queue, td2.time_due + 1))
 
 
+class TestFormatTime (unittest.TestCase):
+    def testBasic(self):
+        import datetime
+        dt = datetime.datetime(2013, 10, 11, 10, 46, 23)
+        self.assertEqual(('2013-10-11T10:46:23', 0), format_time(dt, 'iso'))
+        self.assertEqual(('2013-284', 47617), format_time(dt, 'ord'))
+        self.assertEqual((735152, 47617), format_time(dt, 'pgd'))
+        (rep, exp) = format_time(dt, 'jd')
+        self.assertAlmostEqual(2456576.948877315037, rep)
+        self.assertEqual(0, exp)
+        (rep, exp) = format_time(dt, 'mjd')
+        self.assertAlmostEqual(56576.448877315037, rep)
+        self.assertEqual(0, exp)
+        (rep, exp) = format_time(dt, 'tjd')
+        self.assertAlmostEqual(16576.448877315037, rep)
+        self.assertEqual(0, exp)
+        self.assertEqual((2456576, 4417), format_time(dt, 'jdn'))
+        self.assertEqual((284, 47617), format_time(dt, 'doy'))
+        self.assertEqual((5, 47617), format_time(dt, 'dow'))
+        self.assertEqual((646, 37), format_time(dt, 'mod'))
+        self.assertEqual((1381488383, 0), format_time(dt, 'posix'))
+
+
 if __name__ == '__main__':
     unittest.main()
