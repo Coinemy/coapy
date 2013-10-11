@@ -588,17 +588,46 @@ class UrOption (object):
         self.__value = self.format.from_packed(self.format.to_packed(unpacked_value))
 
     def _get_value(self):
+        """Contains the value of the option.  This is an instance of
+        :attr:`format.unpacked_type<_format_base.unpacked_type>`.
+        Only values that pass the restrictions of :attr:`format` may
+        be assigned to this property.  Unacceptable values result in
+        :exc:`TypeError<python:exceptions.TypeError>` or
+        :exc:`OptionLengthError`.
+        """
         return self.__value
 
-    value = property(_get_value, _set_value, None,
-                     """Contains the value of the option.  This is an
-                     instance of
-                     :attr:`format.unpacked_type<_format_base.unpacked_type>`.
-                     Only values that pass the restrictions of
-                     :attr:`format` may be assigned to this property.
-                     Unacceptable values result in
-                     :exc:`TypeError<python:exceptions.TypeError>`
-                     or :exc:`OptionLengthError`.""")
+    value = property(_get_value, _set_value)
+
+    @classmethod
+    def first_match(cls, options):
+        """Return the first option in *options* that's an instance of
+        *cls*.
+
+        Returns ``None`` if no option in the *options is an instance
+        of *cls*.  Note that the test is specifically for instances of
+        the class; an instance of :class:`UnrecognizedOption` will not
+        be returned just because the :attr:`number` matches.
+        """
+        for o in options:
+            if isinstance(o, cls):
+                return o
+        return None
+
+    @classmethod
+    def all_match(cls, options):
+        """Return the sub-sequence of options in *options* that are
+        instances of *cls*.
+
+        Note that the test is specifically for instances of the class;
+        an instance of :class:`UnrecognizedOption` will not be
+        returned just because the :attr:`number` matches.
+        """
+        rv = []
+        for o in options:
+            if isinstance(o, cls):
+                rv.append(o)
+        return rv
 
     @property
     def packed_value(self):

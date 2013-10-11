@@ -497,10 +497,11 @@ class Message(object):
         """
         if not isinstance(self, Response):
             return None
-        max_age = 60
-        for opt in filter(lambda _o: isinstance(_o, coapy.option.MaxAge), self.options):
+        opt = coapy.option.MaxAge.first_match(self.options)
+        if opt is None:
+            max_age = 60
+        else:
             max_age = opt.value
-            break
         return max_age
 
     def _get_payload(self):
@@ -740,15 +741,16 @@ class Message(object):
                                                                         isinstance(self, Request))
         opts = self._sort_options()
         if isinstance(self, Request):
-            for opt in filter(lambda _o: isinstance(_o, coapy.option.ProxyUri), opts):
-                if 0 < len(list(filter(lambda _o: isinstance(_o,
-                                                             (coapy.option.UriHost,
-                                                              coapy.option.UriPort,
-                                                              coapy.option.UriPath,
-                                                              coapy.option.UriQuery,
-                                                              )), opts))):
+            opt = coapy.option.ProxyUri.first_match(opts)
+            if opt is not None:
+                bad_opts = [_o for _o in opts if isinstance(_o,
+                                                            (coapy.option.UriHost,
+                                                             coapy.option.UriPort,
+                                                             coapy.option.UriPath,
+                                                             coapy.option.UriQuery,
+                                                             ))]
+                if 0 < len(bad_opts):
                     raise MessageValidationError(MessageValidationError.PROXY_URI_CONFLICT, self)
-                break
         for opt in opts:
             if isinstance(opt, coapy.option.UnrecognizedOption):
                 _log.warn('Unrecognized option in message: {0!s}'.format(opt))

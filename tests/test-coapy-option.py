@@ -110,6 +110,21 @@ class TestOptionInfrastructure (unittest.TestCase):
         puopt = encode_options([uopt])
         self.assertEqual(popt, puopt)
 
+    def testMatchFuncs(self):
+        uh1 = UriHost('localhost')
+        up1 = UriPath('p1')
+        up2 = UriPath('p2')
+        up3 = UriPath('p3')
+        ma = MaxAge(3)
+        opts = [uh1, up1, up2, ma, up3]
+        self.assertTrue(uh1 is UriHost.first_match(opts))
+        self.assertTrue(up1 is UriPath.first_match(opts))
+        self.assertTrue(ma is MaxAge.first_match(opts))
+        self.assertTrue(None is UriQuery.first_match(opts))
+        self.assertEqual([up1, up2, up3], UriPath.all_match(opts))
+        self.assertEqual([uh1], UriHost.all_match(opts))
+        self.assertEqual([], UriQuery.all_match(opts))
+
 
 class TestOptionConformance (unittest.TestCase):
     def testIfMatch(self):

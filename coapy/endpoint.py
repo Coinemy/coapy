@@ -831,17 +831,18 @@ class Endpoint (object):
         if self.security_mode is not None:
             scheme = 'coaps'
         host = None
-        for opt in filter(lambda _o: isinstance(_o, coapy.option.UriHost), opts):
+        opt = coapy.option.UriHost.first_match(opts)
+        if opt is not None:
             host = opt.value
             if host is None:
                 raise URIError('empty Uri-Host')
             if host and ('[' != host[0]):
                 host = urllib.quote(host.encode('utf-8'))
-            break
         if host is None:
             host = self.uri_host
         port = self.port
-        for opt in filter(lambda _o: isinstance(_o, coapy.option.UriPort), opts):
+        opt = coapy.option.UriPort.first_match(opts)
+        if opt is not None:
             port = opt.value
             if port is None:
                 raise URIError('empty Uri-Port')
@@ -852,7 +853,7 @@ class Endpoint (object):
         # Paths are always absolute, so start with an empty segment so the
         # encoded version begins with a slash.
         elts = ['']
-        for segment_opt in filter(lambda _o: isinstance(_o, coapy.option.UriPath), opts):
+        for segment_opt in coapy.option.UriPath.all_match(opts):
             segment = segment_opt.value
             segment = coapy.util.to_net_unicode(segment)
             segment = urllib.quote(segment, str(''))
@@ -862,7 +863,7 @@ class Endpoint (object):
             # Make sure we still have the leading slash
             path = '/'
         elts = []
-        for qseg_opt in filter(lambda _o: isinstance(_o, coapy.option.UriQuery), opts):
+        for qseg_opt in coapy.option.UriQuery.all_match(opts):
             qseg = qseg_opt.value
             qseg = coapy.util.to_net_unicode(qseg)
             qseg = urllib.quote(qseg, str('?'))
