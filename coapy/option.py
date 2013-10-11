@@ -155,7 +155,7 @@ class _format_base (object):
         type-specific packing.  The subclass implementation may assume
         *value* is of type :attr:`unpacked_type` and that the length
         constraints on the packed representation will be checked by
-        :method:`to_packed`.
+        :meth:`to_packed`.
         """
         raise NotImplementedError
 
