@@ -22,6 +22,7 @@ from __future__ import division
 import unittest
 from coapy.endpoint import *
 import coapy.option
+import urlparse
 
 
 class TestEndpoint (unittest.TestCase):
