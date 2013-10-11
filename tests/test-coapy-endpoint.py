@@ -21,6 +21,7 @@ from __future__ import division
 
 import unittest
 from coapy.endpoint import *
+from tests.support import *
 import coapy.option
 import urlparse
 
@@ -359,6 +360,262 @@ class TestMessageCache (unittest.TestCase):
         self.assertTrue(e3.cache is None)
         self.assertEqual(0, len(c))
 
+
+class TestSentCache (DeterministicBEBO_mixin,
+                     LogHandler_mixin,
+                     ManagedClock_mixin,
+                     unittest.TestCase):
+
+    def testCONNoAck(self):
+        tp = coapy.transmissionParameters
+        self.assertEqual(tp.ACK_RANDOM_FACTOR, 1.0)
+        clk = coapy.clock
+        sep = FIFOEndpoint()
+        dep = FIFOEndpoint()
+        self.assertEqual(0, clk())
+        sm = dep.create_request('/path', confirmable=True, token=b'x')
+
+        # Send the request through a full message layer.  In the
+        # current model, this creates the cache entry and sets an
+        # event due immediately but does not actually transmit
+        # anything.
+        ce = sep.send(sm)
+        self.assertEqual(0, ce.transmissions)
+        self.assertTrue(clk() >= ce.time_due)
+        self.assertEqual(ce.ST_untransmitted, ce.state)
+
+        # Process one timeout.  This should send the message and
+        # start the BEBO process.
+        rv = ce.process_timeout()
+        self.assertTrue(rv is ce)
+        self.assertTrue(ce.stale_at is None)
+        self.assertEqual(ce.created_clk, 0)
+        self.assertTrue(ce.message is sm)
+        self.assertTrue(ce.destination_endpoint is dep)
+        self.assertEqual(1, ce.transmissions)
+        self.assertEqual(len(dep.fifo), ce.transmissions)
+
+        # Cycle through the BEBO with ACK_TIMEOUT base interval
+        to = tp.ACK_TIMEOUT
+        for s in xrange(tp.MAX_RETRANSMIT):
+            self.assertEqual(ce.time_due, clk() + to)
+            clk.adjust(to)
+            self.assertEqual(ce.ST_unacknowledged, ce.state)
+            rv = ce.process_timeout()
+            self.assertTrue(rv is ce)
+            self.assertEqual(len(dep.fifo), ce.transmissions)
+            to += to
+
+        # At the end of the retransmissions, the clock should be at
+        # MAX_TRANSMIT_WAIT.  The state should still be
+        # unacknowledged, and there should be a timeout due through
+        # which the caller may deal with the failure to receive an
+        # ACK.
+        clk.adjust(to)
+        self.assertEqual(clk(), tp.MAX_TRANSMIT_WAIT)
+        self.assertEqual(ce.ST_final_ack_wait, ce.state)
+        self.assertEqual(ce.time_due, clk())
+
+        # Now process the timeout, which simply moves the entry into
+        # its completed state with a final timeout at which the entry
+        # should be removed from the cache.
+        rv = ce.process_timeout()
+        self.assertTrue(rv is ce)
+        self.assertEqual(ce.ST_completed, ce.state)
+        self.assertEqual(ce.time_due, tp.EXCHANGE_LIFETIME)
+        clk.adjust(ce.time_due - clk())
+
+        # Finally, process the last timeout which removes the cache
+        # entry.
+        cache = ce.cache
+        self.assertEqual(1, len(cache))
+        rv = ce.process_timeout()
+        self.assertTrue(rv is None)
+        self.assertEqual(0, len(cache))
+        self.assertTrue(ce.cache is None)
+
+    def testNONNoAck(self):
+        tp = coapy.transmissionParameters
+        self.assertEqual(tp.ACK_RANDOM_FACTOR, 1.0)
+        clk = coapy.clock
+        sep = FIFOEndpoint()
+        dep = FIFOEndpoint()
+        self.assertEqual(0, clk())
+        sm = dep.create_request('/path', confirmable=False, token=b'x')
+
+        # Send the request through a full message layer.  In the
+        # current model, this creates the cache entry and sets an
+        # event due immediately but does not actually transmit
+        # anything.
+        ce = sep.send(sm)
+        self.assertEqual(0, ce.transmissions)
+        self.assertTrue(clk() >= ce.time_due)
+        self.assertEqual(ce.ST_untransmitted, ce.state)
+
+        # Process one timeout.  This should send the message and put it
+        # into completed state.
+        rv = ce.process_timeout()
+        self.assertTrue(rv is ce)
+        self.assertTrue(ce.stale_at is None)
+        self.assertEqual(ce.created_clk, 0)
+        self.assertTrue(ce.message is sm)
+        self.assertTrue(ce.destination_endpoint is dep)
+        self.assertEqual(1, ce.transmissions)
+        self.assertEqual(len(dep.fifo), ce.transmissions)
+        self.assertEqual(ce.ST_completed, ce.state)
+        self.assertEqual(ce.time_due, tp.NON_LIFETIME)
+        clk.adjust(ce.time_due - clk())
+
+        # Finally, process the last timeout which removes the cache
+        # entry.
+        cache = ce.cache
+        self.assertEqual(1, len(cache))
+        rv = ce.process_timeout()
+        self.assertTrue(rv is None)
+        self.assertEqual(0, len(cache))
+        self.assertTrue(ce.cache is None)
+
+    def testCONReset(self):
+        from coapy.message import Message, Request, ServerErrorResponse
+
+        tp = coapy.transmissionParameters
+        self.assertEqual(tp.ACK_RANDOM_FACTOR, 1.0)
+        clk = coapy.clock
+        sep = FIFOEndpoint()
+        dep = FIFOEndpoint()
+        self.assertEqual(0, clk())
+        sm = dep.create_request('/path', confirmable=True, token=b'x')
+
+        # Prep the send, then execute it via the timeout.
+        ce = sep.send(sm)
+        self.assertEqual(0, ce.transmissions)
+        self.assertTrue(clk() >= ce.time_due)
+        self.assertEqual(ce.ST_untransmitted, ce.state)
+        rv = ce.process_timeout()
+        self.assertEqual(len(dep.fifo), ce.transmissions)
+
+        # Process the receive
+        self.assertTrue(ce.reply_message is None)
+        self.assertEqual(0, len(sep._rcvd_cache))
+        rce = dep.receive()
+        rm = rce.message
+        self.assertEqual(rm.source_endpoint, sep)
+        self.assertEqual(rm.destination_endpoint, dep)
+        self.assertEqual(len(dep.fifo), 0)
+        self.assertEqual(sm.messageID, rm.messageID)
+        self.assertEqual(1, len(sep._rcvd_cache))
+
+        # Try some invalid replies
+        m = ServerErrorResponse(acknowledgement=True,
+                                messageID=rm.messageID+1,
+                                code=ServerErrorResponse.NotImplemented)
+        with self.assertRaises(ReplyMessageError) as cm:
+            rce.reply(message=m)
+        exc = cm.exception
+        self.assertEqual(exc.args[0], exc.ID_MISMATCH)
+        self.assertEqual(exc.args[1], rce)
+        self.assertEqual(exc.args[2], m)
+
+        m = Request(acknowledgement=True,
+                    messageID=rm.messageID,
+                    token=b'!'+rm.token,
+                    code=Request.GET)
+        with self.assertRaises(ReplyMessageError) as cm:
+            rce.reply(message=m)
+        exc = cm.exception
+        self.assertEqual(exc.args[0], exc.NOT_RESPONSE)
+        self.assertEqual(exc.args[1], rce)
+        self.assertEqual(exc.args[2], m)
+
+        m = ServerErrorResponse(messageID=rm.messageID,
+                                token=rm.token,
+                                code=ServerErrorResponse.NotImplemented)
+        with self.assertRaises(ReplyMessageError) as cm:
+            rce.reply(message=m)
+        exc = cm.exception
+        self.assertEqual(exc.args[0], exc.RESPONSE_NOT_ACK)
+        self.assertEqual(exc.args[1], rce)
+        self.assertEqual(exc.args[2], m)
+
+        m = ServerErrorResponse(acknowledgement=True,
+                                messageID=rm.messageID,
+                                token=b'!'+rm.token,
+                                code=ServerErrorResponse.NotImplemented)
+        with self.assertRaises(ReplyMessageError) as cm:
+            rce.reply(message=m)
+        exc = cm.exception
+        self.assertEqual(exc.args[0], exc.TOKEN_MISMATCH)
+        self.assertEqual(exc.args[1], rce)
+        self.assertEqual(exc.args[2], m)
+
+        # Send the reply
+        self.assertEqual(len(sep.fifo), 0)
+        rce.reply(reset=True)
+
+        with self.assertRaises(ReplyMessageError) as cm:
+            rce.reply(reset=True)
+        exc = cm.exception
+        self.assertEqual(exc.args[0], exc.ALREADY_GIVEN)
+        self.assertEqual(exc.args[1], rce)
+
+        # Process the reply.  Make sure the RST aborts the BEBO.
+        self.assertEqual(len(sep.fifo), 1)
+        self.assertTrue(ce.reply_message is None)
+        rrce = sep.receive()
+        self.assertTrue(rrce is None)
+        self.assertTrue(ce.reply_message is not None)
+        self.assertTrue(ce.reply_message.is_reset())
+        self.assertEqual(ce.ST_completed, ce.state)
+        self.assertEqual(ce.time_due, tp.EXCHANGE_LIFETIME)
+
+    def testCONPBReply(self):
+        from coapy.message import Message, Request, SuccessResponse
+
+        tp = coapy.transmissionParameters
+        self.assertEqual(tp.ACK_RANDOM_FACTOR, 1.0)
+        clk = coapy.clock
+        sep = FIFOEndpoint()
+        dep = FIFOEndpoint()
+        self.assertEqual(0, clk())
+        sm = dep.create_request('/path', confirmable=True, token=b'x')
+
+        # Prep the send, then execute it via the timeout.
+        ce = sep.send(sm)
+        self.assertEqual(0, ce.transmissions)
+        self.assertTrue(clk() >= ce.time_due)
+        self.assertEqual(ce.ST_untransmitted, ce.state)
+        rv = ce.process_timeout()
+        self.assertEqual(len(dep.fifo), ce.transmissions)
+
+        # Process the receive
+        self.assertTrue(ce.reply_message is None)
+        self.assertEqual(0, len(sep._rcvd_cache))
+        rce = dep.receive()
+        reqm = rce.message
+        self.assertEqual(reqm.source_endpoint, sep)
+        self.assertEqual(reqm.destination_endpoint, dep)
+        self.assertEqual(len(dep.fifo), 0)
+        self.assertEqual(sm.messageID, reqm.messageID)
+        self.assertEqual(1, len(sep._rcvd_cache))
+
+        # Create a response message
+        rspm = reqm.create_response(SuccessResponse,
+                                    code=SuccessResponse.Content)
+        self.assertTrue(rspm.is_acknowledgement())
+
+        # Send the response as a piggy-backed reply
+        self.assertEqual(len(sep.fifo), 0)
+        rce.reply(message=rspm)
+
+        # Process the reply.  Make sure the ACK aborts the BEBO.
+        self.assertEqual(len(sep.fifo), 1)
+        self.assertTrue(ce.reply_message is None)
+        rrce = sep.receive()
+        self.assertTrue(rrce is None)
+        self.assertTrue(ce.reply_message is not None)
+        self.assertTrue(ce.reply_message.is_acknowledgement())
+        self.assertEqual(ce.ST_completed, ce.state)
+        self.assertEqual(ce.time_due, tp.EXCHANGE_LIFETIME)
 
 if __name__ == '__main__':
     unittest.main()

@@ -14,3 +14,11 @@ Message Caches
 
 .. autoclass:: MessageCacheEntry
 .. autoclass:: MessageCache
+.. autoclass:: SentMessageCacheEntry
+.. autoclass:: RcvdMessageCacheEntry
+
+
+Exceptions
+----------
+
+.. autoclass:: ReplyMessageError

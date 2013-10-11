@@ -45,6 +45,42 @@ class URIError (coapy.CoAPyException):
     pass
 
 
+class ReplyMessageError (coapy.CoAPyException):
+    """Exception raised when :meth:`RcvdMessageCacheEntry.reply` is
+    invoked improperly.
+
+    The *args* are ``(diagnostic, cache_entry, message)`` where
+    *diagnostic* is one of the string values in this class,
+    *cache_entry* is the :class:`RcvdMessageCacheEntry`, and *message* is
+    the proposed reply message that was rejected.
+    """
+
+    ID_MISMATCH = 'Message IDs do not match'
+    """A reply message must match using the
+    :attr:`messageID<coapy.message.Message.messageID>` attributes.
+    """
+
+    TOKEN_MISMATCH = 'Tokens do not match'
+    """A piggy-backed response must match the
+    :attr:`Token<coapy.message.Message.token>` of the request.
+    """
+
+    NOT_RESPONSE = 'Non-empty reply is not a response'
+    """A piggy-backed response must be a :class:`response
+    message<coapy.message.Response>`.
+    """
+
+    RESPONSE_NOT_ACK = 'Piggy-backed response is not ACK'
+    """A piggy-backed response must have type
+    :attr:`ACK<coapy.message.Message.Type_ACK>`.
+    """
+
+    ALREADY_GIVEN = 'Message already has reply'
+    """A :attr:`reply_message<RcvdMessageCacheEntry.reply_message>`
+    has already been assigned.
+    """
+
+
 class MessageCacheEntry (coapy.util.TimeDueOrdinal):
     """A class holding data stored in a :class:`MessageCache`.
 
@@ -216,6 +252,8 @@ class MessageCache (object):
             raise ValueError(value)
         if value.message_id in self.__dict:
             raise ValueError(value)
+        if value.cache != self:
+            raise ValueError(value)
         value.queue_insert(self.__queue)
         self.__dict[value.message_id] = value
 
@@ -225,7 +263,6 @@ class MessageCache (object):
         if not isinstance(value, MessageCacheEntry):
             raise ValueError(value)
         value.queue_remove(self.__queue)
-
         del self.__dict[value.message_id]
         value._dissociate()
         return value
@@ -242,10 +279,288 @@ class MessageCache (object):
         return len(self.__queue)
 
     def __getitem__(self, key):
+        if isinstance(key, coapy.message.Message):
+            key = key.messageID
         return self.__dict[key]
 
     def __contains__(self, key):
         return key in self.__dict
+
+
+class SentMessageCacheEntry (MessageCacheEntry):
+    """Data related to a message sent from a specific endpoint.
+
+    This cache holds a message that originated from a local
+    :attr:`coapy.message.Message.source_endpoint`, along with the
+    necessary state to retransmit it if it is
+    :meth:`confirmable<coapy.message.Message.is_confirmable>`.
+    """
+
+    ST_untransmitted = 0
+    ST_unacknowledged = 1
+    ST_final_ack_wait = 2
+    ST_completed = 3
+    ST_removed = 4
+
+    @property
+    def state(self):
+        return self.__state
+    __state = None
+
+    @property
+    def transmissions(self):
+        """Number of times this message has been transmitted."""
+        return self.__transmissions
+    __transmissions = None
+
+    @property
+    def created_clk(self):
+        """The :func:`coapy.clock` value at the time the cache entry
+        was created.
+        """
+        return self.__created_clk
+    __created_clk = None
+
+    __bebo = None
+
+    @property
+    def message(self):
+        """The :class:`coapy.message.Message` being cached."""
+        return self.__message
+    __message = None
+
+    @property
+    def reply_message(self):
+        """The :class:`coapy.message.Message` that was received in response to :attr:`message`.
+
+        The value is ``None`` unless either an
+        :attr:`acknowledgement<coapy.message.Message.Type_ACK>` (empty
+        or with a piggy-backed response) or a
+        :attr:`reset<coapy.message.Message.Type_RST>` has been
+        received.
+        """
+        return self.__reply
+    __reply = None
+
+    @property
+    def destination_endpoint(self):
+        """The endpoint to which the message is being sent."""
+        return self.__destination_endpoint
+    __destination_endpoint = None
+
+    @property
+    def stale_at(self):
+        """Return the time at which the content of a response message is outdated.
+
+        This is calculated from the :class:`coapy.option.MaxAge`
+        option in conjunction with :attr:`created_clk`.  Callers may
+        wish to update the :attr:`message` options to reflect the
+        change in age on subsequent retransmissions.
+
+        The value is ``None`` if the message is not a response.
+        """
+        return self.__stale_at
+    __stale_at = None
+
+    def __init__(self, cache, message, destination_endpoint, transmission_parameters=None):
+        if not isinstance(message, coapy.message.Message):
+            raise ValueError(message)
+        if transmission_parameters is None:
+            transmission_parameters = coapy.transmissionParameters
+        self.__created_clk = coapy.clock()
+        self.__destination_endpoint = destination_endpoint
+        self.__expiry_due = self.__created_clk
+        if message.is_confirmable():
+            self.__expiry_due += transmission_parameters.EXCHANGE_LIFETIME
+        elif message.is_non_confirmable():
+            self.__expiry_due += transmission_parameters.NON_LIFETIME
+        else:
+            # ACK and RST messages should not be cached
+            raise ValueError(message)
+        if isinstance(message, coapy.message.Response):
+            self.__stale_at = self.__created_clk + message.maxAge()
+        self.__state = self.ST_untransmitted
+        self.__transmissions = 0
+        self.__message = message
+        self.__timeout = 0
+        time_due = self.__created_clk
+        super(SentMessageCacheEntry, self).__init__(cache=cache,
+                                                    message_id=message.messageID,
+                                                    time_due=time_due)
+        if message.is_confirmable():
+            self.__bebo = transmission_parameters.make_bebo()
+
+    def __complete(self):
+        self.__state = self.ST_completed
+        self.time_due = self.__expiry_due
+
+    def process_timeout(self):
+        now = coapy.clock()
+        if now < self.time_due:
+            raise Exception
+        if self.__state == self.ST_removed:
+            raise Exception
+        if self.__state == self.ST_completed:
+            self.cache._remove(self)
+            self.__state = self.ST_removed
+            return None
+        ep = self.cache.endpoint
+        data = self.message.to_packed()
+        ep.rawsendto(data, self.destination_endpoint)
+        self.__transmissions += 1
+        if self.ST_untransmitted == self.__state:
+            if self.__bebo is None:
+                self.__complete()
+            else:
+                self.__state = self.ST_unacknowledged
+        if self.ST_unacknowledged == self.__state:
+            try:
+                self.__timeout = next(self.__bebo)
+            except StopIteration:
+                self.__bebo = None
+                # Double last timeout (4.2) to wait for
+                # acknowledgement to final transmission
+                self.__timeout += self.__timeout
+                self.__state = self.ST_final_ack_wait
+            self.time_due += self.__timeout
+        elif self.ST_final_ack_wait == self.__state:
+            self.__complete()
+        return self
+
+    def process_reply(self, msg):
+        if self.__reply is not None:
+            _log.warning('Multiple replies')
+            return
+        if msg.is_reset() or ((self.ST_unacknowledged == self.__state) and msg.is_acknowledgement):
+            self.__reply = msg
+            self.__complete()
+            return self
+        raise ValueError(msg)
+
+
+class RcvdMessageCacheEntry (MessageCacheEntry):
+    """Data related to a message received by a specific endpoint.
+
+    This cache holds a message that originated from a remote
+    :attr:`coapy.message.Message.source_endpoint`, along with the
+    necessary state to cache the reply to that message.
+
+    *cache* must be the source endpoint cache for received messages.
+
+    *message* must be a message that originated on that host, and is
+    either a :meth:`confirmable<coapy.message.Message.is_confirmable>`
+    or
+    :meth:`non-confirmable<coapy.message.Message.is_non_confirmable>`
+    message.  Acknowledgements and Resets are not recorded in the
+    cache.
+    """
+
+    @property
+    def created_clk(self):
+        """The :func:`coapy.clock` value at the time the cache entry
+        was created.  This should correspond to the time at which
+        :attr:`message` was first received.
+        """
+        return self.__created_clk
+    __created_clk = None
+
+    @property
+    def message(self):
+        """The :class:`coapy.message.Message` being cached."""
+        return self.__message
+    __message = None
+
+    @property
+    def reception_count(self):
+        """The number of times :attr:`message` was received.  More
+        strictly, this is the number of times a message with the same
+        :attr:`messageID<coapy.message.Message.messageID>` was received
+        while this cache entry is live.  Diagnostics may be emitted in a
+        situation where it appears a message ID has been re-used
+        prematurely.
+        """
+        return self.__reception_count
+    __reception_count = None
+
+    @property
+    def reply_message(self):
+        """The :class:`coapy.message.Message` that was sent in
+        response to this message.  ``None`` until a response is sent,
+        then either an
+        :meth:`acknowledgement<coapy.message.Message.is_acknowledgement>`
+        (which may or may not have a :coapsect:`piggy-backed
+        response<>`) or a
+        :meth:`reset<coapy.message.Message.is_reset>` message.  A
+        non-confirmable message may have no response at all.
+        """
+        return self.__reply_message
+    __reply_message = None
+
+    def reply(self, reset=False, message=None):
+        """Create the :attr:`reply_message` for the reception in this entry.
+
+        If *message* is provided, it should be an
+        :class:`coapy.message.Response` message with type
+        :attr:`ACK<coapy.message.Message.Type_ACK>` that is to be sent
+        as a :coapsect:`piggy-backed response<5.2.1>`.
+
+        If *message* is ``None``, this method will create an empty
+        :attr:`ACK<coapy.message.Message.Type_ACK>` (*reset* is
+        ``False``) or
+        :attr:`RST<coapy.message.Message.Type_RST>` (*reset* is
+        ``True``) message.
+
+        The reply message will be transmitted to the source endpoint
+        of the received message.
+
+        Erroneous use will raise :exc:`ReplyMessageError`.
+        """
+
+        if self.__reply_message is not None:
+            raise ReplyMessageError(ReplyMessageError.ALREADY_GIVEN, self, message)
+        if message is None:
+            message = self.message.create_reply(reset=reset)
+        if message.messageID is None:
+            message.messageID = self.message.messageID
+        if message.messageID != self.message.messageID:
+            raise ReplyMessageError(ReplyMessageError.ID_MISMATCH, self, message)
+        if coapy.message.Message.Empty != message.code:
+            if not isinstance(message, coapy.message.Response):
+                raise ReplyMessageError(ReplyMessageError.NOT_RESPONSE, self, message)
+            if not message.is_acknowledgement():
+                raise ReplyMessageError(ReplyMessageError.RESPONSE_NOT_ACK, self, message)
+            if message.token != self.message.token:
+                raise ReplyMessageError(ReplyMessageError.TOKEN_MISMATCH, self, message)
+        if message.source_endpoint is None:
+            message.source_endpoint = self.message.destination_endpoint
+        if message.destination_endpoint is None:
+            message.destination_endpoint = self.message.source_endpoint
+        self.__reply_message = message
+        self.resend_reply()
+
+    def resend_reply(self):
+        rm = self.__reply_message
+        rm.source_endpoint.rawsendto(rm.to_packed(), rm.destination_endpoint)
+
+    def __init__(self, cache, message, transmission_parameters=None):
+        if not isinstance(message, coapy.message.Message):
+            raise ValueError(message)
+        if transmission_parameters is None:
+            transmission_parameters = coapy.transmissionParameters
+        self.__created_clk = coapy.clock()
+        self.__message = message
+        self.__reception_count = 1
+        time_due = self.created_clk
+        if message.is_confirmable():
+            time_due += transmission_parameters.EXCHANGE_LIFETIME
+        elif message.is_non_confirmable():
+            time_due += transmission_parameters.NON_LIFETIME
+        else:
+            # ACK and RST messages should not be cached
+            raise ValueError(message)
+        super(RcvdMessageCacheEntry, self).__init__(cache=cache,
+                                                    message_id=message.messageID,
+                                                    time_due=time_due)
 
 
 class Endpoint (object):
@@ -663,6 +978,8 @@ class Endpoint (object):
             except:
                 pass
             self.__bound_socket = None
+        self._sent_cache = MessageCache(self, True)
+        self._rcvd_cache = MessageCache(self, False)
 
     def __init__(self, sockaddr=None, family=socket.AF_UNSPEC,
                  security_mode=None,
@@ -679,12 +996,17 @@ class Endpoint (object):
         """Return a new messageID suitable for a message to this endpoint.
 
         This is sequentially generated starting from an initial value
-        that was randomly generated when the endpoint was created.
+        that was randomly generated when the endpoint was created.  It
+        is filtered so message IDs still present in the sent message
+        cache are not re-used.
         """
-        return next(self.__messageID_iter)
+        while True:
+            mid = next(self.__messageID_iter)
+            if not (mid in self._sent_cache):
+                return mid
 
     def _reset_next_messageID(self, start):
-        # Back-door for unit testing.
+        # Back-door for unit testing from known starting point
         self.__messageID_iter = itertools.imap(lambda _v: _v % 65536, itertools.count(start))
 
     def get_peer_endpoint(self, sockaddr=None, host=None, port=coapy.COAP_PORT):
@@ -901,6 +1223,86 @@ class Endpoint (object):
         if len(nopt) != len(message.options):
             message.options = nopt
         return message
+
+    def _flush_rcvd_cache(self):
+        now = coapy.clock()
+        cache = self._rcvd_cache
+        while 0 < len(cache):
+            e = cache.peek_oldest()
+            if e.time_due > now:
+                break
+            cache.pop_oldest()
+
+    def receive(self):
+        """Receive and decode a message from another endpoint.
+
+        Returns ``None`` if the message is so corrupt it should be
+        ignored, or if the received message is a duplicate.  Raises
+        :exc:`coapy.message.MessageFormatError` if the message cannot
+        be fully decoded.  Otherwise returns the message, in which
+        :attr:`destination_endpoint<coapy.message.Message.destination_endpoint>`
+        will be set to *self* and
+        :attr:`source_endpoint<coapy.message.Message.source_endpoint>`
+        will be set to *source_endpoint*.
+
+        Any message-layer processing (e.g. re-sending duplicate ACK or
+        RST, or sending a RST due to a message format error) will have
+        been done before this call returns.
+        """
+        m = None
+        dkw = None
+        (data, source_endpoint) = self.rawrecvfrom(8192)
+        try:
+            m = coapy.message.Message.from_packed(data)
+            m.destination_endpoint = self
+            m.source_endpoint = source_endpoint
+        except coapy.message.MessageFormatError as e:
+            _log.exception('receive')
+            dkw = e.args[1]
+        if m is None:
+            mid = dkw['messageID']
+            mtype = dkw['type']
+        else:
+            mid = m.messageID
+            mtype = m.messageType
+        local_origin = not coapy.message.Message.source_originates_type(mtype)
+        if local_origin:
+            # local_origin means ACK or RST; look in send cache.
+            ce = self._sent_cache.get(mid)
+            if ce is None:
+                _log.error('Reply to unrecognized message')
+                return None
+            if m is None:
+                _log.error('Invalid reply to message')
+                return None
+            ce.process_reply(m)
+            return None
+        # not local origin means CON or NON; look in receive cache
+        ce = source_endpoint._rcvd_cache.get(mid)
+        if ce is not None:
+            _log.error('Received duplicate')
+            return None
+        if m is None:
+            _log.error('Need send RST')
+        return RcvdMessageCacheEntry(source_endpoint._rcvd_cache, m)
+
+    def send(self, msg, destination_endpoint=None):
+        """Send *msg* to *destination_endpoint*.
+
+        *msg* must be an instance of :class:`coapy.message.Message`.
+
+        *destination_endpoint* specifies where the packed message will
+        be sent and defaults to *msg*'s
+        :attr:`destination_endpoint<coapy.message.Message.destination_endpoint>`.
+
+        The return value is the :class:`SentMessageCacheEntry` that
+        has message-level transmission state.
+        """
+        if not isinstance(msg, coapy.message.Message):
+            raise TypeError(msg)
+        if destination_endpoint is None:
+            destination_endpoint = msg.destination_endpoint
+        return SentMessageCacheEntry(self._sent_cache, msg, destination_endpoint)
 
     def create_request(self, uri,
                        confirmable=False,
