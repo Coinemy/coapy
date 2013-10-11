@@ -171,13 +171,15 @@ class MessageCache (object):
         self.keys = self.__dict.keys
         self.values = self.__dict.values
         self.items = self.__dict.items
-        self.has_key = self.__dict.has_key
         self.get = self.__dict.get
         # clear
         # setdefault
-        self.iterkeys = self.__dict.iterkeys
-        self.itervalues = self.__dict.itervalues
-        self.iteritems = self.__dict.iteritems
+        import sys
+        if sys.version_info < (3, 0):
+            self.has_key = self.__dict.has_key
+            self.iterkeys = self.__dict.iterkeys
+            self.itervalues = self.__dict.itervalues
+            self.iteritems = self.__dict.iteritems
         # pop
         # popitem
         # copy
