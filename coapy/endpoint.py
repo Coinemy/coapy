@@ -1101,7 +1101,7 @@ class Endpoint (object):
         # ParseResult hostname and port values rather than try to re-parse
         # netloc locally.
         if res.hostname:
-            host = urllib.unquote(res.hostname)
+            host = coapy.util.url_unquote(res.hostname)
             if not self.is_same_host(host):
                 opts.append(coapy.option.UriHost(host))
 
@@ -1120,18 +1120,14 @@ class Endpoint (object):
             if path.startswith('/'):
                 path = path[1:]
             for segment in path.split('/'):
-                segment = bytes(segment)
-                segment = urllib.unquote(segment)
-                segment = segment.decode('utf-8')
+                segment = coapy.util.url_unquote(segment)
                 opts.append(coapy.option.UriPath(segment))
 
         # 6.4.9
         query = res.query
         if query:
             for qseg in query.split('&'):
-                qseg = bytes(qseg)
-                qseg = urllib.unquote(qseg)
-                qseg = qseg.decode('utf-8')
+                qseg = coapy.util.url_unquote(qseg)
                 opts.append(coapy.option.UriQuery(qseg))
         return opts
 
@@ -1161,7 +1157,7 @@ class Endpoint (object):
             if host is None:
                 raise URIError('empty Uri-Host')
             if host and ('[' != host[0]):
-                host = urllib.quote(host.encode('utf-8'))
+                host = coapy.util.url_quote(host)
         if host is None:
             host = self.uri_host
         port = self.port
@@ -1179,8 +1175,7 @@ class Endpoint (object):
         elts = ['']
         for segment_opt in coapy.option.UriPath.all_match(opts):
             segment = segment_opt.value
-            segment = coapy.util.to_net_unicode(segment)
-            segment = urllib.quote(segment, str(''))
+            segment = coapy.util.url_quote(segment, '')
             elts.append(segment)
         path = '/'.join(elts)
         if not path:
@@ -1189,8 +1184,7 @@ class Endpoint (object):
         elts = []
         for qseg_opt in coapy.option.UriQuery.all_match(opts):
             qseg = qseg_opt.value
-            qseg = coapy.util.to_net_unicode(qseg)
-            qseg = urllib.quote(qseg, str('?'))
+            qseg = coapy.util.url_quote(qseg, '?')
             elts.append(qseg)
         query = '&'.join(elts)
         return urlparse.urlunsplit((scheme, netloc, path, query, None))

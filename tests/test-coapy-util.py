@@ -102,11 +102,10 @@ class TestNetUnicode (unittest.TestCase):
 
         path = 'こんにちは'
         path_nu = to_net_unicode(path)
+        path_uq = url_quote(path_nu)
         self.assertEqual('%E3%81%93%E3%82%93%E3%81%AB%E3%81%A1%E3%81%AF',
-                         urllib.quote(path_nu))
-        dpath_nu = urllib.unquote(bytes(urllib.quote(path_nu)))
-        self.assertEqual(path_nu, dpath_nu)
-        dpath = path_nu.decode('utf-8')
+                         path_uq)
+        dpath = url_unquote(path_uq)
         self.assertEqual(path, dpath)
 
 

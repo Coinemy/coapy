@@ -16,4 +16,6 @@ coapy.util
    :no-show-inheritance:
 
 .. autofunction:: to_net_unicode
+.. autofunction:: url_quote
+.. autofunction:: url_unquote
 .. autofunction:: format_time

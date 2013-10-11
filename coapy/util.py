@@ -27,6 +27,7 @@ from __future__ import division
 import logging
 _log = logging.getLogger(__name__)
 
+import sys
 import coapy
 import unicodedata
 import functools
@@ -34,6 +35,7 @@ import bisect
 import time
 import datetime
 import calendar
+import urllib
 
 
 class ClassReadOnly (object):
@@ -166,17 +168,61 @@ class TimeDueOrdinal(object):
 def to_net_unicode(text):
     """Convert text to Net-Unicode (:rfc:`5198`) data.
 
-    This normalizes the text to ensure all characters are their own
+    This normalizes *text* to ensure all characters are their own
     canonical equivalent in the NFC form (section 3 of :rfc:`5198`).
-    The result is encoded in UTF-8 and returned.
+    The result is encoded in UTF-8 and returned as data.
 
     The operation currently does not handle newline normalization
     (section 2 item 2), since its use in CoAP is currently limited to
-    values of options with format :class:`coapy.option.format_string`.
+    values of options with format :class:`coapy.option.format_string`
+    and diagnostic payloads.
     """
     # At first blush, this is Net-Unicode.
     return unicodedata.normalize('NFC', text).encode('utf-8')
 
+
+def url_quote(text, safe='/'):
+    """Perform URL percent encoding on *text*.
+
+    If *text* is Unicode, it is first converted to
+    :func:`Net-Unicode<to_net_unicode>`.  *text* may also be data.
+
+    Unsafe characters are percent-escaped, and the result is returned
+    as text containing only ASCII characters.
+
+    *safe* is as in :func:`python:urllib.parse`.
+
+    Encapsulated because in Python 3 :func:`python:urllib.parse.quote`
+    works directly on Unicode strings, while in Python 2 the
+    corresponding :func:`python:urllib.quote` does not tolerate
+    Unicode characters and does not like *safe* to be a Unicode
+    string as it is since we use unicode_literals).
+    """
+
+    if isinstance(text, unicode):
+        text = to_net_unicode(text)
+    if sys.version_info < (3, 0):
+        # Python 2 quote does not like having a Unicode safe string
+        safe = str(safe)
+    quoted = urllib.quote(text, safe)
+    return quoted
+
+def url_unquote(quoted):
+    """Perform URL percent decoding on *quoted*.
+
+    Encapsulated because in Python 3
+    :func:`python:urllib.parse.unquote` works directly on Unicode
+    strings, while in Python 2 the corresponding
+    :func:`python:urllib.unquote` does not tolerate Unicode
+    characters.
+    """
+    if sys.version_info < (3, 0):
+        data = bytes(quoted)
+        encoded = urllib.unquote(data)
+        text = encoded.decode('utf-8')
+    else:
+        text = urllib.unquote(quoted)
+    return text
 
 def format_time(tval=None, format='iso'):
     """Convert a date/time value to a standard representation and
