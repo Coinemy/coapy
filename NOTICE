@@ -1,4 +1,7 @@
 CoAPy
 Copyright 2013, Peter A. Bigot
+Parts Copyright © 2001-2013 Python Software Foundation; All Rights Reserved
 
 This product includes software developed by Peter Bigot.
+
+coapy/httputil.py includes modified code from Python 2.7.3.
