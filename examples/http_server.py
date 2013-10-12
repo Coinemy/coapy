@@ -105,7 +105,106 @@ class TimeResource(HTTPResource):
         if not head_only:
             request.wfile.write(content)
 
+class BlackboardResource(HTTPResource):
+    """Test with::
+      curl -D- 'http://localhost:8000/blackboard/foo'
+      curl -X POST -D- --data 'something' 'http://localhost:8000/blackboard/foo'
+      curl -D- 'http://localhost:8000/blackboard/foo'
+      curl -X PUT -D- --data 'else' 'http://localhost:8000/blackboard/foo'
+      curl -D- 'http://localhost:8000/blackboard/foo'
+      curl -X DELETE -D- 'http://localhost:8000/blackboard/foo'
+      curl -D- 'http://localhost:8000/blackboard/foo'
+    """
+
+    class PostingData(object):
+        key = None
+        content_type = None
+        content = None
+        updates = None
+        last_update = None
+
+        def __init__(self, key, content, content_type):
+            self.key = key
+            self.content = content
+            self.content_type = content_type
+            self.updates = 0
+            self.last_update = time.time()
+
+    def __init__(self, path, handler_class=HTTPRequestHandler):
+        super(BlackboardResource, self).__init__(path, handler_class)
+        self.__postings = {}
+
+    def key_from_request(self, request):
+        key = request.split_uri.path
+        if not key.startswith(self.path):
+            request.send_error(400, 'Bad path')
+            return None
+        key = key[len(self.path):]
+        return key
+
+    def do_GET(self, request, head_only=False):
+        key = self.key_from_request(request)
+        if key is None:
+            return
+        try:
+            record = self.__postings[key]
+        except KeyError:
+            request.send_response(404)
+            return
+        request.send_response(200)
+        request.send_header('Content-Type', record.content_type)
+        request.send_header('Content-Length', len(record.content))
+        request.end_headers()
+        if not head_only:
+            request.wfile.write(record.content)
+
+    def do_DELETE(self, request, head_only=False):
+        key = self.key_from_request(request)
+        if key is None:
+            return
+        try:
+            del self.__postings[key]
+        except KeyError:
+            request.send_response(404)
+            return
+        request.send_response(204)
+
+    def do_POST(self, request):
+        key = self.key_from_request(request)
+        if key is None:
+            return
+        try:
+            record = self.__postings[key]
+            request.send_response(409)
+            return
+        except KeyError:
+            pass
+        content = request.rfile.read(int(request.headers['Content-Length']))
+        content_type = request.headers['Content-Type']
+        _log.info('{0} create {1} as {2}'.format(self.path, key, content_type))
+        self.__postings[key] = self.PostingData(key, content, content_type)
+        request.send_response(201)
+        request.send_header('Location', request.server.make_uri(''.join([self.path, key])))
+        request.end_headers()
+
+    def do_PUT(self, request):
+        key = self.key_from_request(request)
+        if key is None:
+            return
+        try:
+            record = self.__postings[key]
+        except KeyError:
+            request.send_response(404)
+            return
+        record.content = request.rfile.read(int(request.headers['Content-Length']))
+        record.content_type = request.headers['Content-Type']
+        record.updates += 1
+        record.last_update = time.time()
+        request.send_response(204)
+
+
 TimeResource('/time')
+BlackboardResource('/blackboard')
 
 # Can't use wildcard here since Python server doesn't tell you which
 # interface the request came in on, and we need a valid host to
