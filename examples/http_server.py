@@ -41,6 +41,8 @@ import BaseHTTPServer
 import urlparse
 import time
 import socket
+import struct
+import re
 
 import coapy.util
 from coapy.httputil import *
@@ -203,8 +205,76 @@ class BlackboardResource(HTTPResource):
         request.send_response(204)
 
 
+class BlockResource(HTTPResource):
+    """
+        curl -ox 'http://localhost:8000/block'
+        curl -ox -H 'Range: bytes=256-511' 'http://localhost:8000/block'
+    """
+    size = None
+
+    def __init__(self, path, handler_class=HTTPRequestHandler, size=4096):
+        super(BlockResource, self).__init__(path, handler_class)
+        self.size = size
+
+    def send_content(self, request, offset, length):
+        block_size = 16
+        endoffs = offset + length
+        total = 0
+        while offset < endoffs:
+            base = block_size * (offset // block_size)
+            block = struct.pack(str('!I'), base)
+            block += struct.pack(str('{0}B').format(block_size-4), 0xFF, *(range(5, block_size)))
+            sp = offset % block_size
+            if endoffs >= (base + block_size):
+                ep = block_size
+            else:
+                ep = endoffs % block_size
+            request.wfile.write(block[sp:ep])
+            offset += (ep - sp)
+            total += ep - sp
+        print('Wrote {0} octets'.format(total))
+        request.wfile.flush()
+
+    bytes_re = re.compile('^bytes=(?P<soffs>\d*)-(?P<eoffs>\d*)$')
+
+    def do_GET(self, request, head_only=False):
+        offs = 0
+        length = self.size
+        range = request.headers.get('Range')
+        if range is None:
+            request.send_response(200)
+        else:
+            m = self.bytes_re.match(range)
+            if m is None:
+                request.send_response(416)
+                return
+            (soffs, eoffs) = m.groups()
+            if '' == soffs:
+                length = int(eoffs)
+                offs = self.size - length
+            elif '' == eoffs:
+                offs = int(soffs)
+                length = self.size - offs
+            else:
+                offs = int(soffs)
+                length = int(eoffs) - offs + 1
+            if (0 > offs) or ((offs + length) > self.size):
+                request.send_response(416)
+                content = 'Entity size is {0}'.format(self.size)
+                request.send_header('Content-Length', len(content))
+                request.end_headers()
+                request.wfile.write(content)
+                return
+            request.send_response(206)
+        request.send_header('Content-Type', 'application/octet-stream')
+        request.send_header('Content-Length', length)
+        request.end_headers()
+        if not head_only:
+            self.send_content(request, offs, length)
+
 TimeResource('/time')
 BlackboardResource('/blackboard')
+BlockResource('/block')
 
 # Can't use wildcard here since Python server doesn't tell you which
 # interface the request came in on, and we need a valid host to
