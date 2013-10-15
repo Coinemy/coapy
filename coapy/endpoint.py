@@ -574,6 +574,11 @@ class Endpoint (object):
     :coapsect:`default values for options<5.10.1>`, and re-usability
     of message IDs, are associated with specific endpoints.
 
+    Note that although all endpoints have socket addresses, the base
+    :class:`Endpoint` class does not provide any communications
+    infrastructure.  Subclasses of :class:`LocalEndpoint` provide
+    the communication methods.
+
     *sockaddr*, if not ``None``, must be a tuple the first two
     elements of which are ``host, port`` which override the
     user-provided *host* and *port*.
@@ -610,6 +615,17 @@ class Endpoint (object):
     will return a reference to the original instance.
     """
 
+    # NOTE To Developer: Because Endpoint controls object allocation
+    # through the __new__ method, subclasses should not extend
+    # __new__, but instead must make sure that any subclass
+    # construction is done with a factory method that ensures its
+    # __init__() call takes the same arguments as Endpoint's init
+    # (which are the same as Endpoint's __new__).  Subclasses should
+    # not initialize any local state in __init__ but instead do so
+    # inside _reset(), which Endpoint's __init__ conditionally invokes
+    # when the endpoint is first created.  You can ignore this if you
+    # know exactly what you're doing, but you probably shouldn't.
+
     @property
     def sockaddr(self):
         """The Python :mod:`python:socket` address of the endpoint.
@@ -629,138 +645,6 @@ class Endpoint (object):
         *number*.
         """
         return self.__sockaddr
-
-    __bound_socket = None
-
-    def set_bound_socket(self, socket):
-        """Set the :attr:`bound_socket`.
-
-        *socket* may be ``None``, in which case the endpoint is
-        disassociated from any socket.
-
-        If *socket* is not ``None`` it must be an object suitable for
-        assignment to :attr:`bound_socket`.  The endpoint adopts the
-        socket, in that if/when the endpoint is destroyed the socket
-        will be closed if it remains bound to the endpoint.  (Since
-        :class:`Endpoint` instances are almost impossible to destroy,
-        this has little relevance at this time.)
-
-        In either case if the assignment succeed the previous value of
-        :attr:`bound_socket` is returned, with the caller taking
-        responsibility to close it when finished.
-
-        .. note::
-           For simulation and testing purposes *socket* might not be
-           a :func:`socket object<python:socket.socket>`, but it must
-           act like one with respect to the methods CoAPy expects it
-           to provide, including but not limited to:
-
-           * :meth:`getsockname()<python:socket.socket.getsockname>`
-           * :meth:`sendto()<python:socket.socket.sendto>`
-        """
-        obs = self.__bound_socket
-        if (socket is not None) and (self.sockaddr != socket.getsockname()):
-            raise ValueError(socket)
-        self.__bound_socket = socket
-        return obs
-
-    @property
-    def bound_socket(self):
-        """Return a :func:`socket object<python:socket.socket>`
-        instance that is bound to :attr:`sockaddr`.
-
-        This may only be set for endpoints that are local to the host.
-        It may set to ``None`` to disassociate the endpoint from a
-        socket, and may be changed from ``None`` to an object that
-        returns :attr:`sockaddr` when
-        :meth:`socket.getsockname<python:socket.socket.getsockname>`
-        is invoked on it.
-
-        See :meth:`create_bound_endpoint` and
-        :meth:`set_bound_socket`.
-        """
-        return self.__bound_socket
-
-    def _rawsendto(self, data, destination_endpoint):
-        """Send *data* from this endpoint to *destination_endpoint*.
-
-        This invokes :meth:`sendto<python:socket.socket.sendto>` on
-        :attr:`bound_socket` to transmit *data* to the
-        *destination_endpoint* via its :attr:`sockaddr`.
-        """
-        return self.bound_socket.sendto(data, destination_endpoint.sockaddr)
-
-    def rawsendto(self, data, destination_endpoint):
-        """Send *data* from this endpoint to *destination_endpoint*.
-
-        Normally this is shorthand for invoking
-        :meth:`sendto<python:socket.socket.sendto>` on
-        :attr:`bound_socket` to transmit *data* to the
-        *destination_endpoint* via its :attr:`sockaddr`.  Subclasses
-        may override the implementation for the purposes of testing or
-        simulation.
-        """
-        return self._rawsendto(data, destination_endpoint)
-
-    def _rawrecvfrom(self, bufsize):
-        """Receive *data* from a *source_endpoint*.
-
-        Invokes :meth:`recvfrom<python:socket.socket.recvfrom>` on
-        :attr:`bound_socket` and replacing the returned source socket
-        address with the corresponding :class:`Endpoint` instance as
-        *source_endpoint*.  Returns ``(data, source_endpoint)``.
-        """
-        (data, addr) = self.bound_socket.recvfrom(bufsize)
-        return (data, Endpoint(sockaddr=addr, family=self.family))
-
-    def rawrecvfrom(self, bufsize):
-        """Receive *data* from a *source_endpoint*.
-
-        Returns ``(data, source_endpoint)``.  Normally this is simply
-        shorthand for invoking
-        :meth:`recvfrom<python:socket.socket.recvfrom>` on
-        :attr:`bound_socket` and replacing the returned source socket
-        address with the corresponding :class:`Endpoint` instance as
-        *source_endpoint*.  Subclasses may override the implementation
-        for the purposes of testing or simulation.
-        """
-        return self._rawrecvfrom(bufsize)
-
-    @classmethod
-    def create_bound_endpoint(cls, sockaddr=None, family=socket.AF_UNSPEC,
-                              security_mode=None,
-                              host=None, port=coapy.COAP_PORT):
-        """Create an endpoint with a local socket bound to it.
-
-        *sockaddr*, *family*, *security_mode*, *host*, and *port* are
-        all as used with :class:`Endpoint`.
-
-        For use with a CoAP service on the local host (*host* as
-        ``127.0.0.1`` or ``::1``), *port* may be 0 in this call.  This
-        allows the bind operation to select an unused local port.
-
-        Returns the created endpoint with :attr:`bound_socket`
-        initialized and ready to send and receive messages.
-        """
-        # First, figure out the resolved family and host/port part of
-        # the socket address.
-        (family, sockaddr) = cls._canonical_sockinfo(sockaddr=sockaddr,
-                                                     family=family,
-                                                     security_mode=security_mode,
-                                                     host=host,
-                                                     port=port)
-        if (family is None) or (family is socket.AF_UNSPEC):
-            raise ValueError
-        # Create a socket, bind it to the proposed socket address, then use
-        # the result as the endpoint socket address: this is necessary because
-        # if port was passed as 0 the act of binding assigned a local port.
-        s = socket.socket(family, socket.SOCK_DGRAM)
-        s.bind(sockaddr)
-        sockaddr = s.getsockname()
-        # Now we can create the instance and associate the socket with it.
-        ep = cls(sockaddr=sockaddr, family=family, security_mode=security_mode)
-        ep.set_bound_socket(s)
-        return ep
 
     @property
     def family(self):
@@ -908,7 +792,7 @@ class Endpoint (object):
         creation.
 
         Returns ``None`` if passing these parameters to
-        class:`Endpoint` would result in creation of a new endpoint.
+        :class:`Endpoint` would result in creation of a new endpoint.
         """
         instance = None
         if sockaddr is not None:
@@ -970,14 +854,13 @@ class Endpoint (object):
         also used when a new Endpoint is constructed for the first
         time.  Only mutable state is reset; immutable values like
         :attr:`family` and :attr:`sockaddr` are not affected.
+
+        .. note::
+
+           This method uses cooperative super-calling for subclass
+           extension.
         """
         self._reset_next_messageID(random.randint(0, 65535))
-        if self.__bound_socket is not None:
-            try:
-                self.__bound_socket.close()
-            except:
-                pass
-            self.__bound_socket = None
         self._sent_cache = MessageCache(self, True)
         self._rcvd_cache = MessageCache(self, False)
 
@@ -1218,6 +1101,71 @@ class Endpoint (object):
             message.options = nopt
         return message
 
+    def create_request(self, uri,
+                       confirmable=False,
+                       code=coapy.message.Request.GET,
+                       messageID=None,
+                       token=None,
+                       options=None,
+                       payload=None):
+        """Create and return a :class:`Request<coapy.message.Request>`
+        instance to retrieve *uri* from this endpoint.
+
+        *uri* should generally be a relative URI hosted on the
+        endpoint.
+
+        By default this creates a non-confirmable
+        :attr:`GET<coapy.message.Request.GET>` message.  These
+        features can be overridden with *confirmable* and *code*.
+        *messageID* will default to :meth:`next_messageID`.  The
+        caller may specify a token; if none is provided, an empty
+        token will be used.  Any *options* are appended to the options
+        derived from *uri*, and *payload* is as in the
+        :class:`coapy.message.Message` constructor.  The message
+        :attr:`destination_endpoint<coapy.message.Message.destination_endpoint>`
+        is set to *self*, and finally the message is returned to the
+        caller.
+        """
+        uri_options = []
+        if uri is not None:
+            uri_options = self.uri_to_options(uri)
+        if messageID is None:
+            messageID = self.next_messageID()
+        if token is None:
+            token = b''
+        if options is not None:
+            uri_options.extend(options)
+        m = coapy.message.Request(confirmable=confirmable,
+                                  code=code, messageID=messageID,
+                                  token=token, options=uri_options,
+                                  payload=payload)
+        m.destination_endpoint = self
+        return m
+
+    def __unicode__(self):
+        return '{s.uri_host}:{s.port:d}'.format(s=self)
+    __str__ = __unicode__
+
+
+class LocalEndpoint(Endpoint):
+    """Extends :class:`Endpoint` with methods to send and receive messages.
+
+    This is an abstract class; a subclass must implement the
+    underlying communications operations invoked through
+    :meth:`rawsendto` and :meth:`rawrecvfrom`.  The most likely
+    subclass is :class:`SocketEndpoint`, but for simulation and
+    testing purposes alternative implementations like
+    :class:`tests.support.FIFOEndpoint` may be used.
+    """
+
+    def _reset(self):
+        """Return all data to its initial state.
+
+        """
+        self._sent_cache = MessageCache(self, True)
+        self._rcvd_cache = MessageCache(self, False)
+        super(LocalEndpoint, self)._reset()
+
     def _flush_rcvd_cache(self):
         now = coapy.clock()
         cache = self._rcvd_cache
@@ -1226,6 +1174,33 @@ class Endpoint (object):
             if e.time_due > now:
                 break
             cache.pop_oldest()
+
+    def rawsendto(self, data, destination_endpoint):
+        """Send *data* from this endpoint to *destination_endpoint*.
+
+        *data* is :class:`bytes` data.  *destination_endpoint* is an
+        instance of :class:`Endpoint`.
+
+        The mechanism by which the data is transferred depends on
+        subclass support for communications, and a subclass must
+        override this method.
+        """
+        raise NotImplementedError
+
+    def rawrecvfrom(self, bufsize):
+        """Receive *data* from a *source_endpoint*.
+
+        Returns tuple ``(data, source_endpoint)`` where *data* is
+        :class:`bytes` data and *source_endpoint* is the instance
+        :class:`Endpoint` associated with the origin of *data*.
+
+        Subclasses must override this method.  The method of
+        communication is determined by the subclass.  Whether the call
+        blocks or raises an exception if communication is unavailable
+        is not specified, but if no exception is raised the return
+        value must be as described above.
+        """
+        raise NotImplementedError
 
     def receive(self):
         """Receive and decode a message from another endpoint.
@@ -1298,47 +1273,130 @@ class Endpoint (object):
             destination_endpoint = msg.destination_endpoint
         return SentMessageCacheEntry(self._sent_cache, msg, destination_endpoint)
 
-    def create_request(self, uri,
-                       confirmable=False,
-                       code=coapy.message.Request.GET,
-                       messageID=None,
-                       token=None,
-                       options=None,
-                       payload=None):
-        """Create and return a :class:`Request<coapy.message.Request>`
-        instance to retrieve *uri* from this endpoint.
 
-        *uri* should generally be a relative URI hosted on the
-        endpoint.
+class SocketEndpoint (LocalEndpoint):
+    """An endpoint that has a Python :func:`python:socket.socket`
+    bound to it to be used for network communications.
 
-        By default this creates a non-confirmable
-        :attr:`GET<coapy.message.Request.GET>` message.  These
-        features can be overridden with *confirmable* and *code*.
-        *messageID* will default to :meth:`next_messageID`.  The
-        caller may specify a token; if none is provided, an empty
-        token will be used.  Any *options* are appended to the options
-        derived from *uri*, and *payload* is as in the
-        :class:`coapy.message.Message` constructor.  The message
-        :attr:`destination_endpoint<coapy.message.Message.destination_endpoint>`
-        is set to *self*, and finally the message is returned to the
-        caller.
+    While all :class:`Endpoint` instances have a socket address, only
+    endpoints that belong to the local node have sockets associated
+    with them.  These sockets are used to exchange messages with
+    remote endpoints.
+    """
+
+    __bound_socket = None
+
+    def set_bound_socket(self, socket):
+        """Set the :attr:`bound_socket`.
+
+        *socket* may be ``None``, in which case the endpoint is
+        disassociated from any socket.
+
+        If *socket* is not ``None`` it must be an object suitable for
+        assignment to :attr:`bound_socket`.  The endpoint adopts the
+        socket, in that if/when the endpoint is destroyed the socket
+        will be closed if it remains bound to the endpoint.  (Since
+        :class:`Endpoint` instances are almost impossible to destroy,
+        this has little relevance at this time.)
+
+        In either case if the assignment succeed the previous value of
+        :attr:`bound_socket` is returned, with the caller taking
+        responsibility to close it when finished.
+
+        .. note::
+           For simulation and testing purposes *socket* might not be
+           a :func:`socket object<python:socket.socket>`, but it must
+           act like one with respect to the methods CoAPy expects it
+           to provide, including but not limited to:
+
+           * :meth:`getsockname()<python:socket.socket.getsockname>`
+           * :meth:`sendto()<python:socket.socket.sendto>`
         """
-        uri_options = []
-        if uri is not None:
-            uri_options = self.uri_to_options(uri)
-        if messageID is None:
-            messageID = self.next_messageID()
-        if token is None:
-            token = b''
-        if options is not None:
-            uri_options.extend(options)
-        m = coapy.message.Request(confirmable=confirmable,
-                                  code=code, messageID=messageID,
-                                  token=token, options=uri_options,
-                                  payload=payload)
-        m.destination_endpoint = self
-        return m
+        obs = self.__bound_socket
+        if (socket is not None) and (self.sockaddr != socket.getsockname()):
+            raise ValueError(socket)
+        self.__bound_socket = socket
+        return obs
 
-    def __unicode__(self):
-        return '{s.uri_host}:{s.port:d}'.format(s=self)
-    __str__ = __unicode__
+    @property
+    def bound_socket(self):
+        """Return a :func:`socket object<python:socket.socket>`
+        instance that is bound to :attr:`sockaddr`.
+
+        This may only be set for endpoints that are local to the host.
+        It may set to ``None`` to disassociate the endpoint from a
+        socket, and may be changed from ``None`` to an object that
+        returns :attr:`sockaddr` when
+        :meth:`socket.getsockname<python:socket.socket.getsockname>`
+        is invoked on it.
+
+        See :meth:`create_bound_endpoint` and
+        :meth:`set_bound_socket`.
+        """
+        return self.__bound_socket
+
+    def rawsendto(self, data, destination_endpoint):
+        """Send *data* from this endpoint to *destination_endpoint*.
+
+        This invokes :meth:`sendto<python:socket.socket.sendto>` on
+        :attr:`bound_socket` to transmit *data* to the
+        *destination_endpoint* at its :attr:`sockaddr`.
+        """
+        return self.bound_socket.sendto(data, destination_endpoint.sockaddr)
+
+    def rawrecvfrom(self, bufsize):
+        """Receive *data* from a *source_endpoint*.
+
+        Invokes :meth:`recvfrom<python:socket.socket.recvfrom>` on
+        :attr:`bound_socket` and uses the resulting source address to
+        identify the corresponding :class:`Endpoint` instance as
+        *source_endpoint*.  Returns ``(data, source_endpoint)``.
+        """
+        (data, addr) = self.bound_socket.recvfrom(bufsize)
+        return (data, Endpoint(sockaddr=addr, family=self.family))
+
+    @classmethod
+    def create_bound_endpoint(cls, sockaddr=None, family=socket.AF_UNSPEC,
+                              security_mode=None,
+                              host=None, port=coapy.COAP_PORT):
+        """Create an endpoint with a local socket bound to it.
+
+        *sockaddr*, *family*, *security_mode*, *host*, and *port* are
+        all as used with :class:`Endpoint`.
+
+        For use with a CoAP service on the local host (*host* as
+        ``127.0.0.1`` or ``::1``), *port* may be 0 in this call.  This
+        allows the bind operation to select an unused local port.
+
+        Returns the created endpoint with :attr:`bound_socket`
+        initialized and ready to send and receive messages.
+        """
+        # First, figure out the resolved family and host/port part of
+        # the socket address.
+        (family, sockaddr) = cls._canonical_sockinfo(sockaddr=sockaddr,
+                                                     family=family,
+                                                     security_mode=security_mode,
+                                                     host=host,
+                                                     port=port)
+        if (family is None) or (family is socket.AF_UNSPEC):
+            raise ValueError
+        # Create a socket, bind it to the proposed socket address, then use
+        # the result as the endpoint socket address: this is necessary because
+        # if port was passed as 0 the act of binding assigned a local
+        # port which we need to obtain.
+        s = socket.socket(family, socket.SOCK_DGRAM)
+        s.bind(sockaddr)
+        sockaddr = s.getsockname()
+        # Now we can create the instance and associate the socket with it.
+        ep = cls(sockaddr=sockaddr, family=family, security_mode=security_mode)
+        ep.set_bound_socket(s)
+        return ep
+
+    def _reset(self):
+        if self.__bound_socket is not None:
+            try:
+                self.__bound_socket.close()
+            except:
+                pass
+            self.__bound_socket = None
+        super(SocketEndpoint, self)._reset()

@@ -32,12 +32,12 @@ import unittest
 import logging.handlers
 
 
-class FIFOEndpoint (coapy.endpoint.Endpoint):
+class FIFOEndpoint (coapy.endpoint.LocalEndpoint):
     """A specialized endpoint for unit testing.
 
     Each instance of this class is assigned a unique name.  The
-    underlying :meth:`coapy.endpoint.Endpoint.rawsendto` and
-    :meth:`coapy.endpoint.Endpoint.rawrecvfrom` operations are
+    underlying :meth:`coapy.endpoint.LocalEndpoint.rawsendto` and
+    :meth:`coapy.endpoint.LocalEndpoint.rawrecvfrom` operations are
     replaced to directly deliver to another instance of this class.
     """
 
@@ -57,20 +57,36 @@ class FIFOEndpoint (coapy.endpoint.Endpoint):
     __fifo_idx = 0
 
     def __new__(cls, **kw):
+        # It is "safe" to override __new__ here because we always want
+        # a unique endpoint; we don't have to rely on the lookup for a
+        # previously created one that will be done in the base
+        # implementation.
         host = 'fifo # {0}'.format(cls.__fifo_idx)
         cls.__fifo_idx += 1
         return super(FIFOEndpoint, cls).__new__(cls, host=host, port=coapy.COAP_PORT, family=None)
 
-    def __init__(self, **kw):
-        super(FIFOEndpoint, self).__init__(sockaddr=self.sockaddr, family=self.family)
+    def _reset(self):
         self.__fifo = []
+        super(FIFOEndpoint, self)._reset()
 
-    def _rawsendto(self, data, destination_endpoint):
+    def rawsendto(self, data, destination_endpoint):
+        """Place the tuple ``(data, self)`` on the :attr:`fifo` of
+        *destination_endpoint*, which must also be a
+        :class:`FIFOEndpoint`.
+
+        Overrides :meth:`coapy.endpoint.LocalEndpoint.rawsendto`.
+        """
         if not isinstance(destination_endpoint, FIFOEndpoint):
             raise ValueError(destination_endpoint)
         destination_endpoint.fifo.append((data, self))
 
-    def _rawrecvfrom(self, bufsize):
+    def rawrecvfrom(self, bufsize):
+        """Return the tuple ``(data, destination_endpoint)`` at the
+        head of :attr:`fifo`.  If the fifo is empty, raises
+        :exc:`python:socket.error`.
+
+        Overrides :meth:`coapy.endpoint.LocalEndpoint.rawrecvfrom`.
+        """
         if 0 == len(self.fifo):
             raise socket.error(errno.EAGAIN, 'Resource temporarily unavailable')
         return self.fifo.pop(0)

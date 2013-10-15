@@ -8,6 +8,8 @@ coapy.endpoint
 
 .. autoclass:: Endpoint
    :no-show-inheritance:
+.. autoclass:: LocalEndpoint
+.. autoclass:: SocketEndpoint
 
 Message Caches
 --------------

@@ -132,7 +132,7 @@ class TestEndpoint (unittest.TestCase):
         self.assertTrue(m.destination_endpoint is ep)
 
     def testReset(self):
-        ep = Endpoint.create_bound_endpoint(host='127.0.0.1', port=0)
+        ep = SocketEndpoint.create_bound_endpoint(host='127.0.0.1', port=0)
         self.assertFalse(ep.bound_socket is None)
         ep._reset()
         self.assertTrue(ep.bound_socket is None)
@@ -278,14 +278,13 @@ class TestEndpointInterface (unittest.TestCase):
 class TestBoundEndpoints (unittest.TestCase):
     def testBasic(self):
         localhost = '127.0.0.1'
-        ep = Endpoint.create_bound_endpoint(host=localhost, port=0)
+        ep = SocketEndpoint.create_bound_endpoint(host=localhost, port=0)
         self.assertEqual(socket.AF_INET, ep.family)
         self.assertNotEqual(0, ep.port)
         self.assertFalse(ep.bound_socket is None)
         self.assertEqual(ep.sockaddr, ep.bound_socket.getsockname())
         ep2 = Endpoint(host=localhost)
-        self.assertTrue(ep2.bound_socket is None)
-        self.assertFalse(ep is ep2)
+        self.assertFalse(isinstance(ep2, SocketEndpoint))
         s = socket.socket(ep.family, socket.SOCK_DGRAM)
         with self.assertRaises(ValueError):
             ep.set_bound_socket(s)
@@ -303,7 +302,7 @@ class TestSocketSendRecv (unittest.TestCase):
     def testBasic(self):
         import socket
         import errno
-        ep1 = Endpoint.create_bound_endpoint(host='localhost', port=0)
+        ep1 = SocketEndpoint.create_bound_endpoint(host='localhost', port=0)
         ep1.bound_socket.setblocking(0)
         with self.assertRaises(socket.error) as cm:
             (data, sep) = ep1.rawrecvfrom(2048)
