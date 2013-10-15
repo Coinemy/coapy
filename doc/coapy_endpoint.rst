@@ -14,8 +14,8 @@ coapy.endpoint
 Message Caches
 --------------
 
-.. autoclass:: MessageCacheEntry
 .. autoclass:: MessageCache
+.. autoclass:: MessageCacheEntry
 .. autoclass:: SentMessageCacheEntry
 .. autoclass:: RcvdMessageCacheEntry
 

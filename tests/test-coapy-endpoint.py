@@ -313,26 +313,55 @@ class TestSocketSendRecv (unittest.TestCase):
         s1.close()
 
 
-class TestMessageCache (unittest.TestCase):
+class TestMessageCache (ManagedClock_mixin,
+                        unittest.TestCase):
 
     def testDictionary(self):
+        from coapy.message import Message
         ep = Endpoint(host='localhost')
         c = MessageCache(ep, True)
         self.assertEqual(0, len(c))
         with self.assertRaises(KeyError):
             v = c[1]
         now = coapy.clock()
-        e1 = MessageCacheEntry(cache=c, message_id=1, time_due=now+5)
-        e2 = MessageCacheEntry(cache=c, message_id=2, time_due=now)
-        e3 = MessageCacheEntry(cache=c, message_id=3, time_due=now+2)
+        e1 = MessageCacheEntry(cache=c, message=Message(messageID=1))
+        self.assertTrue(e1.message.is_non_confirmable())
+        self.assertEqual(e1.message.messageID, 1)
+        self.assertEqual(e1.message_id, 1)
+        self.assertEqual(e1.created_clk, now)
+        self.assertEqual(e1.time_due, now + coapy.transmissionParameters.NON_LIFETIME)
+        e2 = MessageCacheEntry(cache=c, message=Message(messageID=2), time_due_offset=0)
+        self.assertTrue(e2.message.is_non_confirmable())
+        self.assertEqual(e2.message.messageID, 2)
+        self.assertEqual(e2.message_id, 2)
+        self.assertEqual(e2.created_clk, now)
+        self.assertEqual(e2.time_due, now)
+        e3 = MessageCacheEntry(cache=c, message=Message(messageID=3, confirmable=True))
+        self.assertTrue(e3.message.is_confirmable())
+        self.assertEqual(e3.message.messageID, 3)
+        self.assertEqual(e3.message_id, 3)
+        self.assertEqual(e1.created_clk, now)
+        self.assertEqual(e3.time_due, now + coapy.transmissionParameters.EXCHANGE_LIFETIME)
+        self.assertEqual(3, len(c))
+        queue = c.queue()
+        self.assertTrue(queue[0] is e2)
+        self.assertTrue(queue[1] is e1)
+        self.assertTrue(queue[2] is e3)
+        self.assertTrue(c[1] is e1)
+        self.assertTrue(c[2] is e2)
+        self.assertTrue(c[3] is e3)
+
+        e1.time_due = now + 5
+        e2.time_due = now
+        e3.time_due = now + 2
         self.assertEqual(3, len(c))
         self.assertTrue(c[1] is e1)
         self.assertTrue(c[2] is e2)
         self.assertTrue(c[3] is e3)
 
-        self.assertTrue(c.peek_oldest() is e2)
+        self.assertTrue(queue[0] is e2)
         self.assertTrue(e2.cache is c)
-        self.assertTrue(c.pop_oldest() is e2)
+        c._remove(e2)
         self.assertTrue(e2.cache is None)
         self.assertEqual(2, len(c))
 
@@ -341,9 +370,9 @@ class TestMessageCache (unittest.TestCase):
             v = c[2]
         self.assertTrue(c[3] is e3)
 
-        self.assertTrue(c.peek_oldest() is e3)
+        self.assertTrue(queue[0] is e3)
         e1.time_due = e3.time_due - 1
-        self.assertTrue(c.peek_oldest() is e1)
+        self.assertTrue(queue[0] is e1)
 
         self.assertTrue(c[1] is e1)
         self.assertTrue(c[3] is e3)
