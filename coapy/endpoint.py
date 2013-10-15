@@ -215,20 +215,24 @@ class MessageCacheEntry (coapy.util.TimeDueOrdinal):
     :attr:`coapy.util.TimeDueOrdinal.time_due`, and may be looked up
     based on :attr:`message_id`.
 
-    Keyword parameters recognized:
+    *cache* identifies the :class:`MessageCache` instance to which
+    this entry will belong.  Entries are associated with *cache* when
+    they are created, and can be removed from that cache.  Once
+    removed, an entry cannot be inserted into another cache.
 
-    * *cache* identifies the
-      :class:`MessageCache` instance to which this entry will
-      belong.
-    * *message* is a :class:`Message` instance from which
-      :attr:`Message.messageID` is used to initialize
-      :attr:`message_id`
-    * *time_due_offset*, if provided, is used to initialize
-      :attr:`time_due` by adding it to :attr:`created_clk`.  If
-      *time_due_offset* is not provided, the initial :attr:`time_due`
-      is :attr:`expiry_due`.
+    *message* is a :class:`coapy.message.Message` instance of type
+    :attr:`CON<coapy.message.Message.Type_CON>` or
+    :attr:`NON<coapy.message.Message.Type_NON>`.
+    :attr:`ACK<coapy.message.Message.Type_ACK>` and
+    :attr:`RST<coapy.message.Message.Type_RST>` messages cannot be
+    cached.
+    :attr:`message.messageID<coapy.message.Message.messageID>` is used
+    as the key for cache entry lookups.
 
-    The created cache entry is automatically inserted into the cache.
+    *time_due_offset*, if provided, is used to initialize
+    :attr:`time_due` by adding it to :attr:`created_clk`.  If
+    *time_due_offset* is not provided, the initial :attr:`time_due` is
+    :attr:`expiry_due`.
     """
 
     @property
@@ -296,18 +300,40 @@ class MessageCacheEntry (coapy.util.TimeDueOrdinal):
 
     @property
     def message_id(self):
-        """The :attr:`Message.messageID` value associated with the cache
-        entry.
+        """Short-cut access to :attr:`message.messageID<coapy.message.Message.messageID>`.
         """
         return self.__message.messageID
 
-    def __init__(self, **kw):
-        cache = kw.pop('cache', None)
-        time_due_offset = kw.pop('time_due_offset', None)
-        message = kw.pop('message')
+    def process_timeout(self):
+        """Process a timeout at the cache entry.
+
+        This should normally be invoked on an entry by some external
+        system as a consequence of :func:`coapy.clock` having reached
+        :attr:`time_due`.  Operations performed by this method depend
+        on the state of the entry within its lifecycle.  It is an
+        error to invoke this on an entry that is no longer present in
+        its cache.  Invoking this may cause an entry to be removed
+        from its cache.
+
+        The implementation is provided by a subclass.  There is no
+        return value.
+
+        .. note::
+
+           The implementation does not attempt to verify that the
+           current :attr:`time_due` has been reached; an entry may be
+           processed early or late.  The caller is responsible for
+           determining whether it is appropriate to invoke this
+           method.
+        """
+        raise NotImplementedError
+
+    def __init__(self, cache, message, time_due_offset=None):
+        if not isinstance(cache, MessageCache):
+            raise TypeError(cache)
         if not isinstance(message, coapy.message.Message):
             raise TypeError(message)
-        super(MessageCacheEntry, self).__init__(**kw)
+        super(MessageCacheEntry, self).__init__()
         if message.messageID is None:
             raise ValueError(message)
         if message.is_confirmable():
@@ -405,8 +431,7 @@ class SentMessageCacheEntry (MessageCacheEntry):
         self.__state = self.ST_untransmitted
         self.__transmissions = 0
         self.__timeout = 0
-        super(SentMessageCacheEntry, self).__init__(cache=cache,
-                                                    message=message,
+        super(SentMessageCacheEntry, self).__init__(cache, message,
                                                     time_due_offset=0)
         if isinstance(self.message, coapy.message.Response):
             self.__stale_at = self.created_clk + self.message.maxAge()
@@ -418,10 +443,7 @@ class SentMessageCacheEntry (MessageCacheEntry):
         self.time_due = self.expiry_due
 
     def process_timeout(self):
-        now = coapy.clock()
-        if now < self.time_due:
-            raise Exception
-        if self.__state == self.ST_removed:
+        if self.cache is None:
             raise Exception
         if self.__state == self.ST_completed:
             self.cache._remove(self)
@@ -448,7 +470,6 @@ class SentMessageCacheEntry (MessageCacheEntry):
             self.time_due += self.__timeout
         elif self.ST_final_ack_wait == self.__state:
             self.__complete()
-        return self
 
     def process_reply(self, msg):
         if self.__reply is not None:
@@ -553,8 +574,14 @@ class RcvdMessageCacheEntry (MessageCacheEntry):
         if not isinstance(message, coapy.message.Message):
             raise ValueError(message)
         self.__reception_count = 1
-        super(RcvdMessageCacheEntry, self).__init__(cache=cache,
-                                                    message=message)
+        super(RcvdMessageCacheEntry, self).__init__(cache, message)
+
+    def process_timeout(self):
+        if self.cache is None:
+            raise Exception
+        # The only time-based event in a received message's lifecycle
+        # is its removal from the cache.
+        self.cache._remove(self)
 
 
 class Endpoint (object):

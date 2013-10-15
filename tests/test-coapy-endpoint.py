@@ -414,8 +414,8 @@ class TestSentCache (DeterministicBEBO_mixin,
 
         # Process one timeout.  This should send the message and
         # start the BEBO process.
-        rv = ce.process_timeout()
-        self.assertTrue(rv is ce)
+        ce.process_timeout()
+        self.assertFalse(ce.cache is None)
         self.assertTrue(ce.stale_at is None)
         self.assertEqual(ce.created_clk, 0)
         self.assertTrue(ce.message is sm)
@@ -429,8 +429,8 @@ class TestSentCache (DeterministicBEBO_mixin,
             self.assertEqual(ce.time_due, clk() + to)
             clk.adjust(to)
             self.assertEqual(ce.ST_unacknowledged, ce.state)
-            rv = ce.process_timeout()
-            self.assertTrue(rv is ce)
+            ce.process_timeout()
+            self.assertFalse(ce.cache is None)
             self.assertEqual(len(dep.fifo), ce.transmissions)
             to += to
 
@@ -447,8 +447,8 @@ class TestSentCache (DeterministicBEBO_mixin,
         # Now process the timeout, which simply moves the entry into
         # its completed state with a final timeout at which the entry
         # should be removed from the cache.
-        rv = ce.process_timeout()
-        self.assertTrue(rv is ce)
+        ce.process_timeout()
+        self.assertFalse(ce.cache is None)
         self.assertEqual(ce.ST_completed, ce.state)
         self.assertEqual(ce.time_due, tp.EXCHANGE_LIFETIME)
         clk.adjust(ce.time_due - clk())
@@ -457,8 +457,8 @@ class TestSentCache (DeterministicBEBO_mixin,
         # entry.
         cache = ce.cache
         self.assertEqual(1, len(cache))
-        rv = ce.process_timeout()
-        self.assertTrue(rv is None)
+        ce.process_timeout()
+        self.assertTrue(ce.cache is None)
         self.assertEqual(0, len(cache))
         self.assertTrue(ce.cache is None)
 
@@ -482,8 +482,7 @@ class TestSentCache (DeterministicBEBO_mixin,
 
         # Process one timeout.  This should send the message and put it
         # into completed state.
-        rv = ce.process_timeout()
-        self.assertTrue(rv is ce)
+        ce.process_timeout()
         self.assertTrue(ce.stale_at is None)
         self.assertEqual(ce.created_clk, 0)
         self.assertTrue(ce.message is sm)
