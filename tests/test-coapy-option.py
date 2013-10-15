@@ -700,5 +700,12 @@ class TestEncodeDecodeOptions (unittest.TestCase):
         self.assertEqual(rem, remaining)
 
 
+class TestContentFormat (unittest.TestCase):
+    def testBasic(self):
+        self.assertEqual('application/octet-stream',
+                         ContentFormat.media_type_for_content[ContentFormat.APPLICATION_OCTET_STREAM])  # nopep8
+        self.assertIsNone(ContentFormat.media_type_for_content.get(1))
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -921,6 +921,38 @@ class ContentFormat (UrOption):
     format = format_uint(2)
     name = 'Content-Format'
 
+    media_type_for_content = {}
+    """A map from integer content format values
+    (e.g. :attr:`TEXT_PLAIN`) to the media type string for that
+    format."""
+
+    TEXT_PLAIN = 0
+    """See :coapsect:`12.3` deriving from :rfc:`2046`, :rfc:`3676`, :rfc:`5147`."""
+    media_type_for_content[TEXT_PLAIN] = 'text/plain;charset=utf-8'
+
+    APPLICATION_LINK_FORMAT = 40
+    """See :coapsect:`12.3` deriving from :rfc:`6690`."""
+    media_type_for_content[APPLICATION_LINK_FORMAT] = 'application/link-format'
+
+    APPLICATION_XML = 41
+    """:coapsect:`12.3` deriving from :rfc:`3023`."""
+    media_type_for_content[APPLICATION_XML] = 'application/xml'
+
+    APPLICATION_OCTET_STREAM = 42
+    """:coapsect:`12.3` deriving from :rfc:`2045`, :rfc:`2046`."""
+    media_type_for_content[APPLICATION_OCTET_STREAM] = 'application/octet-stream'
+
+    APPLICATION_EXI = 47
+    """:coapsect:`12.3` deriving from `Efficient XML Interchange (EXI)
+    Format 1.0
+    <http://www.w3.org/TR/2009/CR-exi-20091208/#mediaTypeRegistration>`_.
+    """
+    media_type_for_content[APPLICATION_EXI] = 'application/exi'
+
+    APPLICATION_JSON = 50
+    """:coapsect:`12.3` deriving from :rfc:`4627`."""
+    media_type_for_content[APPLICATION_JSON] = 'application/json'
+
 
 class MaxAge (UrOption):
     """Option encoding the maximum time (in seconds) that a response
