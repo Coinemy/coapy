@@ -81,85 +81,6 @@ class ReplyMessageError (coapy.CoAPyException):
     """
 
 
-class MessageCacheEntry (coapy.util.TimeDueOrdinal):
-    """A class holding data stored in a :class:`MessageCache`.
-
-    Instances sort based on
-    :attr:`coapy.util.TimeDueOrdinal.time_due`, and may be looked up
-    based on :attr:`message_id`.
-
-    Keyword parameters recognized:
-
-    * *cache* identifies the
-      :class:`MessageCache` instance to which this entry will
-      belong.
-    * *message* is a :class:`Message` instance from which :attr:`Message.messageID`
-      is used to initialize :attr:`message_id`
-    * *message_id* is used to initialize :attr:`message_id` if
-      *message* is absent
-    * *time_due* is used to initialize :attr:`coapy.util.TimeDueOrdinal.time_due`
-
-    *cache* is a required keyword parameter.  One of *message* and
-     *message_id* must also be provided.  The created cache entry is
-     automatically inserted into the cache upon creation.
-    """
-
-    __cache = None
-
-    def _dissociate(self):
-        """Remove the connection between the instance and the cache.
-
-        This is invoked by :class:`MessageCache` operations that
-        remove the entry from its cache.
-        """
-        self.__cache = None
-
-    @property
-    def cache(self):
-        """The :class:`MessageCache` to which this entry belongs.
-        This is a read-only property, set when the entry is created
-        and cleared when it has been removed from its cache.
-        """
-        return self.__cache
-
-    def _get_time_due(self):
-        """See :attr:`coapy.util.TimeDueOrdinal.time_due`.  In this
-        class, modification of the value has the side-effect of moving
-        the entry within the :attr:`cache` queue.
-        """
-        return self.__time_due
-
-    def _set_time_due(self, value):
-        self.__time_due = value
-        # If we're in the superclass constructor the cache has not
-        # yet been assigned (nor has the message_id that must be
-        # assigned prior to insertion).  So don't do anything yet.
-        if self.__cache is not None:
-            self.__cache._reposition(self)
-    time_due = property(_get_time_due, _set_time_due)
-
-    message_id = None
-    """The :attr:`Message.messageID` value associated with the cache
-    entry.
-    """
-
-    def __init__(self, **kw):
-        cache = kw.pop('cache', None)
-        message = kw.pop('message', None)
-        message_id = kw.pop('message_id', None)
-        super(MessageCacheEntry, self).__init__(**kw)
-        if isinstance(message, coapy.message.Message):
-            self.message_id = message.messageID
-        elif isinstance(message_id, int):
-            self.message_id = message_id
-        else:
-            raise TypeError(message_id)
-        if not isinstance(cache, MessageCache):
-            raise TypeError(cache)
-        self.__cache = cache
-        cache._add(self)
-
-
 class MessageCache (object):
     """Dual-view collection used for caches based on :attr:`Message.messageID`.
 
@@ -285,6 +206,85 @@ class MessageCache (object):
 
     def __contains__(self, key):
         return key in self.__dict
+
+
+class MessageCacheEntry (coapy.util.TimeDueOrdinal):
+    """A class holding data stored in a :class:`MessageCache`.
+
+    Instances sort based on
+    :attr:`coapy.util.TimeDueOrdinal.time_due`, and may be looked up
+    based on :attr:`message_id`.
+
+    Keyword parameters recognized:
+
+    * *cache* identifies the
+      :class:`MessageCache` instance to which this entry will
+      belong.
+    * *message* is a :class:`Message` instance from which :attr:`Message.messageID`
+      is used to initialize :attr:`message_id`
+    * *message_id* is used to initialize :attr:`message_id` if
+      *message* is absent
+    * *time_due* is used to initialize :attr:`coapy.util.TimeDueOrdinal.time_due`
+
+    *cache* is a required keyword parameter.  One of *message* and
+     *message_id* must also be provided.  The created cache entry is
+     automatically inserted into the cache upon creation.
+    """
+
+    __cache = None
+
+    def _dissociate(self):
+        """Remove the connection between the instance and the cache.
+
+        This is invoked by :class:`MessageCache` operations that
+        remove the entry from its cache.
+        """
+        self.__cache = None
+
+    @property
+    def cache(self):
+        """The :class:`MessageCache` to which this entry belongs.
+        This is a read-only property, set when the entry is created
+        and cleared when it has been removed from its cache.
+        """
+        return self.__cache
+
+    def _get_time_due(self):
+        """See :attr:`coapy.util.TimeDueOrdinal.time_due`.  In this
+        class, modification of the value has the side-effect of moving
+        the entry within the :attr:`cache` queue.
+        """
+        return self.__time_due
+
+    def _set_time_due(self, value):
+        self.__time_due = value
+        # If we're in the superclass constructor the cache has not
+        # yet been assigned (nor has the message_id that must be
+        # assigned prior to insertion).  So don't do anything yet.
+        if self.__cache is not None:
+            self.__cache._reposition(self)
+    time_due = property(_get_time_due, _set_time_due)
+
+    message_id = None
+    """The :attr:`Message.messageID` value associated with the cache
+    entry.
+    """
+
+    def __init__(self, **kw):
+        cache = kw.pop('cache', None)
+        message = kw.pop('message', None)
+        message_id = kw.pop('message_id', None)
+        super(MessageCacheEntry, self).__init__(**kw)
+        if isinstance(message, coapy.message.Message):
+            self.message_id = message.messageID
+        elif isinstance(message_id, int):
+            self.message_id = message_id
+        else:
+            raise TypeError(message_id)
+        if not isinstance(cache, MessageCache):
+            raise TypeError(cache)
+        self.__cache = cache
+        cache._add(self)
 
 
 class SentMessageCacheEntry (MessageCacheEntry):
