@@ -18,6 +18,7 @@ Message Caches
 .. autoclass:: MessageCacheEntry
 .. autoclass:: SentMessageCacheEntry
 .. autoclass:: RcvdMessageCacheEntry
+.. autoclass:: RemoteEndpointState
 
 
 Exceptions

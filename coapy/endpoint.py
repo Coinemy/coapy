@@ -734,42 +734,6 @@ class Endpoint (object):
         return self.__base_uri
     __base_uri = None
 
-    last_heard_clk = None
-    """The :func:`coapy.clock()` time at which the last message was
-    received from this endpoint.  The value contributes to
-    verification that
-    :attr:`coapy.message.TransmissionParameters.PROBING_RATE` is not
-    exceeded.
-
-    The value is ``None`` if no messages have ever been received from
-    this endpoint.
-    """
-
-    rx_messages = None
-    """The number of messages received from this endpoint, including
-    duplicates.
-    """
-
-    rx_octets = None
-    """The number of octets received from this endpoint, including
-    duplicates.
-    """
-
-    tx_messages = None
-    """The number of messages transmitted to this endpoint, including
-    retransmissions.
-    """
-
-    tx_octets = None
-    """The number of octets transmitted to this endpoint, including
-    retransmissions.
-    """
-
-    tx_octets_since_heard = None
-    """The number of octets transmitted to this endpoint since
-    :attr:`last_heard_clk`.
-    """
-
     __EndpointRegistry = {}
 
     @staticmethod
@@ -916,15 +880,7 @@ class Endpoint (object):
            This method uses cooperative super-calling for subclass
            extension.
         """
-        self._reset_next_messageID(random.randint(0, 65535))
-        self.last_heard_clk = None
-        self.rx_messages = 0
-        self.rx_octets = 0
-        self.tx_messages = 0
-        self.tx_octets = 0
-        self.tx_octets_since_heard = 0
-        self._sent_cache = MessageCache(self, True)
-        self._rcvd_cache = MessageCache(self, False)
+        pass
 
     def __init__(self, sockaddr=None, family=socket.AF_UNSPEC,
                  security_mode=None,
@@ -936,23 +892,6 @@ class Endpoint (object):
         if self.__base_uri is None:
             self.__base_uri = self.uri_from_options([])
             self._reset()
-
-    def next_messageID(self):
-        """Return a new messageID suitable for a message to this endpoint.
-
-        This is sequentially generated starting from an initial value
-        that was randomly generated when the endpoint was created.  It
-        is filtered so message IDs still present in the sent message
-        cache are not re-used.
-        """
-        while True:
-            mid = next(self.__messageID_iter)
-            if not (mid in self._sent_cache):
-                return mid
-
-    def _reset_next_messageID(self, start):
-        # Back-door for unit testing from known starting point
-        self.__messageID_iter = itertools.imap(lambda _v: _v % 65536, itertools.count(start))
 
     def get_peer_endpoint(self, sockaddr=None, host=None, port=coapy.COAP_PORT):
         """Find the endpoint at *sockaddr* that this endpoint can talk to.
@@ -1178,11 +1117,12 @@ class Endpoint (object):
 
         By default this creates a non-confirmable
         :attr:`GET<coapy.message.Request.GET>` message.  These
-        features can be overridden with *confirmable* and *code*.
-        *messageID* will default to :meth:`next_messageID`.  The
-        caller may specify a token; if none is provided, an empty
-        token will be used.  Any *options* are appended to the options
-        derived from *uri*, and *payload* is as in the
+        features can be overridden with *confirmable* and *code*.  The
+        *messageID* normally remains unassigned (it will be assigned
+        to an available ID when it is transmitted).  The caller may
+        specify a token; if none is provided, an empty token will be
+        used.  Any *options* are appended to the options derived from
+        *uri*, and *payload* is as in the
         :class:`coapy.message.Message` constructor.  The message
         :attr:`destination_endpoint<coapy.message.Message.destination_endpoint>`
         is set to *self*, and finally the message is returned to the
@@ -1191,8 +1131,6 @@ class Endpoint (object):
         uri_options = []
         if uri is not None:
             uri_options = self.uri_to_options(uri)
-        if messageID is None:
-            messageID = self.next_messageID()
         if token is None:
             token = b''
         if options is not None:
@@ -1209,6 +1147,71 @@ class Endpoint (object):
     __str__ = __unicode__
 
 
+class RemoteEndpointState(object):
+    """State relevant to communication with a non-local endpoint from
+    the perspective of a local endpoint.
+    """
+
+    @property
+    def endpoint(self):
+        """The :class:`Endpoint` to which the state in this instance applies."""
+        return self.__endpoint
+    __endpoint = None
+
+    rcvd_cache = None
+    """A :class:`MessageCache` instance recording messages from
+    :attr:`endpoint`.
+    """
+
+    last_heard_clk = None
+    """The :func:`coapy.clock()` time at which the last message was
+    received from this endpoint.  The value contributes to
+    verification that
+    :attr:`coapy.message.TransmissionParameters.PROBING_RATE` is not
+    exceeded.
+
+    The value is ``None`` if no messages have ever been received from
+    this endpoint.
+    """
+
+    rx_messages = None
+    """The number of messages received from this endpoint, including
+    duplicates.
+    """
+
+    rx_octets = None
+    """The number of octets received from this endpoint, including
+    duplicates.
+    """
+
+    tx_messages = None
+    """The number of messages transmitted to this endpoint, including
+    retransmissions.
+    """
+
+    tx_octets = None
+    """The number of octets transmitted to this endpoint, including
+    retransmissions.
+    """
+
+    tx_octets_since_heard = None
+    """The number of octets transmitted to this endpoint since
+    :attr:`last_heard_clk` was last updated.
+    """
+
+    def __init__(self, endpoint):
+        if not isinstance(endpoint, Endpoint):
+            raise ValueError(endpoint)
+        self.__endpoint = endpoint
+        self.rcvd_cache = MessageCache(endpoint, False)
+        self.last_heard_clk = None
+        self.rx_messages = 0
+        self.rx_octets = 0
+        self.tx_messages = 0
+        self.tx_octets = 0
+        self.tx_octets_since_heard = 0
+
+
 class LocalEndpoint(Endpoint):
     """Extends :class:`Endpoint` with methods to send and receive messages.
 
@@ -1220,12 +1223,45 @@ class LocalEndpoint(Endpoint):
     :class:`tests.support.FIFOEndpoint` may be used.
     """
 
+    def next_messageID(self):
+        """Return a new messageID suitable for a message to this endpoint.
+
+        This is sequentially generated starting from an initial value
+        that was randomly generated when the state was created.  It
+        is filtered so message IDs still present in the sent message
+        cache are not re-used.
+        """
+        while True:
+            mid = next(self.__messageID_iter)
+            if not (mid in self._sent_cache):
+                return mid
+
+    def _reset_next_messageID(self, start):
+        # Back-door for unit testing from known starting point
+        self.__messageID_iter = itertools.imap(lambda _v: _v % 65536, itertools.count(start))
+
+    # A map from Endpoint instances to RemoteEndpointState instances.
+    __remote_state = None
+
+    def remote_state(self, endpoint):
+        """Obtain the :class:`RemoteEndpointState` instance relevant
+        to communication between *self* and *endpoint*.
+
+        A new instance is created and returned if *endpoint* has not
+        been contacted before.
+        """
+        rv = self.__remote_state.get(endpoint)
+        if rv is None:
+            rv = RemoteEndpointState(endpoint)
+            self.__remote_state[endpoint] = rv
+        return rv
+
     def _reset(self):
         """Return all data to its initial state.
-
         """
-        #self._sent_cache = MessageCache(self, True)
-        #self._rcvd_cache = MessageCache(self, False)
+        self._reset_next_messageID(random.randint(0, 65535))
+        self._sent_cache = MessageCache(self, True)
+        self.__remote_state = {}
         super(LocalEndpoint, self)._reset()
 
     def _rawsendto(self, data, destination_endpoint):
@@ -1250,9 +1286,10 @@ class LocalEndpoint(Endpoint):
         :meth:`_rawsendto`.
         """
         rv = self._rawsendto(data, destination_endpoint)
-        destination_endpoint.tx_messages += 1
-        destination_endpoint.tx_octets += len(data)
-        destination_endpoint.tx_octets_since_heard += len(data)
+        state = self.remote_state(destination_endpoint)
+        state.tx_messages += 1
+        state.tx_octets += len(data)
+        state.tx_octets_since_heard += len(data)
         return rv
 
     def _rawrecvfrom(self, bufsize):
@@ -1283,10 +1320,11 @@ class LocalEndpoint(Endpoint):
         :meth:`_rawrecvfrom`.
         """
         (data, source_endpoint) = self._rawrecvfrom(bufsize)
-        source_endpoint.rx_messages += 1
-        source_endpoint.rx_octets += len(data)
-        source_endpoint.last_heard_clk = coapy.clock()
-        source_endpoint.tx_octets_since_heard = 0
+        state = self.remote_state(source_endpoint)
+        state.rx_messages += 1
+        state.rx_octets += len(data)
+        state.last_heard_clk = coapy.clock()
+        state.tx_octets_since_heard = 0
         return (data, source_endpoint)
 
     def receive(self):
@@ -1333,14 +1371,17 @@ class LocalEndpoint(Endpoint):
                 return None
             ce.process_reply(m)
             return None
-        # not local origin means CON or NON; look in receive cache
-        ce = source_endpoint._rcvd_cache.get(mid)
+        # not local origin means CON or NON; look in received message cache
+        # from the source endpoint.
+        src_state = self.remote_state(source_endpoint)
+        rx_cache = src_state.rcvd_cache
+        ce = rx_cache.get(mid)
         if ce is not None:
             _log.error('Received duplicate')
             return None
         if m is None:
             _log.error('Need send RST')
-        return RcvdMessageCacheEntry(source_endpoint._rcvd_cache, m)
+        return RcvdMessageCacheEntry(rx_cache, m)
 
     def send(self, msg, destination_endpoint=None):
         """Send *msg* to *destination_endpoint*.
@@ -1358,6 +1399,8 @@ class LocalEndpoint(Endpoint):
             raise TypeError(msg)
         if destination_endpoint is None:
             destination_endpoint = msg.destination_endpoint
+        if msg.messageID is None:
+            msg.messageID = self.next_messageID()
         return SentMessageCacheEntry(self._sent_cache, msg, destination_endpoint)
 
 

@@ -247,7 +247,7 @@ class TestURLConversion (unittest.TestCase):
 
 class TestEndpointInterface (unittest.TestCase):
     def testNextMessageID(self):
-        ep = Endpoint(host='::1')
+        ep = FIFOEndpoint()
         ep._reset_next_messageID(621)
         self.assertEqual(621, ep.next_messageID())
         self.assertEqual(622, ep.next_messageID())
@@ -264,7 +264,7 @@ class TestEndpointInterface (unittest.TestCase):
         self.assertTrue(isinstance(m, coapy.message.Request))
         self.assertEqual(coapy.message.Request.GET, m.code)
         self.assertTrue(m.destination_endpoint is ep)
-        self.assertFalse(m.messageID is None)
+        self.assertIsNone(m.messageID)
         self.assertEqual(m.token, b'')
         opts = m.options
         self.assertTrue(isinstance(opts, list))
@@ -389,8 +389,8 @@ class TestMessageCache (ManagedClock_mixin,
         self.assertEqual(0, len(c))
 
 
-class TestRxTxStatistics (ManagedClock_mixin,
-                          unittest.TestCase):
+class TestRemoteEndpointState (ManagedClock_mixin,
+                               unittest.TestCase):
     def testBasic(self):
         clk = coapy.clock
         sep = FIFOEndpoint()
@@ -401,17 +401,18 @@ class TestRxTxStatistics (ManagedClock_mixin,
         clk.adjust(120)
         self.assertEqual(120, clk())
 
-        self.assertIsNone(dep.last_heard_clk)
-        self.assertEqual(dep.rx_messages, 0)
-        self.assertEqual(dep.tx_messages, 0)
-        self.assertEqual(dep.tx_octets_since_heard, 0)
+        state = sep.remote_state(dep)
+        self.assertIsNone(state.last_heard_clk)
+        self.assertEqual(state.rx_messages, 0)
+        self.assertEqual(state.tx_messages, 0)
+        self.assertEqual(state.tx_octets_since_heard, 0)
 
         sep.rawsendto(data, dep)
 
-        self.assertEqual(dep.rx_messages, 0)
-        self.assertEqual(dep.tx_messages, 1)
-        self.assertEqual(dep.tx_octets, len(data))
-        self.assertEqual(dep.tx_octets_since_heard, len(data))
+        self.assertEqual(state.rx_messages, 0)
+        self.assertEqual(state.tx_messages, 1)
+        self.assertEqual(state.tx_octets, len(data))
+        self.assertEqual(state.tx_octets_since_heard, len(data))
 
         # Simulate destination replying with same content 45 seconds
         # later
@@ -423,12 +424,12 @@ class TestRxTxStatistics (ManagedClock_mixin,
         self.assertEqual(xdata, data)
         self.assertTrue(xsep is dep)
 
-        self.assertEqual(dep.last_heard_clk, 165)
-        self.assertEqual(dep.rx_messages, 1)
-        self.assertEqual(dep.tx_messages, 1)
-        self.assertEqual(dep.rx_octets, len(data))
-        self.assertEqual(dep.tx_octets, len(data))
-        self.assertEqual(dep.tx_octets_since_heard, 0)
+        self.assertEqual(state.last_heard_clk, 165)
+        self.assertEqual(state.rx_messages, 1)
+        self.assertEqual(state.tx_messages, 1)
+        self.assertEqual(state.rx_octets, len(data))
+        self.assertEqual(state.tx_octets, len(data))
+        self.assertEqual(state.tx_octets_since_heard, 0)
 
 
 class TestSentCache (DeterministicBEBO_mixin,
@@ -565,14 +566,15 @@ class TestSentCache (DeterministicBEBO_mixin,
 
         # Process the receive
         self.assertTrue(ce.reply_message is None)
-        self.assertEqual(0, len(sep._rcvd_cache))
+        dstate = dep.remote_state(sep)
+        self.assertEqual(0, len(dstate.rcvd_cache))
         rce = dep.receive()
         rm = rce.message
         self.assertEqual(rm.source_endpoint, sep)
         self.assertEqual(rm.destination_endpoint, dep)
         self.assertEqual(len(dep.fifo), 0)
         self.assertEqual(sm.messageID, rm.messageID)
-        self.assertEqual(1, len(sep._rcvd_cache))
+        self.assertEqual(1, len(dstate.rcvd_cache))
 
         # Try some invalid replies
         m = ServerErrorResponse(acknowledgement=True,
@@ -658,14 +660,15 @@ class TestSentCache (DeterministicBEBO_mixin,
 
         # Process the receive
         self.assertTrue(ce.reply_message is None)
-        self.assertEqual(0, len(sep._rcvd_cache))
+        dstate = dep.remote_state(sep)
+        self.assertEqual(0, len(dstate.rcvd_cache))
         rce = dep.receive()
         reqm = rce.message
         self.assertEqual(reqm.source_endpoint, sep)
         self.assertEqual(reqm.destination_endpoint, dep)
         self.assertEqual(len(dep.fifo), 0)
         self.assertEqual(sm.messageID, reqm.messageID)
-        self.assertEqual(1, len(sep._rcvd_cache))
+        self.assertEqual(1, len(dstate.rcvd_cache))
 
         # Create a response message
         rspm = reqm.create_response(SuccessResponse,
