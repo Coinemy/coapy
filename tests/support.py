@@ -36,8 +36,8 @@ class FIFOEndpoint (coapy.endpoint.LocalEndpoint):
     """A specialized endpoint for unit testing.
 
     Each instance of this class is assigned a unique name.  The
-    underlying :meth:`coapy.endpoint.LocalEndpoint.rawsendto` and
-    :meth:`coapy.endpoint.LocalEndpoint.rawrecvfrom` operations are
+    underlying :meth:`coapy.endpoint.LocalEndpoint._rawsendto` and
+    :meth:`coapy.endpoint.LocalEndpoint._rawrecvfrom` operations are
     replaced to directly deliver to another instance of this class.
     """
 
@@ -69,7 +69,7 @@ class FIFOEndpoint (coapy.endpoint.LocalEndpoint):
         self.__fifo = []
         super(FIFOEndpoint, self)._reset()
 
-    def rawsendto(self, data, destination_endpoint):
+    def _rawsendto(self, data, destination_endpoint):
         """Place the tuple ``(data, self)`` on the :attr:`fifo` of
         *destination_endpoint*, which must also be a
         :class:`FIFOEndpoint`.
@@ -80,7 +80,7 @@ class FIFOEndpoint (coapy.endpoint.LocalEndpoint):
             raise ValueError(destination_endpoint)
         destination_endpoint.fifo.append((data, self))
 
-    def rawrecvfrom(self, bufsize):
+    def _rawrecvfrom(self, bufsize):
         """Return the tuple ``(data, destination_endpoint)`` at the
         head of :attr:`fifo`.  If the fifo is empty, raises
         :exc:`python:socket.error`.

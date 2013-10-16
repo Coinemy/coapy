@@ -734,8 +734,43 @@ class Endpoint (object):
         return self.__base_uri
     __base_uri = None
 
+    last_heard_clk = None
+    """The :func:`coapy.clock()` time at which the last message was
+    received from this endpoint.  The value contributes to
+    verification that
+    :attr:`coapy.message.TransmissionParameters.PROBING_RATE` is not
+    exceeded.
+
+    The value is ``None`` if no messages have ever been received from
+    this endpoint.
+    """
+
+    rx_messages = None
+    """The number of messages received from this endpoint, including
+    duplicates.
+    """
+
+    rx_octets = None
+    """The number of octets received from this endpoint, including
+    duplicates.
+    """
+
+    tx_messages = None
+    """The number of messages transmitted to this endpoint, including
+    retransmissions.
+    """
+
+    tx_octets = None
+    """The number of octets transmitted to this endpoint, including
+    retransmissions.
+    """
+
+    tx_octets_since_heard = None
+    """The number of octets transmitted to this endpoint since
+    :attr:`last_heard_clk`.
+    """
+
     __EndpointRegistry = {}
-    __nonInetIndex = 0
 
     @staticmethod
     def _key_for_sockaddr(sockaddr, family, security_mode=None):
@@ -882,6 +917,12 @@ class Endpoint (object):
            extension.
         """
         self._reset_next_messageID(random.randint(0, 65535))
+        self.last_heard_clk = None
+        self.rx_messages = 0
+        self.rx_octets = 0
+        self.tx_messages = 0
+        self.tx_octets = 0
+        self.tx_octets_since_heard = 0
         self._sent_cache = MessageCache(self, True)
         self._rcvd_cache = MessageCache(self, False)
 
@@ -1183,11 +1224,11 @@ class LocalEndpoint(Endpoint):
         """Return all data to its initial state.
 
         """
-        self._sent_cache = MessageCache(self, True)
-        self._rcvd_cache = MessageCache(self, False)
+        #self._sent_cache = MessageCache(self, True)
+        #self._rcvd_cache = MessageCache(self, False)
         super(LocalEndpoint, self)._reset()
 
-    def rawsendto(self, data, destination_endpoint):
+    def _rawsendto(self, data, destination_endpoint):
         """Send *data* from this endpoint to *destination_endpoint*.
 
         *data* is :class:`bytes` data.  *destination_endpoint* is an
@@ -1199,7 +1240,22 @@ class LocalEndpoint(Endpoint):
         """
         raise NotImplementedError
 
-    def rawrecvfrom(self, bufsize):
+    def rawsendto(self, data, destination_endpoint):
+        """Send *data* from this endpoint to *destination_endpoint*.
+
+        *data* is :class:`bytes` data.  *destination_endpoint* is an
+        instance of :class:`Endpoint`.
+
+        This method delegates to a subclass implementation of
+        :meth:`_rawsendto`.
+        """
+        rv = self._rawsendto(data, destination_endpoint)
+        destination_endpoint.tx_messages += 1
+        destination_endpoint.tx_octets += len(data)
+        destination_endpoint.tx_octets_since_heard += len(data)
+        return rv
+
+    def _rawrecvfrom(self, bufsize):
         """Receive *data* from a *source_endpoint*.
 
         Returns tuple ``(data, source_endpoint)`` where *data* is
@@ -1213,6 +1269,25 @@ class LocalEndpoint(Endpoint):
         value must be as described above.
         """
         raise NotImplementedError
+
+    def rawrecvfrom(self, bufsize=2048):
+        """Receive *data* from a *source_endpoint*.
+
+        Returns tuple ``(data, source_endpoint)`` where *data* is
+        :class:`bytes` data and *source_endpoint* is the instance
+        :class:`Endpoint` associated with the origin of *data*.
+        *bufsize* is a hint of the maximum expected size of the
+        incoming data.
+
+        This method delegates to a subclass implementation of
+        :meth:`_rawrecvfrom`.
+        """
+        (data, source_endpoint) = self._rawrecvfrom(bufsize)
+        source_endpoint.rx_messages += 1
+        source_endpoint.rx_octets += len(data)
+        source_endpoint.last_heard_clk = coapy.clock()
+        source_endpoint.tx_octets_since_heard = 0
+        return (data, source_endpoint)
 
     def receive(self):
         """Receive and decode a message from another endpoint.
@@ -1347,7 +1422,7 @@ class SocketEndpoint (LocalEndpoint):
         """
         return self.__bound_socket
 
-    def rawsendto(self, data, destination_endpoint):
+    def _rawsendto(self, data, destination_endpoint):
         """Send *data* from this endpoint to *destination_endpoint*.
 
         This invokes :meth:`sendto<python:socket.socket.sendto>` on
@@ -1356,7 +1431,7 @@ class SocketEndpoint (LocalEndpoint):
         """
         return self.bound_socket.sendto(data, destination_endpoint.sockaddr)
 
-    def rawrecvfrom(self, bufsize):
+    def _rawrecvfrom(self, bufsize):
         """Receive *data* from a *source_endpoint*.
 
         Invokes :meth:`recvfrom<python:socket.socket.recvfrom>` on

@@ -389,6 +389,48 @@ class TestMessageCache (ManagedClock_mixin,
         self.assertEqual(0, len(c))
 
 
+class TestRxTxStatistics (ManagedClock_mixin,
+                          unittest.TestCase):
+    def testBasic(self):
+        clk = coapy.clock
+        sep = FIFOEndpoint()
+        dep = FIFOEndpoint()
+        data = b'data'
+
+        self.assertEqual(0, clk())
+        clk.adjust(120)
+        self.assertEqual(120, clk())
+
+        self.assertIsNone(dep.last_heard_clk)
+        self.assertEqual(dep.rx_messages, 0)
+        self.assertEqual(dep.tx_messages, 0)
+        self.assertEqual(dep.tx_octets_since_heard, 0)
+
+        sep.rawsendto(data, dep)
+
+        self.assertEqual(dep.rx_messages, 0)
+        self.assertEqual(dep.tx_messages, 1)
+        self.assertEqual(dep.tx_octets, len(data))
+        self.assertEqual(dep.tx_octets_since_heard, len(data))
+
+        # Simulate destination replying with same content 45 seconds
+        # later
+        sep.fifo.append((dep.fifo.pop()[0], dep))
+        clk.adjust(45)
+        self.assertEqual(165, clk())
+
+        (xdata, xsep) = sep.rawrecvfrom()
+        self.assertEqual(xdata, data)
+        self.assertTrue(xsep is dep)
+
+        self.assertEqual(dep.last_heard_clk, 165)
+        self.assertEqual(dep.rx_messages, 1)
+        self.assertEqual(dep.tx_messages, 1)
+        self.assertEqual(dep.rx_octets, len(data))
+        self.assertEqual(dep.tx_octets, len(data))
+        self.assertEqual(dep.tx_octets_since_heard, 0)
+
+
 class TestSentCache (DeterministicBEBO_mixin,
                      LogHandler_mixin,
                      ManagedClock_mixin,
