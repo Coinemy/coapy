@@ -92,9 +92,12 @@ class MessageCache (object):
     :attr:`messageID<coapy.message.Message.messageID>` is substituted
     automatically.
 
-    The collection also implements a priority queue, allowing
-    time-driven events to be processed for cache elements based on
-    :attr:`time_due<coapy.util.TimeDueOrdinal.time_due>`.
+    The collection also implements a :meth:`priority queue<queue>`,
+    allowing time-driven events to be processed for cache elements
+    based on :attr:`time_due<MessageCacheEntry.time_due>`.  Items in
+    the cache for which no
+    :attr:`time_due<MessageCacheEntry.time_due>` has been specified
+    are held on a :meth:`pending` FIFO.
 
     Cache entries are placed in a cache when they are created.  It
     is an error to create a new cache entry when one with the same
@@ -102,11 +105,12 @@ class MessageCache (object):
     cache.
 
     Entry content may be updated while in the cache (in particular,
-    modifying :attr:`MessageCacheEntry.time_due` will reposition the
-    entry within the :meth:`queue`).  Entries proceed through a
+    modifying :attr:`MessageCacheEntry.time_due` will
+    :attr:`activate<MessageCacheEntry.activated_clk>` or reposition
+    the entry within the :meth:`queue`).  Entries proceed through a
     defined life cycle; after all active stages have been completed an
     event to automatically remove the entry from its cache will be
-    scheduled to occur at :attr:`expire<expiry_due>`.
+    scheduled to occur at :attr:`expire<expires_clk>`.
     """
 
     __queue = None
@@ -129,6 +133,7 @@ class MessageCache (object):
             raise ValueError(endpoint)
         self.__endpoint = endpoint
         self.__is_sent_cache = is_sent_cache
+        self.__pending = []
         self.__queue = []
         self.__dict = {}
         self.keys = self.__dict.keys
@@ -147,6 +152,18 @@ class MessageCache (object):
         # popitem
         # copy
         # update
+
+    def pending(self):
+        """The list of pending cache entries in FIFO order.  These are
+        cache entries for which no :attr:`MessageCacheEntry.time_due`
+        has been assigned, so their lifecycle has not yet started.
+
+        .. warning::
+
+           This method returns a reference to the underlying list.
+           Callers are expected to refrain from changing the list.
+        """
+        return self.__pending
 
     def queue(self):
         """The queue of cache entries sorted by
@@ -175,7 +192,10 @@ class MessageCache (object):
             raise ValueError(entry)
         if entry.cache != self:
             raise ValueError(entry)
-        entry.queue_insert(self.__queue)
+        if entry.time_due is None:
+            self.__pending.append(entry)
+        else:
+            entry.queue_insert(self.__queue)
         self.__dict[entry.message_id] = entry
 
     def _remove(self, entry):
@@ -188,10 +208,20 @@ class MessageCache (object):
         entry._dissociate()
         return entry
 
+    def _activate(self, entry):
+        """Move *entry* from the pending list to its correct location
+        in the queue.
+
+        This will be invoked when the underlying
+        :attr:`coapy.util.TimeDueOrdinal.time_due` attribute value is
+        first assigned."""
+        self.__pending.remove(entry)
+        entry.queue_insert(self.__queue)
+
     def _reposition(self, entry):
         """Re-place *entry* at its correct location in the queue.
 
-        This must be invoked whenever the underlying
+        This will be invoked whenever the underlying
         :attr:`coapy.util.TimeDueOrdinal.time_due` attribute value is
         changed."""
         entry.queue_reposition(self.__queue)
@@ -229,10 +259,15 @@ class MessageCacheEntry (coapy.util.TimeDueOrdinal):
     :attr:`message.messageID<coapy.message.Message.messageID>` is used
     as the key for cache entry lookups.
 
-    *time_due_offset*, if provided, is used to initialize
-    :attr:`time_due` by adding it to :attr:`created_clk`.  If
-    *time_due_offset* is not provided, the initial :attr:`time_due` is
-    :attr:`expiry_due`.
+    *activate*, if ``True``, starts the cache entry into its lifecycle
+    immediately by setting :attr:`activated_clk` to
+    :attr:`created_clk` and setting :attr:`time_due` to either
+    :attr:`activated_clk` plus *time_due_offset* if the latter is
+    provided, or to :attr:`expires_clk` if it is not provided.
+
+    If *activate* is ``False`` the entry is held
+    :attr:`pending<MessageCache.pending>` until something assigns an
+    initial :attr:`time_due`.
     """
 
     @property
@@ -255,26 +290,39 @@ class MessageCacheEntry (coapy.util.TimeDueOrdinal):
     @property
     def created_clk(self):
         """The :func:`coapy.clock` value at the time the cache entry
-        was created.
+        was created.  Distinguish this from :attr:`activated_clk`.
         """
         return self.__created_clk
     __created_clk = None
 
     @property
-    def expiry_due(self):
+    def activated_clk(self):
         """The :func:`coapy.clock` value at the time the cache entry
-        is obsolete.
+        was activated: i.e., it starts executing its lifecycle by
+        defining a non-``None`` :attr:`time_due`.  Distinguish this
+        from :attr:`created_clk`.
+        """
+        return self.__activated_clk
+    __activated_clk = None
 
-        This is calculated on construction by adding
+    @property
+    def expires_clk(self):
+        """The :func:`coapy.clock` value at the time the cache entry
+        is obsolete.  ``None`` is returned if the entry has not been
+        :attr:`activated<activated_clk>`.
+
+        This is calculated by adding
         :attr:`EXCHANGE_LIFETIME<coapy.message.TransmissionParameters.EXCHANGE_LIFETIME>`
         (for :attr:`CON<coapy.message.Message.Type_CON>` messages) or
         :attr:`NON_LIFETIME<coapy.message.TransmissionParameters.NON_LIFETIME>`
         (for :attr:`NON<coapy.message.Message.Type_NON>` messages) to
-        :attr:`created_clk`.  Entries must remain in the cache for
-        this period to avoid duplicates.
+        :attr:`activated_clk`.  Entries must remain in the cache until
+        this point to detect duplicates.
         """
-        return self.__expiry_due
-    __expiry_due = None
+        if self.__activated_clk is not None:
+            return self.__activated_clk + self.__expiry_offset
+        return None
+    __expiry_offset = None
 
     @property
     def message(self):
@@ -284,18 +332,35 @@ class MessageCacheEntry (coapy.util.TimeDueOrdinal):
 
     def _get_time_due(self):
         """See :attr:`coapy.util.TimeDueOrdinal.time_due`.  In this
-        class, modification of the value has the side-effect of moving
-        the entry within the :attr:`cache` queue.
+        class, modification of the value has the side-effect
+        potentially :meth:`activating<activated_clk>` the entry and of
+        moving the entry within the :attr:`cache` queue.
+
+        The value assigned to :attr:`time_due` must be an ordinal in
+        the domain of :func:`coapy.clock`.  It cannot be ``None`` if a
+        non-``None`` value had already been assigned.
         """
         return self.__time_due
 
-    def _set_time_due(self, value):
+    def _set_time_due(self, value, due_at_expires=False):
+        old_value = self.__time_due
+        # Permit idempotent assignments, including None.
+        if old_value == value:
+            return
+        # Disallow change to None
+        if value is None:
+            raise ValueError(value)
+        # Activate on change from None
+        if old_value is None:
+            self.__activated_clk = coapy.clock()
         self.__time_due = value
-        # If we're in the superclass constructor the cache has not
-        # yet been assigned (nor has the message_id that must be
-        # assigned prior to insertion).  So don't do anything yet.
         if self.__cache is not None:
-            self.__cache._reposition(self)
+            # Place entry into cache priority queue
+            if old_value is None:
+                self.__cache._activate(self)
+            else:
+                self.__cache._reposition(self)
+    __time_due = None
     time_due = property(_get_time_due, _set_time_due)
 
     @property
@@ -328,7 +393,7 @@ class MessageCacheEntry (coapy.util.TimeDueOrdinal):
         """
         raise NotImplementedError
 
-    def __init__(self, cache, message, time_due_offset=None):
+    def __init__(self, cache, message, activate=True, time_due_offset=None):
         if not isinstance(cache, MessageCache):
             raise TypeError(cache)
         if not isinstance(message, coapy.message.Message):
@@ -337,9 +402,9 @@ class MessageCacheEntry (coapy.util.TimeDueOrdinal):
         if message.messageID is None:
             raise ValueError(message)
         if message.is_confirmable():
-            expiry_offset = coapy.transmissionParameters.EXCHANGE_LIFETIME
+            self.__expiry_offset = coapy.transmissionParameters.EXCHANGE_LIFETIME
         elif message.is_non_confirmable():
-            expiry_offset = coapy.transmissionParameters.NON_LIFETIME
+            self.__expiry_offset = coapy.transmissionParameters.NON_LIFETIME
         else:
             # ACK and RST messages should not be cached
             raise ValueError(message)
@@ -347,16 +412,16 @@ class MessageCacheEntry (coapy.util.TimeDueOrdinal):
             raise TypeError(cache)
         self.__message = message
         self.__created_clk = coapy.clock()
-        self.__expiry_due = self.__created_clk + expiry_offset
 
-        # Assign the time due first, then associate with the cache, so
-        # the infrastructure doesn't attempt to either reposition an
-        # entry that is not in the cache, or add an entry that does
-        # not have a due time.
-        if time_due_offset is None:
-            self.time_due = self.__expiry_due
-        else:
-            self.time_due = self.__created_clk + time_due_offset
+        if activate:
+            # Set up consistent clocks by bypassing the property set
+            # mechanism.
+            self.__activated_clk = self.__created_clk
+            if time_due_offset is None:
+                self.__time_due = self.expires_clk
+            else:
+                self.__time_due = self.__activated_clk + time_due_offset
+
         self.__cache = cache
         cache._add(self)
 
@@ -432,6 +497,7 @@ class SentMessageCacheEntry (MessageCacheEntry):
         self.__transmissions = 0
         self.__timeout = 0
         super(SentMessageCacheEntry, self).__init__(cache, message,
+                                                    activate=False,
                                                     time_due_offset=0)
         if isinstance(self.message, coapy.message.Response):
             self.__stale_at = self.created_clk + self.message.maxAge()
@@ -440,7 +506,7 @@ class SentMessageCacheEntry (MessageCacheEntry):
 
     def __complete(self):
         self.__state = self.ST_completed
-        self.time_due = self.expiry_due
+        self.time_due = self.expires_clk
 
     def process_timeout(self):
         if self.cache is None:
@@ -574,7 +640,7 @@ class RcvdMessageCacheEntry (MessageCacheEntry):
         if not isinstance(message, coapy.message.Message):
             raise ValueError(message)
         self.__reception_count = 1
-        super(RcvdMessageCacheEntry, self).__init__(cache, message)
+        super(RcvdMessageCacheEntry, self).__init__(cache, message, activate=True)
 
     def process_timeout(self):
         if self.cache is None:
@@ -1401,7 +1467,11 @@ class LocalEndpoint(Endpoint):
             destination_endpoint = msg.destination_endpoint
         if msg.messageID is None:
             msg.messageID = self.next_messageID()
-        return SentMessageCacheEntry(self._sent_cache, msg, destination_endpoint)
+        ce = SentMessageCacheEntry(self._sent_cache, msg, destination_endpoint)
+        # @todo: verify that congestion limitations permit sending
+        # this message now.
+        ce.time_due = ce.created_clk
+        return ce
 
 
 class SocketEndpoint (LocalEndpoint):

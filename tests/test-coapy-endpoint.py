@@ -329,6 +329,7 @@ class TestMessageCache (ManagedClock_mixin,
         self.assertEqual(e1.message.messageID, 1)
         self.assertEqual(e1.message_id, 1)
         self.assertEqual(e1.created_clk, now)
+        self.assertEqual(e1.activated_clk, now)
         self.assertEqual(e1.time_due, now + coapy.transmissionParameters.NON_LIFETIME)
         e2 = MessageCacheEntry(cache=c, message=Message(messageID=2), time_due_offset=0)
         self.assertTrue(e2.message.is_non_confirmable())
@@ -387,6 +388,40 @@ class TestMessageCache (ManagedClock_mixin,
         c.clear()
         self.assertTrue(e3.cache is None)
         self.assertEqual(0, len(c))
+
+    def testSentEntry(self):
+        from coapy.message import Message
+        sep = FIFOEndpoint()
+        dep = FIFOEndpoint()
+        c = MessageCache(sep, True)
+        ce = SentMessageCacheEntry(c, Message(messageID=1), dep)
+        self.assertTrue(ce.message.is_non_confirmable())
+        self.assertTrue(ce in c.pending())
+        self.assertFalse(ce in c.queue())
+        self.assertEqual(ce.created_clk, coapy.clock())
+        self.assertIsNone(ce.activated_clk)
+        self.assertIsNone(ce.expires_clk)
+        coapy.clock.adjust(5)
+        ce.time_due = coapy.clock()
+        self.assertFalse(ce in c.pending())
+        self.assertTrue(ce in c.queue())
+        self.assertEqual(ce.activated_clk, coapy.clock())
+        self.assertEqual(ce.created_clk + 5, ce.activated_clk)
+        self.assertEqual(ce.expires_clk,
+                         ce.activated_clk + coapy.transmissionParameters.NON_LIFETIME)
+
+    def testRcvdEntry(self):
+        from coapy.message import Message
+        dep = FIFOEndpoint()
+        c = MessageCache(dep, False)
+        ce = RcvdMessageCacheEntry(c, Message(messageID=1))
+        self.assertTrue(ce.message.is_non_confirmable())
+        self.assertFalse(ce in c.pending())
+        self.assertTrue(ce in c.queue())
+        self.assertEqual(ce.activated_clk, coapy.clock())
+        self.assertEqual(ce.created_clk, ce.activated_clk)
+        self.assertEqual(ce.expires_clk,
+                         ce.activated_clk + coapy.transmissionParameters.NON_LIFETIME)
 
 
 class TestRemoteEndpointState (ManagedClock_mixin,
@@ -688,6 +723,7 @@ class TestSentCache (DeterministicBEBO_mixin,
         self.assertTrue(ce.reply_message.is_acknowledgement())
         self.assertEqual(ce.ST_completed, ce.state)
         self.assertEqual(ce.time_due, tp.EXCHANGE_LIFETIME)
+
 
 if __name__ == '__main__':
     unittest.main()
