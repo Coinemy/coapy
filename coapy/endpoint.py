@@ -166,35 +166,35 @@ class MessageCache (object):
         while self.__queue:
             self._remove(self.__queue[0])
 
-    def _add(self, value):
-        """Add *value* to the cache.
+    def _add(self, entry):
+        """Add *entry* to the cache.
         """
-        if not isinstance(value, MessageCacheEntry):
-            raise ValueError(value)
-        if value.message_id in self.__dict:
-            raise ValueError(value)
-        if value.cache != self:
-            raise ValueError(value)
-        value.queue_insert(self.__queue)
-        self.__dict[value.message_id] = value
+        if not isinstance(entry, MessageCacheEntry):
+            raise ValueError(entry)
+        if entry.message_id in self.__dict:
+            raise ValueError(entry)
+        if entry.cache != self:
+            raise ValueError(entry)
+        entry.queue_insert(self.__queue)
+        self.__dict[entry.message_id] = entry
 
-    def _remove(self, value):
-        """Remove *value* from the cache.
+    def _remove(self, entry):
+        """Remove *entry* from the cache.
         """
-        if not isinstance(value, MessageCacheEntry):
-            raise ValueError(value)
-        value.queue_remove(self.__queue)
-        del self.__dict[value.message_id]
-        value._dissociate()
-        return value
+        if not isinstance(entry, MessageCacheEntry):
+            raise ValueError(entry)
+        entry.queue_remove(self.__queue)
+        del self.__dict[entry.message_id]
+        entry._dissociate()
+        return entry
 
-    def _reposition(self, value):
-        """Re-place *value* at its correct location in the queue.
+    def _reposition(self, entry):
+        """Re-place *entry* at its correct location in the queue.
 
         This must be invoked whenever the underlying
         :attr:`coapy.util.TimeDueOrdinal.time_due` attribute value is
         changed."""
-        value.queue_reposition(self.__queue)
+        entry.queue_reposition(self.__queue)
 
     def __len__(self):
         return len(self.__queue)
