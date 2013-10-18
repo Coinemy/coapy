@@ -12,6 +12,7 @@ API
    coapy_message.rst
    coapy_option.rst
    coapy_endpoint.rst
+   coapy_resource.rst
    coapy_util.rst
    coapy_httputil.rst
    tests_support.rst
