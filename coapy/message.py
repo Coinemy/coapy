@@ -82,6 +82,13 @@ class MessageValidationError (MessageError):
     :class:`coapy.option.UriPath`, or :class:`coapy.option.UriQuery`.
     """
 
+    UNRECOGNIZED_CRITICAL_OPTION = 'Unrecognized critical option'
+    """*diagnostic* value when *message* has an option that is
+    critical but was not recognized.  For this exception the
+    :attr:`python:Exception.args` are ``(diagnostic, message,
+    option)`` where *option* is the unrecognized critical option.
+    """
+
 
 class MessageFormatError (MessageError):
     """Exception raised by :meth:`Message.from_packed` when the
@@ -753,6 +760,8 @@ class Message(object):
                     raise MessageValidationError(MessageValidationError.PROXY_URI_CONFLICT, self)
         for opt in opts:
             if isinstance(opt, coapy.option.UnrecognizedOption):
+                if opt.is_critical():
+                    raise MessageValidationError(MessageValidationError.UNRECOGNIZED_CRITICAL_OPTION, self, opt)
                 _log.warn('Unrecognized option in message: {0!s}'.format(opt))
 
     def create_reply(self, reset=False):
