@@ -325,8 +325,8 @@ be cancelled at (instead of) transport-layer retransmission.  In
 this situation the sole effect of cancellation is to inhibit further
 transport-layer retransmissions: it has no effect on whether the
 transmission is considered to have <cite>succeeded</cite> or <cite>failed</cite>, when the
-transmission <cite>expires</cite>, or (consequently) the message is still
-<cite>outstanding</cite>.</li>
+transmission <cite>expires</cite>, or (consequently) whether the message is
+still <cite>outstanding</cite>.</li>
 <li>A message transmission cannot be cancelled after it has been
 resolved or the last permitted retransmission has occurred.</li>
 </ul>
@@ -355,11 +355,11 @@ transport-layer transmission.</li>
 </ul>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last"><a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-4.8.2">CoAP Section 4.8.2</a> and <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-4.7">CoAP Section 4.7</a> which together imply the
-concept of an expiration time for message transmission leave the
+<p class="last"><a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-4.8.2">CoAP Section 4.8.2</a> and <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-4.7">CoAP Section 4.7</a> together imply the concept of
+an expiration time for message transmission, but leave the
 expiration for non-confirmable messages undefined.  The text above
 provides values based on the principles underlying the defined
-expiration for confirmable messages.  not</p>
+expiration for confirmable messages.</p>
 </div>
 </li>
 <li><p class="first">A message transmission is <em class="dfn">resolved</em> once its disposition is
