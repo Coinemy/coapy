@@ -382,14 +382,17 @@ class TestMessageValidation (tests.support.LogHandler_mixin,
 
         m = Request(code=Request.GET, options=[coapy.option.UriHost('localhost'),
                                                coapy.option.UriHost('bogus')])
-        self.log_handler.flush()
-        logmsgs = self.log_handler.buffer
-        self.assertEqual(0, len(logmsgs))
-        m.validate()
-        self.assertEqual(1, len(logmsgs))
-        self.assertEqual(logmsgs[0].msg,
-                         'Unrecognized option in message: UnrecognizedOption<3>: bogus')
-        self.log_handler.flush()
+        #self.log_handler.flush()
+        #logmsgs = self.log_handler.buffer
+        #self.assertEqual(0, len(logmsgs))
+
+        with self.assertRaises(MessageValidationError) as cm:
+            m.validate()
+
+        #self.assertEqual(1, len(logmsgs))
+        #self.assertEqual(logmsgs[0].msg,
+        #                 'Unrecognized option in message: UnrecognizedOption<3>: bogus')
+        #self.log_handler.flush()
 
 
 class TestMessageEndpoints (unittest.TestCase):
