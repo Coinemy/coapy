@@ -70,10 +70,10 @@ Layers
 
 CoAP envisions a two-layer protocol: a message layer and a
 request/response layer.  Extension beyond base CoAP reveals the
-request/response layer is too, resulting in a recursive concept of what
-a request/response exchange would be.  In this domain model there are
-three CoAP layers, placed in context in this sequence (from higher to
-lower layer similar to the OSI model):
+request/response layer is too abstract, resulting in a recursive concept
+of what a request/response exchange would be.  In this domain model
+there are three CoAP layers, placed in context in this sequence (from
+higher to lower layer similar to the OSI model):
 
 * application layer
 * transaction layer (requests paired with responses via Token)
@@ -103,9 +103,10 @@ In turn, a :dfn:`transaction` comprises:
   messages) matching that Token
 
 Depending on how the transaction is decomposed, it may consist of a
-single exchange, a sequence of exchanges (as per the block extension),
-an initial exchange with additional response message transmissions, or
-some other abstraction (as per the groupcomm extension).
+single exchange, a sequence of exchanges (as per the -block extension),
+an initial exchange with additional response message transmissions (as
+per the -observe extension), or some other abstraction (as per
+the -groupcomm extension).
 
 CoAP lacks the terminology to describe how exceptional behavior in lower
 layers impacts the behavior of higher layers.  This domain model
@@ -310,8 +311,9 @@ Operations
     be cancelled at (instead of) transport-layer retransmission.  In
     this situation the sole effect of cancellation is to inhibit further
     transport-layer retransmissions: it has no effect on whether the
-    transmission is considered to have `succeeded` or `failed`, or on
-    when the transmission `expires`.
+    transmission is considered to have `succeeded` or `failed`, when the
+    transmission `expires`, or (consequently) the message is still
+    `outstanding`.
 
   + A message transmission cannot be cancelled after it has been
     resolved or the last permitted retransmission has occurred.
@@ -510,8 +512,14 @@ Congestion Management (Cross Layer; see also individual layers)
 
 * Congestion rules apply to client requests to servers per :coapsect:`4.7`
 
-* Congestion rules apply to observe responses from servers per
+* Congestion rules apply to -observe responses from servers per
   observe-11.
+
+  .. warning::
+
+     Or not; as of current writing it appears -observe will define its
+     own rules for congestion management instead of sharing the
+     principles used by :coapsect:`4.7`.
 
 Commentary:
 
