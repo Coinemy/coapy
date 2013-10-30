@@ -12,11 +12,68 @@
 Domain Concepts
 ***************
 
+.. warning::
+
+   This document is a work in progress and should not be taken as
+   complete.
+
+The `CoAP specification
+<https://datatracker.ietf.org/doc/draft-ietf-core-coap/>`_ defines a
+protocol, but does so with some terms that are not always used
+precisely, and others that are left undefined beyond the implications of
+their conventional meaning.  The result is an incomplete and ambiguous
+specification that does not translate directly into a reference
+implementation such as CoAPy.
+
+This document refines and redefines terminology to support a domain
+model for the communications patterns supported by CoAP.  It is further
+informed by draft specifications for an `observation capability
+<https://datatracker.ietf.org/doc/draft-ietf-core-observe/>`_ (which
+relaxes the notion away from REST to allow a time series of responses to
+a single query) and a `block transfer capabliity
+<https://datatracker.ietf.org/doc/draft-ietf-core-block/>`_ (which
+conveys large messages through a sequence of smaller message
+transmissions).
+
+For the most part concepts and names introduced derive from those
+implicit in the CoAP specification.  In a few cases CoAP concepts are
+refactored so the description of their behavior depends on more basic
+concepts rather than being defined independently.
+
+.. note::
+
+   Within this document a reference to a technical term "concept"
+   appears as `concept`.  Generally use of a term that has a technical
+   meaning should be take to be that meaning, even if the specific use
+   is not so marked.
+
+   A technical term at its definition is denoted :dfn:`concept`.
+   Whether this is visibly distinct from its use form `concept` depends
+   on the style used when formatting this document.
+
+   To avoid duplication, where a description supports multiple cases
+   with slight variations, parentheses denote the alternatives.  Thus a
+   sentence "A confirmable (non-confirmable) message lives for
+   ``EXCHANGE_LIFETIME`` (``NON_LIFETIME``) seconds" provides a general
+   concept and the details of how its specifics change based on message
+   type.
+
+
 Overview of Concepts
 ====================
 
-Layer
------
+This section provides a brief introduction to the basic domain concepts.
+They are described more complete in their own sections.
+
+Layers
+------
+
+CoAP envisions a two-layer protocol: a message layer and a
+request/response layer.  Extension beyond base CoAP reveals the
+request/response layer is too abstract, resulting in a recursive concept
+of what a request/response exchange would be.  In this domain model
+there are three CoAP layers, placed in context in this sequence (from
+higher to lower layer similar to the OSI model):
 
 * application layer
 * transaction layer (requests paired with responses via Token)
@@ -24,19 +81,20 @@ Layer
 * message layer (CON/NON message paired with ACK/RST message via MID)
 * transport layer (UDP, DTLS, etc.)
 
-A `message transmission` comprises:
+Working from the bottom layer up, a `message transmission` comprises:
 
 * One `CON/NON message` with a given MID
 
 * Zero or one `reply message` matching that MID
 
-An :dfn:`exchange` comprises:
+The primitive component of a request/response exchange (or REST
+transaction) is an :dfn:`exchange`, comprising:
 
 * One `request message` with a given Token
 
 * Zero or one `response messages` matching that Token
 
-A :dfn:`transaction` comprises:
+In turn, a :dfn:`transaction` comprises:
 
 * One `request` (potentially comprised of multiple request messages)
   with a given Token
@@ -44,19 +102,27 @@ A :dfn:`transaction` comprises:
 * One or more `responses` (potentially comprised of multiple response
   messages) matching that Token
 
-A concept of `resolution` to `success` or `failure` applies to message
-transmissions, exchanges, and transactions.  Failure at a lower layer
-propagates to failure at a higher layer.
+Depending on how the transaction is decomposed, it may consist of a
+single exchange, a sequence of exchanges (as per the -block extension),
+an initial exchange with additional response message transmissions (as
+per the -observe extension), or some other abstraction (as per
+the -groupcomm extension).
+
+CoAP lacks the terminology to describe how exceptional behavior in lower
+layers impacts the behavior of higher layers.  This domain model
+introduces a concept of `resolution` to `success` or `failure` that
+applies to message transmissions, exchanges, and transactions.  Failure
+at a lower layer generally propagates to failure at a higher layer.
 
 Messages
 --------
 
-A message comprises various fields including:
+A message comprises various fields (:coapsect:`3`) including:
 
 * A Type being one of CON, NON, ACK, RST
 
 * A Code comprising a integer :dfn:`class` and an integer :dfn:`detail`
-  denoted by a dot-separated value, e.g. ``2.04``
+  denoted herein by a dot-separated decimals, e.g. ``2.04``
 
 * A Message ID (aka :dfn:`MID`) represented as integer in the range
   0..65535
@@ -67,10 +133,13 @@ A message comprises various fields including:
 
 * An optional Payload
 
+CoAP defines a byte encoding of a message; the details of that are
+within the specification and are not relevant to the domain model.
+
 Options
 -------
 
-An Option comprises:
+An Option (:coapsect:`3.1`) comprises:
 
 * An :dfn:`option number` as an unsigned integer in the range 0..65535
 
@@ -78,7 +147,8 @@ An Option comprises:
      The ability to express an option number greater than 65535 within
      an encoded message is assumed to be a flaw in the specification.
 
-* An :dfn:`option format` specified externally for a given option number
+* An :dfn:`option format` (:coapsect:`3.1`) specified externally for a
+  given option number
 
 * An :dfn:`option length` specified in bytes (octets).  Constraints on
   the length are defined externally for a specific option number
@@ -109,16 +179,31 @@ Related concepts:
 * A :dfn:`server` is an endpoint that receives and responds to a CoAP
   request.
 
+Other concepts related to endpoints may be derived when the groupcomm
+extension is considered.
+
 Congestion
 ----------
 
-A Binary Exponential Back-Off (BEBO) state comprises:
+The :dfn:`transmission parameters` (:coapsect:`4.8`) describe features
+related to congestion management, including number of outstanding
+interactions permitted, maximum data rate, etc.  References to those
+parameters are denoted thus: ``EXCHANGE_LIFETIME``.
+
+Unlike transmission parameters, which are simple values, the domain
+model requires understanding of the means by which retransmission of
+confirmable messages is authorized.  A :dfn:`Binary Exponential Back-Off
+(BEBO) state` comprises:
 
 * A retransmission counter, initialized to zero
 
 * A timeout, initialized to a value between ``ACK_TIMEOUT`` and
   ``(ACK_TIMEOUT * ACK_RANDOM_FACTOR)``
 
+The process by which these values are used is described in
+:coapsect:`4.2`.  This document refines the description to clarify what
+a transmission is at a given layer, and the conditions under which
+retransmission becomes unnecessary or disallowed.
 
 Message-Layer Concepts
 ======================
@@ -150,13 +235,13 @@ Taxonomy by Type
 Taxonomy by Code
 ----------------
 
-* An :dfn:`empty message` is a message with Code 0.00.  A message that
-  is not empty is a :dfn:`non-empty message`.
+* An :dfn:`empty message` is a message with Code ``0.00``.  A message
+  that is not empty is a :dfn:`non-empty message`.
 
   .. note::
 
-     * An empty message is represented by a four-octet sequence.  It
-       carries no Token, Options, nor Payload.
+     * An empty message is encoded to a four-octet sequence.  It carries
+       no Token, Options, nor Payload.
 
 * A :dfn:`request message` is a message with Code in class 1.
 
@@ -176,10 +261,10 @@ General Use
 
 In most uses an unqualified :dfn:`message` is a message with type CON or
 NON.  Where disambiguation is critical, such a message is called a
-:dfn:`CON/NON message`, and generic `message` will include ACK and RST
+:dfn:`CON/NON message`, and the term "message" may include ACK and RST
 messages.  `Sender` and `receiver` are generally used as roles defined
-relative to a CON/NON message, hence take care when speaking of them in
-the context of a reply message.
+relative to a CON/NON message.  Take care when speaking of them in the
+context of a `reply message`.
 
 A :dfn:`reply message` is a message with type ACK or RST.  It is coupled
 with the message to which it is a reply through a shared MID value.  A
@@ -197,8 +282,8 @@ Operations
 * A (CoAP) :dfn:`message reply` is the act of sending a `reply message`.
   A message of type CON may evoke a reply of type ACK or RST; a CoAP
   message of type NON may evoke a reply of type RST.  Neither ACK nor
-  RST may evoke replies.  A CoAP message transmission should evoke at
-  most one CoAP message reply.
+  RST may evoke replies.  A CoAP message transmission will evoke at most
+  one CoAP message reply.
 
 * The MID of a `CON/NON message` is determined by the sender.  The
   sender of a message should not re-use a MID for another confirmable
@@ -226,8 +311,9 @@ Operations
     be cancelled at (instead of) transport-layer retransmission.  In
     this situation the sole effect of cancellation is to inhibit further
     transport-layer retransmissions: it has no effect on whether the
-    transmission is considered to have `succeeded` or `failed`, or on
-    when the transmission `expires`.
+    transmission is considered to have `succeeded` or `failed`, when the
+    transmission `expires`, or (consequently) the message is still
+    `outstanding`.
 
   + A message transmission cannot be cancelled after it has been
     resolved or the last permitted retransmission has occurred.
@@ -251,11 +337,25 @@ Operations
 
   + A non-confirmable request message transmission `expires` at
     ``NON_LIFETIME`` seconds after the first transport-layer
-    transmission. (Refines CoAP)
+    transmission.
 
   + A non-confirmable non-request message transmission `expires` at
     ``ACK_TIMEOUT*ACK_RANDOM_FACTOR`` seconds after the first
     transport-layer transmission.
+
+  .. note::
+
+     :coapsect:`4.8.2` and :coapsect:`4.7` which together imply the
+     concept of an expiration time for message transmission leave the
+     expiration for non-confirmable messages undefined.  The text above
+     provides values based on the principles underlying the defined
+     expiration for confirmable messages.  not
+
+* A message transmission is :dfn:`resolved` once its disposition is
+  determined to be `success` or `failure`.  Prior to that point the
+  message transmission is `unresolved`.  Be aware that the sender and
+  the receiver of a message transmission may reach conflicting
+  dispositions for a given transmission.
 
 * From the perspective of a message receiver, the disposition of the
   reception is either `accept` or `reject`.  Rejecting a message is used
@@ -308,10 +408,6 @@ Operations
     `expires` has failed (succeeded) if it is confirmable
     (non-confirmable).
 
-* A message transmission is :dfn:`resolved` once its disposition is
-  determined to be `success` or `failure`.  Prior to that point the
-  message transmission is `unresolved`.
-
 * A :dfn:`duplicate` message is a confirmable (non-confirmable) message
   received from the same source endpoint within ``EXCHANGE_LIFETIME``
   (``NON_LIFETIME``) seconds after receipt of another CON/NON message
@@ -326,10 +422,14 @@ Operations
 
   .. note::
 
-     This refines :coapsect:`4.5`
+     This refactors :coapsect:`4.5` by leveraging more precise
+     terminology, and eliminates the unnecessary text related to relaxed
+     rules that explicitly authorize an implementation to do things that
+     result in behavior that is externally indistinguishable from having
+     satisfied the requirement.
 
 * A message transmission is :dfn:`outstanding (at the message layer)` if
-  it is unresolved.
+  it is `unresolved`.
 
 * An endpoint R :dfn:`responds to` (or :dfn:`is responsive to`) endpoint
   S with respect to a message transmission to R if
@@ -340,11 +440,19 @@ Operations
     notification from a higher layer (exchange, transaction,
     application)
 
+  .. note::
+
+     Responsiveness of an endpoint impacts whether congestion rules
+     apply to transmissions targeting the endpoint, but is not otherwise
+     defined in CoAP.
 
 Exchange Layer
 ==============
 
-TBD
+.. warning::
+
+   This section has not been completed.  Only a few concepts are
+   described, and they have not been verified.
 
 * An exchange is :dfn:`outstanding (at the exchange layer)` if a
   `response message` is still expected.
@@ -365,7 +473,10 @@ TBD
 Transaction Layer
 =================
 
-TBD
+.. warning::
+
+   This section has not been completed.
+
 
 Congestion Management (Cross Layer; see also individual layers)
 ===============================================================
@@ -401,15 +512,26 @@ Congestion Management (Cross Layer; see also individual layers)
 
 * Congestion rules apply to client requests to servers per :coapsect:`4.7`
 
-* Congestion rules apply to observe responses from servers per
+* Congestion rules apply to -observe responses from servers per
   observe-11.
+
+  .. warning::
+
+     Or not; as of current writing it appears -observe will define its
+     own rules for congestion management instead of sharing the
+     principles used by :coapsect:`4.7`.
 
 Commentary:
 
-* The "BEBO (binary exponential back-off) state" of a confirmable
-  message specifies when additional transport layer transmissions may be
-  allowed.  The BEBO "span" for an initial timeout of ITO is::
+* The `BEBO state` of a confirmable message transmission specifies when
+  additional transport layer transmissions may be allowed.  The
+  :dfn:`BEBO span` for an initial timeout of ITO is::
 
         ((2 ** (1 + MAX_RETRANSMIT)) - 1) * ITO
 
-  The BEBO span shall not exceed MAX_TRANSMIT_WAIT.
+  The BEBO span shall not exceed ``MAX_TRANSMIT_WAIT``.
+
+  .. note::
+
+     At this timne it is unclear whether the `BEBO span` is a necessary
+     domain concept.

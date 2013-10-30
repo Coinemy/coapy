@@ -2,6 +2,15 @@
 CoAPy: Python Implementation of Constrained Application Protocol
 ################################################################
 
+Documentation for this project is at:  http://pabigot.github.io/coapy
+
+.. warning::
+
+   This project is a work in progress.  In its current state it supports
+   most low level message operations, but lacks the infrastructure for
+   REST transactions, automated management of cache state, or even
+   primitive examples.
+
 CoAP is an effort of the `Constrained RESTful Environments (core)
 <https://datatracker.ietf.org/wg/core/>`_ working group of the Internet
 Engineering Task Force (IETF).  From the charter:
