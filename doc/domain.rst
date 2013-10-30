@@ -312,8 +312,8 @@ Operations
     this situation the sole effect of cancellation is to inhibit further
     transport-layer retransmissions: it has no effect on whether the
     transmission is considered to have `succeeded` or `failed`, when the
-    transmission `expires`, or (consequently) the message is still
-    `outstanding`.
+    transmission `expires`, or (consequently) whether the message is
+    still `outstanding`.
 
   + A message transmission cannot be cancelled after it has been
     resolved or the last permitted retransmission has occurred.
@@ -345,11 +345,11 @@ Operations
 
   .. note::
 
-     :coapsect:`4.8.2` and :coapsect:`4.7` which together imply the
-     concept of an expiration time for message transmission leave the
+     :coapsect:`4.8.2` and :coapsect:`4.7` together imply the concept of
+     an expiration time for message transmission, but leave the
      expiration for non-confirmable messages undefined.  The text above
      provides values based on the principles underlying the defined
-     expiration for confirmable messages.  not
+     expiration for confirmable messages.
 
 * A message transmission is :dfn:`resolved` once its disposition is
   determined to be `success` or `failure`.  Prior to that point the
