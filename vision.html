@@ -1,0 +1,138 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Architectural Vision &mdash; CoAPy 0.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="CoAPy 0.0.0 documentation" href="index.html" />
+    <link rel="next" title="Release History" href="releases.html" />
+    <link rel="prev" title="CoAPy: Python Implementation of Constrained Application Protocol" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="releases.html" title="Release History"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="CoAPy: Python Implementation of Constrained Application Protocol"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">CoAPy 0.0.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="architectural-vision">
+<span id="vision"></span><h1>Architectural Vision<a class="headerlink" href="#architectural-vision" title="Permalink to this headline">¶</a></h1>
+<p>This chapter specifies the underlying requirements and motivations for
+CoAPy.</p>
+<ul class="simple">
+<li>The implementation should be suitable as a reference implementation,
+supporting exactly the specification as detailed in the to-be RFC.</li>
+<li>The architecture should be highly abstracted so as to decouple key
+concepts such as messages and requests/responses.</li>
+<li>A well-defined and complete logging infrastructure should support tracing
+all protocol operations, including timestamps.</li>
+<li>All protocol-defined configuration constants (such as congestion controls)
+should be mutable within the ranges allowed.</li>
+<li>The implementation should be extensible to handle new options and
+behaviors that are described in additional specifications such as <a class="reference external" href="https://datatracker.ietf.org/doc/draft-ietf-core-block/">block</a>
+and <a class="reference external" href="https://datatracker.ietf.org/doc/draft-ietf-core-observe/">observe</a>.</li>
+<li>The target environment is Python 2.6 and higher including Python 3.  The
+implementation may require may require Python 3 features that were not
+originally available in Python 2, as long as they are present in Python
+2.6.8 and Python 2.7.5.  Supporting infrastructure such as unit tests may
+additionally use any Python 3 features available in Python 2.7.3.</li>
+</ul>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">CoAPy: Python Implementation of Constrained Application Protocol</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="releases.html"
+                        title="next chapter">Release History</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/vision.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="releases.html" title="Release History"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="CoAPy: Python Implementation of Constrained Application Protocol"
+             >previous</a> |</li>
+        <li><a href="index.html">CoAPy 0.0.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Peter A. Bigot.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,1020 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>coapy.option &mdash; CoAPy 0.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="CoAPy 0.0.0 documentation" href="index.html" />
+    <link rel="up" title="API" href="api.html" />
+    <link rel="next" title="coapy.endpoint" href="coapy_endpoint.html" />
+    <link rel="prev" title="coapy.message" href="coapy_message.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="coapy_endpoint.html" title="coapy.endpoint"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="coapy_message.html" title="coapy.message"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">CoAPy 0.0.0 documentation</a> &raquo;</li>
+          <li><a href="api.html" accesskey="U">API</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-coapy.option">
+<span id="coapy-option"></span><h1>coapy.option<a class="headerlink" href="#module-coapy.option" title="Permalink to this headline">¶</a></h1>
+<p>CoAP defines <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.10">a variety of options</a> that affect
+request and response semantics.  This module provides classes and
+functions to operate on native Python instances of the options, and to
+translate them between
+the Python instances and their <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-3.1">encoded representation
+within messages</a></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">copyright:</th><td class="field-body">Copyright 2013, Peter A. Bigot</td>
+</tr>
+<tr class="field-even field"><th class="field-name">license:</th><td class="field-body">Apache-2.0</td>
+</tr>
+</tbody>
+</table>
+<div class="section" id="operations">
+<h2>Operations<a class="headerlink" href="#operations" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="coapy.option.all_options">
+<tt class="descclassname">coapy.option.</tt><tt class="descname">all_options</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/coapy/option.html#all_options"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option.all_options" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return an iterable producing all registered options.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="coapy.option.find_option">
+<tt class="descclassname">coapy.option.</tt><tt class="descname">find_option</tt><big>(</big><em>number</em><big>)</big><a class="reference internal" href="_modules/coapy/option.html#find_option"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option.find_option" title="Permalink to this definition">¶</a></dt>
+<dd><p>Look up an option by number.</p>
+<p>Returns the <a class="reference internal" href="#coapy.option.UrOption" title="coapy.option.UrOption"><tt class="xref py py-class docutils literal"><span class="pre">UrOption</span></tt></a> subclass registered for <em>number</em>,
+or <tt class="docutils literal"><span class="pre">None</span></tt> if no such option has been registered.  <em>number</em> must
+be an <tt class="xref py py-class docutils literal"><span class="pre">int</span></tt> in the range 0 through 65535.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="coapy.option.is_critical_option">
+<tt class="descclassname">coapy.option.</tt><tt class="descname">is_critical_option</tt><big>(</big><em>number</em><big>)</big><a class="reference internal" href="_modules/coapy/option.html#is_critical_option"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option.is_critical_option" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return <tt class="docutils literal"><span class="pre">True</span></tt> iff <em>number</em> identifies a critical option.</p>
+<p>A <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.4.1">critical option</a> is one that must be
+understood by the endpoint processing the message.  This is
+indicated by bit 0 (0x01) of the <em>number</em> being set.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="coapy.option.is_unsafe_option">
+<tt class="descclassname">coapy.option.</tt><tt class="descname">is_unsafe_option</tt><big>(</big><em>number</em><big>)</big><a class="reference internal" href="_modules/coapy/option.html#is_unsafe_option"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option.is_unsafe_option" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return <tt class="docutils literal"><span class="pre">True</span></tt> iff the option number identifies an unsafe option.</p>
+<p>An <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.4.2">unsafe option</a> is one that must be recognized
+by a proxy in order to safely forward (or cache) the message.
+This is indicated by bit 1 (0x02) of the <em>number</em> being set.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="coapy.option.is_no_cache_key_option">
+<tt class="descclassname">coapy.option.</tt><tt class="descname">is_no_cache_key_option</tt><big>(</big><em>number</em><big>)</big><a class="reference internal" href="_modules/coapy/option.html#is_no_cache_key_option"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option.is_no_cache_key_option" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return <tt class="docutils literal"><span class="pre">True</span></tt> iff the option number identifies a NoCacheKey option.</p>
+<p>A <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.4.2">NoCacheKey option</a> is one for which the value
+of the option does not contribute to the key that identifies a
+matching value in a cache.  This is encoded in bits 1 through 5 of
+the <em>number</em>.  Options that are <a class="reference internal" href="#coapy.option.is_unsafe_option" title="coapy.option.is_unsafe_option"><tt class="xref py py-func docutils literal"><span class="pre">unsafe</span></tt></a>
+are always NoCacheKey options.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="coapy.option.encode_options">
+<tt class="descclassname">coapy.option.</tt><tt class="descname">encode_options</tt><big>(</big><em>options</em><big>)</big><a class="reference internal" href="_modules/coapy/option.html#encode_options"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option.encode_options" title="Permalink to this definition">¶</a></dt>
+<dd><p>Encode a set of options into packed form.</p>
+<p>This returns a <tt class="xref py py-class docutils literal"><span class="pre">bytes</span></tt> object that represents the encoding
+of <em>options</em> after they have been <a class="reference internal" href="#coapy.option.sorted_options" title="coapy.option.sorted_options"><tt class="xref py py-func docutils literal"><span class="pre">sorted</span></tt></a>.
+It may raise an exception if an option&#8217;s value cannot be encoded,
+but performs no semantic
+validation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="coapy.option.decode_options">
+<tt class="descclassname">coapy.option.</tt><tt class="descname">decode_options</tt><big>(</big><em>data</em><big>)</big><a class="reference internal" href="_modules/coapy/option.html#decode_options"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option.decode_options" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extract a list of options from the packed <em>data</em> which is <tt class="xref py py-class docutils literal"><span class="pre">bytes</span></tt>.</p>
+<p>Returns <tt class="docutils literal"><span class="pre">(options,</span> <span class="pre">remaining_data)</span></tt> where <em>options</em> is a list of
+instances of subclasses of <a class="reference internal" href="#coapy.option.UrOption" title="coapy.option.UrOption"><tt class="xref py py-class docutils literal"><span class="pre">UrOption</span></tt></a>.  Options that are
+unknown to the infrastructure will be returned as instances of
+<a class="reference internal" href="#coapy.option.UnrecognizedOption" title="coapy.option.UnrecognizedOption"><tt class="xref py py-class docutils literal"><span class="pre">UnrecognizedOption</span></tt></a>.  <em>remaining_data</em> will be the suffix of
+<em>data</em> that was not consumed when unpacking the options.</p>
+<p>This will raise <a class="reference internal" href="#coapy.option.OptionDecodeError" title="coapy.option.OptionDecodeError"><tt class="xref py py-exc docutils literal"><span class="pre">OptionDecodeError</span></tt></a> or other exceptions if
+the option data is malformed, but does no semantic validation</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="coapy.option.replace_unacceptable_options">
+<tt class="descclassname">coapy.option.</tt><tt class="descname">replace_unacceptable_options</tt><big>(</big><em>options</em>, <em>is_request</em><big>)</big><a class="reference internal" href="_modules/coapy/option.html#replace_unacceptable_options"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option.replace_unacceptable_options" title="Permalink to this definition">¶</a></dt>
+<dd><p>Verify that a set of options passes CoAP requirements.</p>
+<p>Individual options have occurrence restrictions that are encoded
+within the options themselves and may be inspected by these
+methods:</p>
+<blockquote>
+<div><ul class="simple">
+<li><a class="reference internal" href="#coapy.option.UrOption.valid_in_request" title="coapy.option.UrOption.valid_in_request"><tt class="xref py py-meth docutils literal"><span class="pre">coapy.option.UrOption.valid_in_request()</span></tt></a></li>
+<li><a class="reference internal" href="#coapy.option.UrOption.valid_in_response" title="coapy.option.UrOption.valid_in_response"><tt class="xref py py-meth docutils literal"><span class="pre">coapy.option.UrOption.valid_in_response()</span></tt></a></li>
+<li><a class="reference internal" href="#coapy.option.UrOption.valid_multiple_in_request" title="coapy.option.UrOption.valid_multiple_in_request"><tt class="xref py py-meth docutils literal"><span class="pre">coapy.option.UrOption.valid_multiple_in_request()</span></tt></a></li>
+<li><a class="reference internal" href="#coapy.option.UrOption.valid_multiple_in_response" title="coapy.option.UrOption.valid_multiple_in_response"><tt class="xref py py-meth docutils literal"><span class="pre">coapy.option.UrOption.valid_multiple_in_response()</span></tt></a></li>
+</ul>
+</div></blockquote>
+<p><a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.4.5">CoAP Section 5.4.5</a> specifies that options violating these
+constraints are to be interpreted as <a class="reference internal" href="#coapy.option.UnrecognizedOption" title="coapy.option.UnrecognizedOption"><tt class="xref py py-class docutils literal"><span class="pre">unrecognized</span>
+<span class="pre">options</span></tt></a>.  These are subsequently used to
+check for <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.4.1">critical</a> or <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.7">unsafe</a>
+options.</p>
+<p>This method replaces individual recognized options in
+<tt class="xref py py-attr docutils literal"><span class="pre">options</span></tt> with an equivalent unrecognized option instance
+based on <em>is_request</em> and each option&#8217;s restrictions.  The
+resulting list of options is returned.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="coapy.option.sorted_options">
+<tt class="descclassname">coapy.option.</tt><tt class="descname">sorted_options</tt><big>(</big><em>options</em><big>)</big><a class="reference internal" href="_modules/coapy/option.html#sorted_options"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option.sorted_options" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sort a sequence of options into canonical order.</p>
+<p>Return a list with the same elements as <em>options</em> sorted using the option
+<a class="reference internal" href="#coapy.option.UrOption.number" title="coapy.option.UrOption.number"><tt class="xref py py-attr docutils literal"><span class="pre">number</span></tt></a> as the key.  The sort is stable:
+options with the same number remain in their original order.  This
+operation is used for duplicate detection and to calculate the
+delta required to encode options.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="option-classes">
+<h2>Option Classes<a class="headerlink" href="#option-classes" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="coapy.option.UrOption">
+<em class="property">class </em><tt class="descclassname">coapy.option.</tt><tt class="descname">UrOption</tt><big>(</big><em>unpacked_value=None</em>, <em>packed_value=None</em><big>)</big><a class="reference internal" href="_modules/coapy/option.html#UrOption"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option.UrOption" title="Permalink to this definition">¶</a></dt>
+<dd><p>Abstract base for CoAP options.</p>
+<p>If <em>unpacked_value</em> is not <tt class="docutils literal"><span class="pre">None</span></tt>, <a class="reference internal" href="#coapy.option.UrOption.value" title="coapy.option.UrOption.value"><tt class="xref py py-attr docutils literal"><span class="pre">value</span></tt></a> will be initialized
+with that value; otherwise if <em>packed_value</em> is not <tt class="docutils literal"><span class="pre">None</span></tt>
+<a class="reference internal" href="#coapy.option.UrOption.value" title="coapy.option.UrOption.value"><tt class="xref py py-attr docutils literal"><span class="pre">value</span></tt></a> will be initialized with the corresponding unpacked
+value; otherwise <a class="reference internal" href="#coapy.option.UrOption.value" title="coapy.option.UrOption.value"><tt class="xref py py-attr docutils literal"><span class="pre">value</span></tt></a> will be <tt class="docutils literal"><span class="pre">None</span></tt> until a valid
+value is assigned.</p>
+<dl class="method">
+<dt id="coapy.option.UrOption._get_value">
+<tt class="descname">_get_value</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/coapy/option.html#UrOption._get_value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option.UrOption._get_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Contains the value of the option.  This is an instance of
+<a class="reference internal" href="#coapy.option._format_base.unpacked_type" title="coapy.option._format_base.unpacked_type"><tt class="xref py py-attr docutils literal"><span class="pre">format.unpacked_type</span></tt></a>.
+Only values that pass the restrictions of <a class="reference internal" href="#coapy.option.UrOption.format" title="coapy.option.UrOption.format"><tt class="xref py py-attr docutils literal"><span class="pre">format</span></tt></a> may
+be assigned to this property.  Unacceptable values result in
+<a class="reference external" href="http://docs.python.org/2.7/library/exceptions.html#exceptions.TypeError" title="(in Python v2.7)"><tt class="xref py py-exc docutils literal"><span class="pre">TypeError</span></tt></a> or
+<a class="reference internal" href="#coapy.option.OptionLengthError" title="coapy.option.OptionLengthError"><tt class="xref py py-exc docutils literal"><span class="pre">OptionLengthError</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="coapy.option.UrOption.all_match">
+<em class="property">classmethod </em><tt class="descname">all_match</tt><big>(</big><em>options</em><big>)</big><a class="reference internal" href="_modules/coapy/option.html#UrOption.all_match"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option.UrOption.all_match" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the sub-sequence of options in <em>options</em> that are
+instances of <em>cls</em>.</p>
+<p>Note that the test is specifically for instances of the class;
+an instance of <a class="reference internal" href="#coapy.option.UnrecognizedOption" title="coapy.option.UnrecognizedOption"><tt class="xref py py-class docutils literal"><span class="pre">UnrecognizedOption</span></tt></a> will not be
+returned just because the <a class="reference internal" href="#coapy.option.UrOption.number" title="coapy.option.UrOption.number"><tt class="xref py py-attr docutils literal"><span class="pre">number</span></tt></a> matches.</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="coapy.option.UrOption.first_match">
+<em class="property">classmethod </em><tt class="descname">first_match</tt><big>(</big><em>options</em><big>)</big><a class="reference internal" href="_modules/coapy/option.html#UrOption.first_match"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option.UrOption.first_match" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the first option in <em>options</em> that&#8217;s an instance of
+<em>cls</em>.</p>
+<p>Returns <tt class="docutils literal"><span class="pre">None</span></tt> if no option in the <em>options is an instance
+of *cls</em>.  Note that the test is specifically for instances of
+the class; an instance of <a class="reference internal" href="#coapy.option.UnrecognizedOption" title="coapy.option.UnrecognizedOption"><tt class="xref py py-class docutils literal"><span class="pre">UnrecognizedOption</span></tt></a> will not
+be returned just because the <a class="reference internal" href="#coapy.option.UrOption.number" title="coapy.option.UrOption.number"><tt class="xref py py-attr docutils literal"><span class="pre">number</span></tt></a> matches.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.option.UrOption.format">
+<tt class="descname">format</tt><em class="property"> = None</em><a class="headerlink" href="#coapy.option.UrOption.format" title="Permalink to this definition">¶</a></dt>
+<dd><p>An instance of <a class="reference internal" href="#coapy.option.format_empty" title="coapy.option.format_empty"><tt class="xref py py-class docutils literal"><span class="pre">format_empty</span></tt></a>, <a class="reference internal" href="#coapy.option.format_opaque" title="coapy.option.format_opaque"><tt class="xref py py-class docutils literal"><span class="pre">format_opaque</span></tt></a>,
+<a class="reference internal" href="#coapy.option.format_uint" title="coapy.option.format_uint"><tt class="xref py py-class docutils literal"><span class="pre">format_uint</span></tt></a>, or <a class="reference internal" href="#coapy.option.format_string" title="coapy.option.format_string"><tt class="xref py py-class docutils literal"><span class="pre">format_string</span></tt></a>.  The instance is
+used to check that the <a class="reference internal" href="#coapy.option.UrOption.value" title="coapy.option.UrOption.value"><tt class="xref py py-attr docutils literal"><span class="pre">value</span></tt></a> is acceptable for the
+option.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.option.UrOption.is_critical">
+<tt class="descname">is_critical</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/coapy/option.html#UrOption.is_critical"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option.UrOption.is_critical" title="Permalink to this definition">¶</a></dt>
+<dd><p>Passes <tt class="docutils literal"><span class="pre">self.number</span></tt> to <a class="reference internal" href="#coapy.option.is_critical_option" title="coapy.option.is_critical_option"><tt class="xref py py-func docutils literal"><span class="pre">is_critical_option()</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.option.UrOption.is_no_cache_key">
+<tt class="descname">is_no_cache_key</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/coapy/option.html#UrOption.is_no_cache_key"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option.UrOption.is_no_cache_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>Passes <tt class="docutils literal"><span class="pre">self.number</span></tt> to <a class="reference internal" href="#coapy.option.is_no_cache_key_option" title="coapy.option.is_no_cache_key_option"><tt class="xref py py-func docutils literal"><span class="pre">is_no_cache_key_option()</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.option.UrOption.is_unsafe">
+<tt class="descname">is_unsafe</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/coapy/option.html#UrOption.is_unsafe"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option.UrOption.is_unsafe" title="Permalink to this definition">¶</a></dt>
+<dd><p>Passes <tt class="docutils literal"><span class="pre">self.number</span></tt> to <a class="reference internal" href="#coapy.option.is_unsafe_option" title="coapy.option.is_unsafe_option"><tt class="xref py py-func docutils literal"><span class="pre">is_unsafe_option()</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.option.UrOption.name">
+<tt class="descname">name</tt><em class="property"> = None</em><a class="headerlink" href="#coapy.option.UrOption.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>A human-readable standard short name for the option, suitable
+for diagnostics.  This is a read-only attribute with a Unicode
+string value.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.option.UrOption.number">
+<tt class="descname">number</tt><em class="property"> = None</em><a class="headerlink" href="#coapy.option.UrOption.number" title="Permalink to this definition">¶</a></dt>
+<dd><p>The option number.</p>
+<p>An unsigned integer in the range 0..65535.  This is an
+IANA-registered value with the following policies
+(<span class="target" id="index-0"></span><a class="rfc reference external" href="http://tools.ietf.org/html/rfc5226.html"><strong>RFC 5226</strong></a>):</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="30%" />
+<col width="70%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Option Range</th>
+<th class="head">Policy</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>0..255</td>
+<td>IETF Review or IESG Approval</td>
+</tr>
+<tr class="row-odd"><td>256..2047</td>
+<td>Specification Required</td>
+</tr>
+<tr class="row-even"><td>2048..64999</td>
+<td>Designated Expert</td>
+</tr>
+<tr class="row-odd"><td>65000..65535</td>
+<td>Reserved for experiments</td>
+</tr>
+</tbody>
+</table>
+<p>The attribute is read-only.  Each subclass of <a class="reference internal" href="#coapy.option.UrOption" title="coapy.option.UrOption"><tt class="xref py py-class docutils literal"><span class="pre">UrOption</span></tt></a> is
+registered during its definition.  <tt class="xref py py-exc docutils literal"><span class="pre">InvalidOptionType</span></tt> will
+be raised if a previously-registered option exists with the same
+option number.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.option.UrOption.packed_value">
+<tt class="descname">packed_value</tt><a class="reference internal" href="_modules/coapy/option.html#UrOption.packed_value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option.UrOption.packed_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference internal" href="#coapy.option.UrOption.value" title="coapy.option.UrOption.value"><tt class="xref py py-attr docutils literal"><span class="pre">value</span></tt></a> of the option in its packed representation.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.option.UrOption.valid_in_request">
+<tt class="descname">valid_in_request</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/coapy/option.html#UrOption.valid_in_request"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option.UrOption.valid_in_request" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return <tt class="docutils literal"><span class="pre">True</span></tt> iff this option may appear at least once in a request message.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.option.UrOption.valid_in_response">
+<tt class="descname">valid_in_response</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/coapy/option.html#UrOption.valid_in_response"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option.UrOption.valid_in_response" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return <tt class="docutils literal"><span class="pre">True</span></tt> iff this option may appear at least once in a response message.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.option.UrOption.valid_multiple_in_request">
+<tt class="descname">valid_multiple_in_request</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/coapy/option.html#UrOption.valid_multiple_in_request"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option.UrOption.valid_multiple_in_request" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return <tt class="docutils literal"><span class="pre">True</span></tt> iff this option may appear multiple times in a request message.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.option.UrOption.valid_multiple_in_response">
+<tt class="descname">valid_multiple_in_response</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/coapy/option.html#UrOption.valid_multiple_in_response"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option.UrOption.valid_multiple_in_response" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return <tt class="docutils literal"><span class="pre">True</span></tt> iff this option may appear multiple times in a response message.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.option.UrOption.value">
+<tt class="descname">value</tt><a class="headerlink" href="#coapy.option.UrOption.value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Contains the value of the option.  This is an instance of
+<a class="reference internal" href="#coapy.option._format_base.unpacked_type" title="coapy.option._format_base.unpacked_type"><tt class="xref py py-attr docutils literal"><span class="pre">format.unpacked_type</span></tt></a>.
+Only values that pass the restrictions of <a class="reference internal" href="#coapy.option.UrOption.format" title="coapy.option.UrOption.format"><tt class="xref py py-attr docutils literal"><span class="pre">format</span></tt></a> may
+be assigned to this property.  Unacceptable values result in
+<a class="reference external" href="http://docs.python.org/2.7/library/exceptions.html#exceptions.TypeError" title="(in Python v2.7)"><tt class="xref py py-exc docutils literal"><span class="pre">TypeError</span></tt></a> or
+<a class="reference internal" href="#coapy.option.OptionLengthError" title="coapy.option.OptionLengthError"><tt class="xref py py-exc docutils literal"><span class="pre">OptionLengthError</span></tt></a>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="coapy.option.UnrecognizedOption">
+<em class="property">class </em><tt class="descclassname">coapy.option.</tt><tt class="descname">UnrecognizedOption</tt><big>(</big><em>number</em>, <em>unpacked_value=None</em>, <em>packed_value=None</em><big>)</big><a class="reference internal" href="_modules/coapy/option.html#UnrecognizedOption"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option.UnrecognizedOption" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#coapy.option.UrOption" title="coapy.option.UrOption"><tt class="xref py py-class docutils literal"><span class="pre">coapy.option.UrOption</span></tt></a></p>
+<p>Contains an option for which the registered <a class="reference internal" href="#coapy.option.UrOption" title="coapy.option.UrOption"><tt class="xref py py-class docutils literal"><span class="pre">UrOption</span></tt></a>
+subclass is not available or may not be used.</p>
+<p><em>number</em> must be provided, must be in the range 0 through 65535.
+<em>unpacked_value</em> and <em>packed_value</em> operate as in
+<a class="reference internal" href="#coapy.option.UrOption" title="coapy.option.UrOption"><tt class="xref py py-class docutils literal"><span class="pre">UrOption</span></tt></a> and accept only <tt class="xref py py-class docutils literal"><span class="pre">bytes</span></tt> objects.</p>
+<p><a class="reference internal" href="#coapy.option.UnrecognizedOption" title="coapy.option.UnrecognizedOption"><tt class="xref py py-class docutils literal"><span class="pre">UnrecognizedOption</span></tt></a> instances are structurally accepted in
+both request and response messages and instances with the same
+<a class="reference internal" href="#coapy.option.UnrecognizedOption.number" title="coapy.option.UnrecognizedOption.number"><tt class="xref py py-attr docutils literal"><span class="pre">number</span></tt></a> may appear multiple times in each.  Semantic
+restrictions may apply based on <a class="reference internal" href="#coapy.option.UrOption.is_critical" title="coapy.option.UrOption.is_critical"><tt class="xref py py-meth docutils literal"><span class="pre">UrOption.is_critical()</span></tt></a>.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last"><a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.4">CoAP Section 5.4</a> specifies situations where an option must be
+treated as an unrecognized option even if its number matches a
+recognized option.</p>
+</div>
+<dl class="method">
+<dt id="coapy.option.UnrecognizedOption._get_number">
+<tt class="descname">_get_number</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/coapy/option.html#UnrecognizedOption._get_number"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option.UnrecognizedOption._get_number" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference internal" href="#coapy.option.UrOption.number" title="coapy.option.UrOption.number"><tt class="xref py py-attr docutils literal"><span class="pre">option</span> <span class="pre">number</span></tt></a> associated with
+this option.  This is a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.option.UnrecognizedOption.format">
+<tt class="descname">format</tt><em class="property"> = &lt;coapy.option.format_opaque object at 0x3d72650&gt;</em><a class="headerlink" href="#coapy.option.UnrecognizedOption.format" title="Permalink to this definition">¶</a></dt>
+<dd><p>Unknown options carry their payload as uninterpreted
+<tt class="xref py py-class docutils literal"><span class="pre">bytes</span></tt> objects with a maximum length of 1034 octets.</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="coapy.option.UnrecognizedOption.from_option">
+<em class="property">classmethod </em><tt class="descname">from_option</tt><big>(</big><em>opt</em><big>)</big><a class="reference internal" href="_modules/coapy/option.html#UnrecognizedOption.from_option"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option.UnrecognizedOption.from_option" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create an <a class="reference internal" href="#coapy.option.UnrecognizedOption" title="coapy.option.UnrecognizedOption"><tt class="xref py py-class docutils literal"><span class="pre">UnrecognizedOption</span></tt></a> from an existing (recognized) option.</p>
+<p>This conversion is necessary per <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.4">CoAP Section 5.4</a> in various
+instances where the recognized option is not accepted.
+Standard option processing then proceeds with the option left
+unrecognized.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.option.UnrecognizedOption.number">
+<tt class="descname">number</tt><a class="headerlink" href="#coapy.option.UnrecognizedOption.number" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference internal" href="#coapy.option.UrOption.number" title="coapy.option.UrOption.number"><tt class="xref py py-attr docutils literal"><span class="pre">option</span> <span class="pre">number</span></tt></a> associated with
+this option.  This is a read-only attribute.</p>
+</dd></dl>
+
+</dd></dl>
+
+<div class="section" id="base-coap-options">
+<h3>Base CoAP Options<a class="headerlink" href="#base-coap-options" title="Permalink to this headline">¶</a></h3>
+<p>The following table shows all options that are defined in base CoAP, along
+with the format and the <a class="reference internal" href="#coapy.option._format_base.max_length" title="coapy.option._format_base.max_length"><tt class="xref py py-attr docutils literal"><span class="pre">maximum</span> <span class="pre">length</span> <span class="pre">of</span> <span class="pre">the</span> <span class="pre">packed</span>
+<span class="pre">value</span></tt></a> (and the minimum length if not zero).</p>
+<blockquote>
+<div><table border="1" class="docutils">
+<colgroup>
+<col width="10%" />
+<col width="34%" />
+<col width="32%" />
+<col width="24%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Option</th>
+<th class="head">Class</th>
+<th class="head">Format</th>
+<th class="head">Max (min) Length</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>1</td>
+<td><a class="reference internal" href="#coapy.option.IfMatch" title="coapy.option.IfMatch"><tt class="xref py py-class docutils literal"><span class="pre">IfMatch</span></tt></a></td>
+<td><a class="reference internal" href="#coapy.option.format_opaque" title="coapy.option.format_opaque"><tt class="xref py py-class docutils literal"><span class="pre">format_opaque</span></tt></a></td>
+<td>8</td>
+</tr>
+<tr class="row-odd"><td>3</td>
+<td><a class="reference internal" href="#coapy.option.UriHost" title="coapy.option.UriHost"><tt class="xref py py-class docutils literal"><span class="pre">UriHost</span></tt></a></td>
+<td><a class="reference internal" href="#coapy.option.format_string" title="coapy.option.format_string"><tt class="xref py py-class docutils literal"><span class="pre">format_string</span></tt></a></td>
+<td>255 (1)</td>
+</tr>
+<tr class="row-even"><td>4</td>
+<td><a class="reference internal" href="#coapy.option.ETag" title="coapy.option.ETag"><tt class="xref py py-class docutils literal"><span class="pre">ETag</span></tt></a></td>
+<td><a class="reference internal" href="#coapy.option.format_opaque" title="coapy.option.format_opaque"><tt class="xref py py-class docutils literal"><span class="pre">format_opaque</span></tt></a></td>
+<td>8 (1)</td>
+</tr>
+<tr class="row-odd"><td>5</td>
+<td><a class="reference internal" href="#coapy.option.IfNoneMatch" title="coapy.option.IfNoneMatch"><tt class="xref py py-class docutils literal"><span class="pre">IfNoneMatch</span></tt></a></td>
+<td><a class="reference internal" href="#coapy.option.format_empty" title="coapy.option.format_empty"><tt class="xref py py-class docutils literal"><span class="pre">format_empty</span></tt></a></td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-even"><td>7</td>
+<td><a class="reference internal" href="#coapy.option.UriPort" title="coapy.option.UriPort"><tt class="xref py py-class docutils literal"><span class="pre">UriPort</span></tt></a></td>
+<td><a class="reference internal" href="#coapy.option.format_uint" title="coapy.option.format_uint"><tt class="xref py py-class docutils literal"><span class="pre">format_uint</span></tt></a></td>
+<td>2</td>
+</tr>
+<tr class="row-odd"><td>8</td>
+<td><a class="reference internal" href="#coapy.option.LocationPath" title="coapy.option.LocationPath"><tt class="xref py py-class docutils literal"><span class="pre">LocationPath</span></tt></a></td>
+<td><a class="reference internal" href="#coapy.option.format_string" title="coapy.option.format_string"><tt class="xref py py-class docutils literal"><span class="pre">format_string</span></tt></a></td>
+<td>255</td>
+</tr>
+<tr class="row-even"><td>11</td>
+<td><a class="reference internal" href="#coapy.option.UriPath" title="coapy.option.UriPath"><tt class="xref py py-class docutils literal"><span class="pre">UriPath</span></tt></a></td>
+<td><a class="reference internal" href="#coapy.option.format_string" title="coapy.option.format_string"><tt class="xref py py-class docutils literal"><span class="pre">format_string</span></tt></a></td>
+<td>255</td>
+</tr>
+<tr class="row-odd"><td>12</td>
+<td><a class="reference internal" href="#coapy.option.ContentFormat" title="coapy.option.ContentFormat"><tt class="xref py py-class docutils literal"><span class="pre">ContentFormat</span></tt></a></td>
+<td><a class="reference internal" href="#coapy.option.format_uint" title="coapy.option.format_uint"><tt class="xref py py-class docutils literal"><span class="pre">format_uint</span></tt></a></td>
+<td>2</td>
+</tr>
+<tr class="row-even"><td>14</td>
+<td><a class="reference internal" href="#coapy.option.MaxAge" title="coapy.option.MaxAge"><tt class="xref py py-class docutils literal"><span class="pre">MaxAge</span></tt></a></td>
+<td><a class="reference internal" href="#coapy.option.format_uint" title="coapy.option.format_uint"><tt class="xref py py-class docutils literal"><span class="pre">format_uint</span></tt></a></td>
+<td>4</td>
+</tr>
+<tr class="row-odd"><td>15</td>
+<td><a class="reference internal" href="#coapy.option.UriQuery" title="coapy.option.UriQuery"><tt class="xref py py-class docutils literal"><span class="pre">UriQuery</span></tt></a></td>
+<td><a class="reference internal" href="#coapy.option.format_string" title="coapy.option.format_string"><tt class="xref py py-class docutils literal"><span class="pre">format_string</span></tt></a></td>
+<td>255</td>
+</tr>
+<tr class="row-even"><td>17</td>
+<td><a class="reference internal" href="#coapy.option.Accept" title="coapy.option.Accept"><tt class="xref py py-class docutils literal"><span class="pre">Accept</span></tt></a></td>
+<td><a class="reference internal" href="#coapy.option.format_uint" title="coapy.option.format_uint"><tt class="xref py py-class docutils literal"><span class="pre">format_uint</span></tt></a></td>
+<td>2</td>
+</tr>
+<tr class="row-odd"><td>20</td>
+<td><a class="reference internal" href="#coapy.option.LocationQuery" title="coapy.option.LocationQuery"><tt class="xref py py-class docutils literal"><span class="pre">LocationQuery</span></tt></a></td>
+<td><a class="reference internal" href="#coapy.option.format_string" title="coapy.option.format_string"><tt class="xref py py-class docutils literal"><span class="pre">format_string</span></tt></a></td>
+<td>255</td>
+</tr>
+<tr class="row-even"><td>35</td>
+<td><a class="reference internal" href="#coapy.option.ProxyUri" title="coapy.option.ProxyUri"><tt class="xref py py-class docutils literal"><span class="pre">ProxyUri</span></tt></a></td>
+<td><a class="reference internal" href="#coapy.option.format_string" title="coapy.option.format_string"><tt class="xref py py-class docutils literal"><span class="pre">format_string</span></tt></a></td>
+<td>1034 (1)</td>
+</tr>
+<tr class="row-odd"><td>39</td>
+<td><a class="reference internal" href="#coapy.option.ProxyScheme" title="coapy.option.ProxyScheme"><tt class="xref py py-class docutils literal"><span class="pre">ProxyScheme</span></tt></a></td>
+<td><a class="reference internal" href="#coapy.option.format_string" title="coapy.option.format_string"><tt class="xref py py-class docutils literal"><span class="pre">format_string</span></tt></a></td>
+<td>255 (1)</td>
+</tr>
+<tr class="row-even"><td>60</td>
+<td><a class="reference internal" href="#coapy.option.Size1" title="coapy.option.Size1"><tt class="xref py py-class docutils literal"><span class="pre">Size1</span></tt></a></td>
+<td><a class="reference internal" href="#coapy.option.format_uint" title="coapy.option.format_uint"><tt class="xref py py-class docutils literal"><span class="pre">format_uint</span></tt></a></td>
+<td>4</td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p>Additional options are defined in protocol extensions.</p>
+<dl class="class">
+<dt id="coapy.option.UriHost">
+<em class="property">class </em><tt class="descclassname">coapy.option.</tt><tt class="descname">UriHost</tt><big>(</big><em>unpacked_value=None</em>, <em>packed_value=None</em><big>)</big><a class="reference internal" href="_modules/coapy/option.html#UriHost"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option.UriHost" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#coapy.option.UrOption" title="coapy.option.UrOption"><tt class="xref py py-class docutils literal"><span class="pre">coapy.option.UrOption</span></tt></a></p>
+<p>Option encoding the Internet host of a requested resource.  See
+<a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.10.1">CoAP Section 5.10.1</a>.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="coapy.option.UriPort">
+<em class="property">class </em><tt class="descclassname">coapy.option.</tt><tt class="descname">UriPort</tt><big>(</big><em>unpacked_value=None</em>, <em>packed_value=None</em><big>)</big><a class="reference internal" href="_modules/coapy/option.html#UriPort"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option.UriPort" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#coapy.option.UrOption" title="coapy.option.UrOption"><tt class="xref py py-class docutils literal"><span class="pre">coapy.option.UrOption</span></tt></a></p>
+<p>Option encoding the transport-layer port of a requested
+resource.  See <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.10.1">CoAP Section 5.10.1</a>.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="coapy.option.UriPath">
+<em class="property">class </em><tt class="descclassname">coapy.option.</tt><tt class="descname">UriPath</tt><big>(</big><em>unpacked_value=None</em>, <em>packed_value=None</em><big>)</big><a class="reference internal" href="_modules/coapy/option.html#UriPath"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option.UriPath" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#coapy.option.UrOption" title="coapy.option.UrOption"><tt class="xref py py-class docutils literal"><span class="pre">coapy.option.UrOption</span></tt></a></p>
+<p>Option encoding (a segment of) the path of a requested
+resource.  This option may occur multiple times.  See
+<a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.10.1">CoAP Section 5.10.1</a>.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="coapy.option.UriQuery">
+<em class="property">class </em><tt class="descclassname">coapy.option.</tt><tt class="descname">UriQuery</tt><big>(</big><em>unpacked_value=None</em>, <em>packed_value=None</em><big>)</big><a class="reference internal" href="_modules/coapy/option.html#UriQuery"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option.UriQuery" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#coapy.option.UrOption" title="coapy.option.UrOption"><tt class="xref py py-class docutils literal"><span class="pre">coapy.option.UrOption</span></tt></a></p>
+<p>Option encoding (an element of) the query part of a requested
+resource.  This option may occur multiple times.  See
+<a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.10.1">CoAP Section 5.10.1</a>.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="coapy.option.ProxyUri">
+<em class="property">class </em><tt class="descclassname">coapy.option.</tt><tt class="descname">ProxyUri</tt><big>(</big><em>unpacked_value=None</em>, <em>packed_value=None</em><big>)</big><a class="reference internal" href="_modules/coapy/option.html#ProxyUri"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option.ProxyUri" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#coapy.option.UrOption" title="coapy.option.UrOption"><tt class="xref py py-class docutils literal"><span class="pre">coapy.option.UrOption</span></tt></a></p>
+<p>Option encoding the URI of a request directed through a
+<a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.7">forward-proxy</a>. See <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.10.2">CoAP Section 5.10.2</a>.</p>
+<p>If this option appears in a request, none of <a class="reference internal" href="#coapy.option.UriHost" title="coapy.option.UriHost"><tt class="xref py py-class docutils literal"><span class="pre">UriHost</span></tt></a>,
+<a class="reference internal" href="#coapy.option.UriPort" title="coapy.option.UriPort"><tt class="xref py py-class docutils literal"><span class="pre">UriPort</span></tt></a>, <a class="reference internal" href="#coapy.option.UriPath" title="coapy.option.UriPath"><tt class="xref py py-class docutils literal"><span class="pre">UriPath</span></tt></a>, or <a class="reference internal" href="#coapy.option.UriQuery" title="coapy.option.UriQuery"><tt class="xref py py-class docutils literal"><span class="pre">UriQuery</span></tt></a> may
+appear.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="coapy.option.ProxyScheme">
+<em class="property">class </em><tt class="descclassname">coapy.option.</tt><tt class="descname">ProxyScheme</tt><big>(</big><em>unpacked_value=None</em>, <em>packed_value=None</em><big>)</big><a class="reference internal" href="_modules/coapy/option.html#ProxyScheme"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option.ProxyScheme" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#coapy.option.UrOption" title="coapy.option.UrOption"><tt class="xref py py-class docutils literal"><span class="pre">coapy.option.UrOption</span></tt></a></p>
+<p>Option encoding the schema for a URI of a request directed
+through a <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.7">forward-proxy</a>.  In this case the
+remainder of the URI is constructed from <a class="reference internal" href="#coapy.option.UriHost" title="coapy.option.UriHost"><tt class="xref py py-class docutils literal"><span class="pre">UriHost</span></tt></a>,
+<a class="reference internal" href="#coapy.option.UriPort" title="coapy.option.UriPort"><tt class="xref py py-class docutils literal"><span class="pre">UriPort</span></tt></a>, <a class="reference internal" href="#coapy.option.UriPath" title="coapy.option.UriPath"><tt class="xref py py-class docutils literal"><span class="pre">UriPath</span></tt></a>, or <a class="reference internal" href="#coapy.option.UriQuery" title="coapy.option.UriQuery"><tt class="xref py py-class docutils literal"><span class="pre">UriQuery</span></tt></a> options.
+See <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.10.2">CoAP Section 5.10.2</a>.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="coapy.option.ContentFormat">
+<em class="property">class </em><tt class="descclassname">coapy.option.</tt><tt class="descname">ContentFormat</tt><big>(</big><em>unpacked_value=None</em>, <em>packed_value=None</em><big>)</big><a class="reference internal" href="_modules/coapy/option.html#ContentFormat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option.ContentFormat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#coapy.option.UrOption" title="coapy.option.UrOption"><tt class="xref py py-class docutils literal"><span class="pre">coapy.option.UrOption</span></tt></a></p>
+<p>Option encoding the representation format of the message
+payload.  See <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.10.3">CoAP Section 5.10.3</a>.</p>
+<dl class="attribute">
+<dt id="coapy.option.ContentFormat.APPLICATION_EXI">
+<tt class="descname">APPLICATION_EXI</tt><em class="property"> = 47</em><a class="headerlink" href="#coapy.option.ContentFormat.APPLICATION_EXI" title="Permalink to this definition">¶</a></dt>
+<dd><p><a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-12.3">CoAP Section 12.3</a> deriving from <a class="reference external" href="http://www.w3.org/TR/2009/CR-exi-20091208/#mediaTypeRegistration">Efficient XML Interchange (EXI)
+Format 1.0</a>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.option.ContentFormat.APPLICATION_JSON">
+<tt class="descname">APPLICATION_JSON</tt><em class="property"> = 50</em><a class="headerlink" href="#coapy.option.ContentFormat.APPLICATION_JSON" title="Permalink to this definition">¶</a></dt>
+<dd><p><a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-12.3">CoAP Section 12.3</a> deriving from <span class="target" id="index-1"></span><a class="rfc reference external" href="http://tools.ietf.org/html/rfc4627.html"><strong>RFC 4627</strong></a>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.option.ContentFormat.APPLICATION_LINK_FORMAT">
+<tt class="descname">APPLICATION_LINK_FORMAT</tt><em class="property"> = 40</em><a class="headerlink" href="#coapy.option.ContentFormat.APPLICATION_LINK_FORMAT" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-12.3">CoAP Section 12.3</a> deriving from <span class="target" id="index-2"></span><a class="rfc reference external" href="http://tools.ietf.org/html/rfc6690.html"><strong>RFC 6690</strong></a>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.option.ContentFormat.APPLICATION_OCTET_STREAM">
+<tt class="descname">APPLICATION_OCTET_STREAM</tt><em class="property"> = 42</em><a class="headerlink" href="#coapy.option.ContentFormat.APPLICATION_OCTET_STREAM" title="Permalink to this definition">¶</a></dt>
+<dd><p><a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-12.3">CoAP Section 12.3</a> deriving from <span class="target" id="index-3"></span><a class="rfc reference external" href="http://tools.ietf.org/html/rfc2045.html"><strong>RFC 2045</strong></a>, <span class="target" id="index-4"></span><a class="rfc reference external" href="http://tools.ietf.org/html/rfc2046.html"><strong>RFC 2046</strong></a>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.option.ContentFormat.APPLICATION_XML">
+<tt class="descname">APPLICATION_XML</tt><em class="property"> = 41</em><a class="headerlink" href="#coapy.option.ContentFormat.APPLICATION_XML" title="Permalink to this definition">¶</a></dt>
+<dd><p><a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-12.3">CoAP Section 12.3</a> deriving from <span class="target" id="index-5"></span><a class="rfc reference external" href="http://tools.ietf.org/html/rfc3023.html"><strong>RFC 3023</strong></a>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.option.ContentFormat.TEXT_PLAIN">
+<tt class="descname">TEXT_PLAIN</tt><em class="property"> = 0</em><a class="headerlink" href="#coapy.option.ContentFormat.TEXT_PLAIN" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-12.3">CoAP Section 12.3</a> deriving from <span class="target" id="index-6"></span><a class="rfc reference external" href="http://tools.ietf.org/html/rfc2046.html"><strong>RFC 2046</strong></a>, <span class="target" id="index-7"></span><a class="rfc reference external" href="http://tools.ietf.org/html/rfc3676.html"><strong>RFC 3676</strong></a>, <span class="target" id="index-8"></span><a class="rfc reference external" href="http://tools.ietf.org/html/rfc5147.html"><strong>RFC 5147</strong></a>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.option.ContentFormat.media_type_for_content">
+<tt class="descname">media_type_for_content</tt><em class="property"> = {0: u'text/plain;charset=utf-8', 40: u'application/link-format', 41: u'application/xml', 42: u'application/octet-stream', 47: u'application/exi', 50: u'application/json'}</em><a class="headerlink" href="#coapy.option.ContentFormat.media_type_for_content" title="Permalink to this definition">¶</a></dt>
+<dd><p>A map from integer content format values
+(e.g. <a class="reference internal" href="#coapy.option.ContentFormat.TEXT_PLAIN" title="coapy.option.ContentFormat.TEXT_PLAIN"><tt class="xref py py-attr docutils literal"><span class="pre">TEXT_PLAIN</span></tt></a>) to the media type string for that
+format.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="coapy.option.Accept">
+<em class="property">class </em><tt class="descclassname">coapy.option.</tt><tt class="descname">Accept</tt><big>(</big><em>unpacked_value=None</em>, <em>packed_value=None</em><big>)</big><a class="reference internal" href="_modules/coapy/option.html#Accept"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option.Accept" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#coapy.option.UrOption" title="coapy.option.UrOption"><tt class="xref py py-class docutils literal"><span class="pre">coapy.option.UrOption</span></tt></a></p>
+<p>Option encoding the representation format acceptable to a
+client.  See <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.10.4">CoAP Section 5.10.4</a>.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="coapy.option.MaxAge">
+<em class="property">class </em><tt class="descclassname">coapy.option.</tt><tt class="descname">MaxAge</tt><big>(</big><em>unpacked_value=None</em>, <em>packed_value=None</em><big>)</big><a class="reference internal" href="_modules/coapy/option.html#MaxAge"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option.MaxAge" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#coapy.option.UrOption" title="coapy.option.UrOption"><tt class="xref py py-class docutils literal"><span class="pre">coapy.option.UrOption</span></tt></a></p>
+<p>Option encoding the maximum time (in seconds) that a response
+may be cached before it is outdated.  See <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.10.5">CoAP Section 5.10.5</a>.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="coapy.option.ETag">
+<em class="property">class </em><tt class="descclassname">coapy.option.</tt><tt class="descname">ETag</tt><big>(</big><em>unpacked_value=None</em>, <em>packed_value=None</em><big>)</big><a class="reference internal" href="_modules/coapy/option.html#ETag"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option.ETag" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#coapy.option.UrOption" title="coapy.option.UrOption"><tt class="xref py py-class docutils literal"><span class="pre">coapy.option.UrOption</span></tt></a></p>
+<p>Option used for a resource-local short-hand for a given
+representation of a resource.  See <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.10.6">CoAP Section 5.10.6</a>.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="coapy.option.LocationPath">
+<em class="property">class </em><tt class="descclassname">coapy.option.</tt><tt class="descname">LocationPath</tt><big>(</big><em>unpacked_value=None</em>, <em>packed_value=None</em><big>)</big><a class="reference internal" href="_modules/coapy/option.html#LocationPath"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option.LocationPath" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#coapy.option.UrOption" title="coapy.option.UrOption"><tt class="xref py py-class docutils literal"><span class="pre">coapy.option.UrOption</span></tt></a></p>
+<p>Option encoding (a segment of) the path of a resource
+identified in a response.  This option may occur multiple times.
+See <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.10.7">CoAP Section 5.10.7</a>.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="coapy.option.LocationQuery">
+<em class="property">class </em><tt class="descclassname">coapy.option.</tt><tt class="descname">LocationQuery</tt><big>(</big><em>unpacked_value=None</em>, <em>packed_value=None</em><big>)</big><a class="reference internal" href="_modules/coapy/option.html#LocationQuery"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option.LocationQuery" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#coapy.option.UrOption" title="coapy.option.UrOption"><tt class="xref py py-class docutils literal"><span class="pre">coapy.option.UrOption</span></tt></a></p>
+<p>Option encoding (an element of) the query part of a resource
+identified in a response.  This option may occur multiple times.
+See <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.10.7">CoAP Section 5.10.7</a>.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="coapy.option.IfMatch">
+<em class="property">class </em><tt class="descclassname">coapy.option.</tt><tt class="descname">IfMatch</tt><big>(</big><em>unpacked_value=None</em>, <em>packed_value=None</em><big>)</big><a class="reference internal" href="_modules/coapy/option.html#IfMatch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option.IfMatch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#coapy.option.UrOption" title="coapy.option.UrOption"><tt class="xref py py-class docutils literal"><span class="pre">coapy.option.UrOption</span></tt></a></p>
+<p>Option used to make requests conditional on an <a class="reference internal" href="#coapy.option.ETag" title="coapy.option.ETag"><tt class="xref py py-class docutils literal"><span class="pre">ETag</span></tt></a>
+match.  See <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.10.8.1">CoAP Section 5.10.8.1</a>.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="coapy.option.IfNoneMatch">
+<em class="property">class </em><tt class="descclassname">coapy.option.</tt><tt class="descname">IfNoneMatch</tt><big>(</big><em>unpacked_value=None</em>, <em>packed_value=None</em><big>)</big><a class="reference internal" href="_modules/coapy/option.html#IfNoneMatch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option.IfNoneMatch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#coapy.option.UrOption" title="coapy.option.UrOption"><tt class="xref py py-class docutils literal"><span class="pre">coapy.option.UrOption</span></tt></a></p>
+<p>Option used to make requests conditional absence of a resource.
+See <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.10.8.2">CoAP Section 5.10.8.2</a>.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="coapy.option.Size1">
+<em class="property">class </em><tt class="descclassname">coapy.option.</tt><tt class="descname">Size1</tt><big>(</big><em>unpacked_value=None</em>, <em>packed_value=None</em><big>)</big><a class="reference internal" href="_modules/coapy/option.html#Size1"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option.Size1" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#coapy.option.UrOption" title="coapy.option.UrOption"><tt class="xref py py-class docutils literal"><span class="pre">coapy.option.UrOption</span></tt></a></p>
+<p>Option providing size (in bytes) of a resource representation
+in a request.  It may appear in an informational role in a
+diagnostic response.  See <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.10.9">CoAP Section 5.10.9</a>.</p>
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="option-formatter-classes">
+<h2>Option Formatter Classes<a class="headerlink" href="#option-formatter-classes" title="Permalink to this headline">¶</a></h2>
+<p>When encoded option values are packed in space efficient ways depending on
+the <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-3.2">format of the option value</a>.</p>
+<dl class="class">
+<dt id="coapy.option._format_base">
+<em class="property">class </em><tt class="descclassname">coapy.option.</tt><tt class="descname">_format_base</tt><big>(</big><em>max_length</em>, <em>min_length</em><big>)</big><a class="reference internal" href="_modules/coapy/option.html#_format_base"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option._format_base" title="Permalink to this definition">¶</a></dt>
+<dd><p>Abstract base for typed option value formatters.</p>
+<p>CoAP options encode values as byte sequences in one of several
+formats including:</p>
+<ul class="simple">
+<li><a class="reference internal" href="#coapy.option.format_empty" title="coapy.option.format_empty"><tt class="xref py py-class docutils literal"><span class="pre">format_empty</span></tt></a> for no value</li>
+<li><a class="reference internal" href="#coapy.option.format_opaque" title="coapy.option.format_opaque"><tt class="xref py py-class docutils literal"><span class="pre">format_opaque</span></tt></a> for uninterpreted byte sequences</li>
+<li><a class="reference internal" href="#coapy.option.format_uint" title="coapy.option.format_uint"><tt class="xref py py-class docutils literal"><span class="pre">format_uint</span></tt></a> for variable-length unsigned integers</li>
+<li><a class="reference internal" href="#coapy.option.format_string" title="coapy.option.format_string"><tt class="xref py py-class docutils literal"><span class="pre">format_string</span></tt></a> for Unicode text in Net-Unicode form
+(<span class="target" id="index-9"></span><a class="rfc reference external" href="http://tools.ietf.org/html/rfc5198.html"><strong>RFC 5198</strong></a>).</li>
+</ul>
+<p><em>max_length</em> is the maximum length of the packed representation in
+octets.  <em>min_length</em> is the minimum length of the packed
+representation in octets.</p>
+<dl class="method">
+<dt id="coapy.option._format_base._from_packed">
+<tt class="descname">_from_packed</tt><big>(</big><em>value</em><big>)</big><a class="reference internal" href="_modules/coapy/option.html#_format_base._from_packed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option._format_base._from_packed" title="Permalink to this definition">¶</a></dt>
+<dd><p>&#8216;Virtual&#8217; method implemented by subclasses to do
+type-specific unpacking.  The subclass implementation may
+assume <em>value</em> is of type <tt class="xref py py-attr docutils literal"><span class="pre">bytes</span></tt> and that the length
+constraints on the packed representation have been checked.
+It must return an instance of <a class="reference internal" href="#coapy.option._format_base.unpacked_type" title="coapy.option._format_base.unpacked_type"><tt class="xref py py-attr docutils literal"><span class="pre">unpacked_type</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.option._format_base._max_length">
+<tt class="descname">_max_length</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/coapy/option.html#_format_base._max_length"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option._format_base._max_length" title="Permalink to this definition">¶</a></dt>
+<dd><p>The maximum acceptable length of the packed representation,
+in octets.  This is a read-only property.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.option._format_base._min_length">
+<tt class="descname">_min_length</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/coapy/option.html#_format_base._min_length"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option._format_base._min_length" title="Permalink to this definition">¶</a></dt>
+<dd><p>The minimum acceptable length of the packed representation,
+in octets.  This is a read-only property.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.option._format_base._to_packed">
+<tt class="descname">_to_packed</tt><big>(</big><em>value</em><big>)</big><a class="reference internal" href="_modules/coapy/option.html#_format_base._to_packed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option._format_base._to_packed" title="Permalink to this definition">¶</a></dt>
+<dd><p>&#8216;Virtual&#8217; method implemented by subclasses to do
+type-specific packing.  The subclass implementation may assume
+<em>value</em> is of type <a class="reference internal" href="#coapy.option._format_base.unpacked_type" title="coapy.option._format_base.unpacked_type"><tt class="xref py py-attr docutils literal"><span class="pre">unpacked_type</span></tt></a> and that the length
+constraints on the packed representation will be checked by
+<a class="reference internal" href="#coapy.option._format_base.to_packed" title="coapy.option._format_base.to_packed"><tt class="xref py py-meth docutils literal"><span class="pre">to_packed()</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.option._format_base._to_text">
+<tt class="descname">_to_text</tt><big>(</big><em>value</em><big>)</big><a class="reference internal" href="_modules/coapy/option.html#_format_base._to_text"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option._format_base._to_text" title="Permalink to this definition">¶</a></dt>
+<dd><p>&#8216;Virtual&#8217; method implemented by subclasses to represent the
+given value known to be in type <a class="reference internal" href="#coapy.option._format_base.unpacked_type" title="coapy.option._format_base.unpacked_type"><tt class="xref py py-attr docutils literal"><span class="pre">unpacked_type</span></tt></a>.  Return
+the text value as required by <a class="reference internal" href="#coapy.option._format_base.to_text" title="coapy.option._format_base.to_text"><tt class="xref py py-meth docutils literal"><span class="pre">to_text()</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.option._format_base._unpacked_type">
+<tt class="descname">_unpacked_type</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/coapy/option.html#_format_base._unpacked_type"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option._format_base._unpacked_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>The Python type used for unpacked values.  This is a
+read-only property.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.option._format_base.from_packed">
+<tt class="descname">from_packed</tt><big>(</big><em>packed</em><big>)</big><a class="reference internal" href="_modules/coapy/option.html#_format_base.from_packed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option._format_base.from_packed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert <em>packed</em> to its unpacked form.</p>
+<p>If <em>packed</em> is not an instance of <tt class="xref py py-class docutils literal"><span class="pre">bytes</span></tt> then
+<a class="reference external" href="http://docs.python.org/2.7/library/exceptions.html#exceptions.TypeError" title="(in Python v2.7)"><tt class="xref py py-exc docutils literal"><span class="pre">TypeError</span></tt></a> will be raised
+with <em>packed</em> as an argument.</p>
+<p>If the length of <em>packed</em> is not between <a class="reference internal" href="#coapy.option._format_base.min_length" title="coapy.option._format_base.min_length"><tt class="xref py py-attr docutils literal"><span class="pre">min_length</span></tt></a>
+and <a class="reference internal" href="#coapy.option._format_base.max_length" title="coapy.option._format_base.max_length"><tt class="xref py py-attr docutils literal"><span class="pre">max_length</span></tt></a> (both inclusive) then
+<a class="reference internal" href="#coapy.option.OptionLengthError" title="coapy.option.OptionLengthError"><tt class="xref py py-exc docutils literal"><span class="pre">OptionLengthError</span></tt></a> will be raised with <em>packed</em> as
+an argument.</p>
+<p>Otherwise the value is unpacked and a corresponding instance
+of <a class="reference internal" href="#coapy.option._format_base.unpacked_type" title="coapy.option._format_base.unpacked_type"><tt class="xref py py-attr docutils literal"><span class="pre">unpacked_type</span></tt></a> is returned.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.option._format_base.max_length">
+<tt class="descname">max_length</tt><a class="headerlink" href="#coapy.option._format_base.max_length" title="Permalink to this definition">¶</a></dt>
+<dd><p>The maximum acceptable length of the packed representation,
+in octets.  This is a read-only property.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.option._format_base.min_length">
+<tt class="descname">min_length</tt><a class="headerlink" href="#coapy.option._format_base.min_length" title="Permalink to this definition">¶</a></dt>
+<dd><p>The minimum acceptable length of the packed representation,
+in octets.  This is a read-only property.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.option._format_base.to_packed">
+<tt class="descname">to_packed</tt><big>(</big><em>value</em><big>)</big><a class="reference internal" href="_modules/coapy/option.html#_format_base.to_packed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option._format_base.to_packed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert <em>value</em> to packed form.</p>
+<p>If <em>value</em> is not an instance of <a class="reference internal" href="#coapy.option._format_base.unpacked_type" title="coapy.option._format_base.unpacked_type"><tt class="xref py py-attr docutils literal"><span class="pre">unpacked_type</span></tt></a> then
+<tt class="xref py py-exc docutils literal"><span class="pre">TypeError</span></tt> will be raised
+with <em>value</em> as an argument.</p>
+<p>The return value is a <tt class="xref py py-class docutils literal"><span class="pre">bytes</span></tt> object with a length
+between <a class="reference internal" href="#coapy.option._format_base.min_length" title="coapy.option._format_base.min_length"><tt class="xref py py-attr docutils literal"><span class="pre">min_length</span></tt></a> and <a class="reference internal" href="#coapy.option._format_base.max_length" title="coapy.option._format_base.max_length"><tt class="xref py py-attr docutils literal"><span class="pre">max_length</span></tt></a>.  If <em>value</em>
+results in a packed format that is not within these bounds,
+<a class="reference internal" href="#coapy.option.OptionLengthError" title="coapy.option.OptionLengthError"><tt class="xref py py-exc docutils literal"><span class="pre">OptionLengthError</span></tt></a> will be raised with <em>value</em> as
+an argument.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.option._format_base.to_text">
+<tt class="descname">to_text</tt><big>(</big><em>value</em><big>)</big><a class="reference internal" href="_modules/coapy/option.html#_format_base.to_text"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option._format_base.to_text" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert an <a class="reference internal" href="#coapy.option._format_base.unpacked_type" title="coapy.option._format_base.unpacked_type"><tt class="xref py py-attr docutils literal"><span class="pre">unpacked_type</span></tt></a> <em>value</em> to a text
+(unicode) string holding a user-readable representation of the
+value.</p>
+<p>This function does not validate length constraints on the
+value.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.option._format_base.unpacked_type">
+<tt class="descname">unpacked_type</tt><a class="headerlink" href="#coapy.option._format_base.unpacked_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>The Python type used for unpacked values.  This is a
+read-only property.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="coapy.option.format_empty">
+<em class="property">class </em><tt class="descclassname">coapy.option.</tt><tt class="descname">format_empty</tt><a class="reference internal" href="_modules/coapy/option.html#format_empty"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option.format_empty" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#coapy.option._format_base" title="coapy.option._format_base"><tt class="xref py py-class docutils literal"><span class="pre">coapy.option._format_base</span></tt></a></p>
+<p>Support options with no value.</p>
+<p>The only acceptable value is a zero-length byte string.  This is
+both the packed and unpacked value.</p>
+<dl class="attribute">
+<dt id="coapy.option.format_empty._UnpackedType">
+<tt class="descname">_UnpackedType</tt><a class="headerlink" href="#coapy.option.format_empty._UnpackedType" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <tt class="xref py py-class docutils literal"><span class="pre">str</span></tt></p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="coapy.option.format_opaque">
+<em class="property">class </em><tt class="descclassname">coapy.option.</tt><tt class="descname">format_opaque</tt><big>(</big><em>max_length</em>, <em>min_length=0</em><big>)</big><a class="reference internal" href="_modules/coapy/option.html#format_opaque"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option.format_opaque" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#coapy.option._format_base" title="coapy.option._format_base"><tt class="xref py py-class docutils literal"><span class="pre">coapy.option._format_base</span></tt></a></p>
+<p>Support options with opaque values.</p>
+<p>Unpacked values are instances of <tt class="xref py py-class docutils literal"><span class="pre">bytes</span></tt>, and packing and
+unpacking is an identity operation.</p>
+<dl class="attribute">
+<dt id="coapy.option.format_opaque._UnpackedType">
+<tt class="descname">_UnpackedType</tt><a class="headerlink" href="#coapy.option.format_opaque._UnpackedType" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <tt class="xref py py-class docutils literal"><span class="pre">str</span></tt></p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="coapy.option.format_uint">
+<em class="property">class </em><tt class="descclassname">coapy.option.</tt><tt class="descname">format_uint</tt><big>(</big><em>max_length</em><big>)</big><a class="reference internal" href="_modules/coapy/option.html#format_uint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option.format_uint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#coapy.option._format_base" title="coapy.option._format_base"><tt class="xref py py-class docutils literal"><span class="pre">coapy.option._format_base</span></tt></a></p>
+<p>Supports options with variable-length unsigned integer values.
+<em>max_length</em> is the maximum number of octets in the packed format.
+The implicit <em>min_length</em> is always zero.</p>
+<p>Unpacked values are instances of <tt class="xref py py-class docutils literal"><span class="pre">int</span></tt>.  The packed value is
+big-endian in a <tt class="xref py py-class docutils literal"><span class="pre">bytes</span></tt> string with all zero-valued leading
+bytes removed.  Thus the packed representation of zero is an empty
+string.</p>
+<p>Per the CoAP specification packed values with leading NUL bytes
+will decode correctly; however, they are still subject to
+validation against <tt class="xref py py-attr docutils literal"><span class="pre">max_length</span></tt>.</p>
+<dl class="attribute">
+<dt id="coapy.option.format_uint._UnpackedType">
+<tt class="descname">_UnpackedType</tt><a class="headerlink" href="#coapy.option.format_uint._UnpackedType" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <tt class="xref py py-class docutils literal"><span class="pre">int</span></tt></p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="coapy.option.format_string">
+<em class="property">class </em><tt class="descclassname">coapy.option.</tt><tt class="descname">format_string</tt><big>(</big><em>max_length</em>, <em>min_length=0</em><big>)</big><a class="reference internal" href="_modules/coapy/option.html#format_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option.format_string" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#coapy.option._format_base" title="coapy.option._format_base"><tt class="xref py py-class docutils literal"><span class="pre">coapy.option._format_base</span></tt></a></p>
+<p>Supports options with text values.</p>
+<p>Unpacked values are Python Unicode (text) strings.  Packed values
+are <tt class="xref py py-class docutils literal"><span class="pre">bytes</span></tt> in Net-Unicode form (<span class="target" id="index-10"></span><a class="rfc reference external" href="http://tools.ietf.org/html/rfc5198.html"><strong>RFC 5198</strong></a>), a
+canonicalized <tt class="docutils literal"><span class="pre">utf-8</span></tt> encoding.  Note that, as usual, the
+<em>max_length</em> and <em>min_length</em> attributes apply to the packed
+representation, which for non-ASCII text may be longer than the
+unpacked representation.</p>
+<dl class="attribute">
+<dt id="coapy.option.format_string._UnpackedType">
+<tt class="descname">_UnpackedType</tt><a class="headerlink" href="#coapy.option.format_string._UnpackedType" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <tt class="xref py py-class docutils literal"><span class="pre">unicode</span></tt></p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="option-related-exceptions">
+<h2>Option-Related Exceptions<a class="headerlink" href="#option-related-exceptions" title="Permalink to this headline">¶</a></h2>
+<dl class="exception">
+<dt id="coapy.option.OptionError">
+<em class="property">exception </em><tt class="descclassname">coapy.option.</tt><tt class="descname">OptionError</tt><a class="reference internal" href="_modules/coapy/option.html#OptionError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option.OptionError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">coapy.InfrastructureError</span></tt></p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="coapy.option.OptionRegistryConflictError">
+<em class="property">exception </em><tt class="descclassname">coapy.option.</tt><tt class="descname">OptionRegistryConflictError</tt><a class="reference internal" href="_modules/coapy/option.html#OptionRegistryConflictError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option.OptionRegistryConflictError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#coapy.option.OptionError" title="coapy.option.OptionError"><tt class="xref py py-class docutils literal"><span class="pre">coapy.option.OptionError</span></tt></a></p>
+<p>Exception raised when option numbers collide.</p>
+<p>CoAPy requires that each subclass of <a class="reference internal" href="#coapy.option.UrOption" title="coapy.option.UrOption"><tt class="xref py py-class docutils literal"><span class="pre">UrOption</span></tt></a> has a
+unique option number, enforced by registering the
+subclass when its type is defined.  Attempts to use the same
+number for multiple options produce this exception.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="coapy.option.InvalidOptionTypeError">
+<em class="property">exception </em><tt class="descclassname">coapy.option.</tt><tt class="descname">InvalidOptionTypeError</tt><a class="reference internal" href="_modules/coapy/option.html#InvalidOptionTypeError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option.InvalidOptionTypeError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#coapy.option.OptionError" title="coapy.option.OptionError"><tt class="xref py py-class docutils literal"><span class="pre">coapy.option.OptionError</span></tt></a></p>
+<p>Exception raised when an option is incorrectly defined.</p>
+<p>Each subclass of <a class="reference internal" href="#coapy.option.UrOption" title="coapy.option.UrOption"><tt class="xref py py-class docutils literal"><span class="pre">UrOption</span></tt></a> must override
+<a class="reference internal" href="#coapy.option.UrOption.number" title="coapy.option.UrOption.number"><tt class="xref py py-attr docutils literal"><span class="pre">UrOption.number</span></tt></a> with the integer option number,
+<a class="reference internal" href="#coapy.option.UrOption.name" title="coapy.option.UrOption.name"><tt class="xref py py-attr docutils literal"><span class="pre">UrOption.name</span></tt></a> with the Unicode option name,
+<a class="reference internal" href="#coapy.option.UrOption.format" title="coapy.option.UrOption.format"><tt class="xref py py-attr docutils literal"><span class="pre">UrOption.format</span></tt></a> with the type of the option, and
+<tt class="xref py py-attr docutils literal"><span class="pre">UrOption._repeatable</span></tt> with repeatability information.
+Failure to do so will cause this exception to be raised.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="coapy.option.OptionLengthError">
+<em class="property">exception </em><tt class="descclassname">coapy.option.</tt><tt class="descname">OptionLengthError</tt><a class="reference internal" href="_modules/coapy/option.html#OptionLengthError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option.OptionLengthError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">exceptions.ValueError</span></tt>, <a class="reference internal" href="#coapy.option.OptionError" title="coapy.option.OptionError"><tt class="xref py py-class docutils literal"><span class="pre">coapy.option.OptionError</span></tt></a></p>
+<p>Exception raised when a value&#8217;s packed representation violates
+an option&#8217;s length constraints, as determined by
+<a class="reference internal" href="#coapy.option.UrOption.format" title="coapy.option.UrOption.format"><tt class="xref py py-attr docutils literal"><span class="pre">UrOption.format</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="coapy.option.OptionDecodeError">
+<em class="property">exception </em><tt class="descclassname">coapy.option.</tt><tt class="descname">OptionDecodeError</tt><a class="reference internal" href="_modules/coapy/option.html#OptionDecodeError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option.OptionDecodeError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#coapy.option.OptionError" title="coapy.option.OptionError"><tt class="xref py py-class docutils literal"><span class="pre">coapy.option.OptionError</span></tt></a></p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="coapy.option.UnrecognizedCriticalOptionError">
+<em class="property">exception </em><tt class="descclassname">coapy.option.</tt><tt class="descname">UnrecognizedCriticalOptionError</tt><a class="reference internal" href="_modules/coapy/option.html#UnrecognizedCriticalOptionError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option.UnrecognizedCriticalOptionError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#coapy.option.OptionError" title="coapy.option.OptionError"><tt class="xref py py-class docutils literal"><span class="pre">coapy.option.OptionError</span></tt></a></p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="coapy.option.InvalidOptionError">
+<em class="property">exception </em><tt class="descclassname">coapy.option.</tt><tt class="descname">InvalidOptionError</tt><a class="reference internal" href="_modules/coapy/option.html#InvalidOptionError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option.InvalidOptionError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#coapy.option.OptionError" title="coapy.option.OptionError"><tt class="xref py py-class docutils literal"><span class="pre">coapy.option.OptionError</span></tt></a></p>
+<p>An option appears in a response or request when it must not.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="coapy.option.InvalidMultipleOptionError">
+<em class="property">exception </em><tt class="descclassname">coapy.option.</tt><tt class="descname">InvalidMultipleOptionError</tt><a class="reference internal" href="_modules/coapy/option.html#InvalidMultipleOptionError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.option.InvalidMultipleOptionError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#coapy.option.InvalidOptionError" title="coapy.option.InvalidOptionError"><tt class="xref py py-class docutils literal"><span class="pre">coapy.option.InvalidOptionError</span></tt></a></p>
+<p>An option appears multiple times in a response or request when
+it must only appear once.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">coapy.option</a><ul>
+<li><a class="reference internal" href="#operations">Operations</a></li>
+<li><a class="reference internal" href="#option-classes">Option Classes</a><ul>
+<li><a class="reference internal" href="#base-coap-options">Base CoAP Options</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#option-formatter-classes">Option Formatter Classes</a></li>
+<li><a class="reference internal" href="#option-related-exceptions">Option-Related Exceptions</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="coapy_message.html"
+                        title="previous chapter">coapy.message</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="coapy_endpoint.html"
+                        title="next chapter">coapy.endpoint</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/coapy_option.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="coapy_endpoint.html" title="coapy.endpoint"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="coapy_message.html" title="coapy.message"
+             >previous</a> |</li>
+        <li><a href="index.html">CoAPy 0.0.0 documentation</a> &raquo;</li>
+          <li><a href="api.html" >API</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Peter A. Bigot.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

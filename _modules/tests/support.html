@@ -1,0 +1,284 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>tests.support &mdash; CoAPy 0.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="CoAPy 0.0.0 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">CoAPy 0.0.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for tests.support</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="c"># Copyright 2013, Peter A. Bigot</span>
+<span class="c">#</span>
+<span class="c"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;); you may</span>
+<span class="c"># not use this file except in compliance with the License. You may obtain a</span>
+<span class="c"># copy of the License at:</span>
+<span class="c">#</span>
+<span class="c">#            http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c">#</span>
+<span class="c"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS, WITHOUT</span>
+<span class="c"># WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the</span>
+<span class="c"># License for the specific language governing permissions and limitations</span>
+<span class="c"># under the License.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Support for CoAPy unit testing.</span>
+
+<span class="sd">:copyright: Copyright 2013, Peter A. Bigot</span>
+<span class="sd">:license: Apache-2.0</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">division</span>
+
+<span class="kn">import</span> <span class="nn">coapy</span>
+<span class="kn">import</span> <span class="nn">coapy.endpoint</span>
+<span class="kn">import</span> <span class="nn">socket</span>
+<span class="kn">import</span> <span class="nn">errno</span>
+<span class="kn">import</span> <span class="nn">unittest</span>
+<span class="kn">import</span> <span class="nn">logging.handlers</span>
+
+
+<div class="viewcode-block" id="FIFOEndpoint"><a class="viewcode-back" href="../../tests_support.html#tests.support.FIFOEndpoint">[docs]</a><span class="k">class</span> <span class="nc">FIFOEndpoint</span> <span class="p">(</span><span class="n">coapy</span><span class="o">.</span><span class="n">endpoint</span><span class="o">.</span><span class="n">Endpoint</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A specialized endpoint for unit testing.</span>
+
+<span class="sd">    Each instance of this class is assigned a unique name.  The</span>
+<span class="sd">    underlying :meth:`coapy.endpoint.Endpoint.rawsendto` and</span>
+<span class="sd">    :meth:`coapy.endpoint.Endpoint.rawrecvfrom` operations are</span>
+<span class="sd">    replaced to directly deliver to another instance of this class.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="FIFOEndpoint.fifo"><a class="viewcode-back" href="../../tests_support.html#tests.support.FIFOEndpoint.fifo">[docs]</a>    <span class="k">def</span> <span class="nf">fifo</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Access to the FIFO holding undelivered messages to this</span>
+<span class="sd">        endpoint.  Elements on the FIFO are tuples ``(data,</span>
+<span class="sd">        source_endpoint)`` where *data* is a byte string and</span>
+<span class="sd">        *source_endpoint* is the endpoint from which *data* was</span>
+<span class="sd">        received.</span>
+
+<span class="sd">        The contents of the fifo may be inspected and manipulated to</span>
+<span class="sd">        test endpoint network delivery without involving real sockets.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__fifo</span>
+</div>
+    <span class="n">__fifo_idx</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">def</span> <span class="nf">__new__</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+        <span class="n">host</span> <span class="o">=</span> <span class="s">&#39;fifo # {0}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">cls</span><span class="o">.</span><span class="n">__fifo_idx</span><span class="p">)</span>
+        <span class="n">cls</span><span class="o">.</span><span class="n">__fifo_idx</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">FIFOEndpoint</span><span class="p">,</span> <span class="n">cls</span><span class="p">)</span><span class="o">.</span><span class="n">__new__</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">host</span><span class="o">=</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="n">coapy</span><span class="o">.</span><span class="n">COAP_PORT</span><span class="p">,</span> <span class="n">family</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">FIFOEndpoint</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">sockaddr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sockaddr</span><span class="p">,</span> <span class="n">family</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">family</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__fifo</span> <span class="o">=</span> <span class="p">[]</span>
+
+<div class="viewcode-block" id="FIFOEndpoint._rawsendto"><a class="viewcode-back" href="../../tests_support.html#tests.support.FIFOEndpoint._rawsendto">[docs]</a>    <span class="k">def</span> <span class="nf">_rawsendto</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">destination_endpoint</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">destination_endpoint</span><span class="p">,</span> <span class="n">FIFOEndpoint</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">destination_endpoint</span><span class="p">)</span>
+        <span class="n">destination_endpoint</span><span class="o">.</span><span class="n">fifo</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="FIFOEndpoint._rawrecvfrom"><a class="viewcode-back" href="../../tests_support.html#tests.support.FIFOEndpoint._rawrecvfrom">[docs]</a>    <span class="k">def</span> <span class="nf">_rawrecvfrom</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bufsize</span><span class="p">):</span>
+        <span class="k">if</span> <span class="mi">0</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fifo</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">socket</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">errno</span><span class="o">.</span><span class="n">EAGAIN</span><span class="p">,</span> <span class="s">&#39;Resource temporarily unavailable&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">fifo</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="LogHandler_mixin"><a class="viewcode-back" href="../../tests_support.html#tests.support.LogHandler_mixin">[docs]</a><span class="k">class</span> <span class="nc">LogHandler_mixin</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Extension that registers a</span>
+<span class="sd">    :class:`python:logging.handlers.BufferingHandler` for loggers used</span>
+<span class="sd">    in CoAPy modules to capture the log messages for diagnostic</span>
+<span class="sd">    verification.</span>
+
+<span class="sd">    This implementation currently assumes that only the root logger</span>
+<span class="sd">    has set the log message level.  For the duration of the test, this</span>
+<span class="sd">    level is reset to 1 (enabling capture of records at all levels).</span>
+
+<span class="sd">    .. note::</span>
+<span class="sd">       Unit tests that make use of this feature should be sure to</span>
+<span class="sd">       invoke ``self.log_handler.flush()`` prior to exiting.  Any</span>
+<span class="sd">       unflushed messages left in the buffering handler will be</span>
+<span class="sd">       emitted to the console when the test cleanup is performed, so</span>
+<span class="sd">       that unexpected log messages do not slip by unnoticed.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">LOG_CAPACITY</span> <span class="o">=</span> <span class="mi">128</span>
+    <span class="sd">&quot;&quot;&quot;The number of records that the associated :attr:`log_handler`</span>
+<span class="sd">    should be able to retain.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="LogHandler_mixin.log_handler"><a class="viewcode-back" href="../../tests_support.html#tests.support.LogHandler_mixin.log_handler">[docs]</a>    <span class="k">def</span> <span class="nf">log_handler</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Read-only reference to the</span>
+<span class="sd">        :class:`python:logging.handlers.BufferingHandler` that is</span>
+<span class="sd">        hooked into the logging infrastructure while the unit test is</span>
+<span class="sd">        running.  The test case may access the log handler&#39;s</span>
+<span class="sd">        :attr:`buffer&lt;python:logging.handlers.BufferingHandler.buffer&gt;`</span>
+<span class="sd">        attribute to access the generated :class:`log</span>
+<span class="sd">        records&lt;python:logging.LogRecord&gt;`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__log_handler</span>
+</div>
+<div class="viewcode-block" id="LogHandler_mixin.setUp"><a class="viewcode-back" href="../../tests_support.html#tests.support.LogHandler_mixin.setUp">[docs]</a>    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Cooperative super-calling support to install managed clock.&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">LogHandler_mixin</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">setUp</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__log_handler</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">handlers</span><span class="o">.</span><span class="n">BufferingHandler</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">LOG_CAPACITY</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__log_handler</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__log_formatter</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">Formatter</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__log_handler</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__log_formatter</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__root_logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__root_logger_level</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__root_logger</span><span class="o">.</span><span class="n">getEffectiveLevel</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__root_logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__root_logger</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__log_handler</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="LogHandler_mixin.tearDown"><a class="viewcode-back" href="../../tests_support.html#tests.support.LogHandler_mixin.tearDown">[docs]</a>    <span class="k">def</span> <span class="nf">tearDown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Cooperative super-calling support to remove</span>
+<span class="sd">        :attr:`log_handler`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__log_handler</span><span class="o">.</span><span class="n">buffer</span><span class="p">):</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&gt;&gt;&gt;UNPROCESSED LOG MESSAGES:&quot;</span><span class="p">)</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__log_handler</span><span class="o">.</span><span class="n">format</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__log_handler</span><span class="o">.</span><span class="n">buffer</span><span class="p">)))</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&lt;&lt;&lt;END UNPROCESSED LOG MESSAGES&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__root_logger</span><span class="o">.</span><span class="n">removeHandler</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__log_handler</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__root_logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__root_logger_level</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">LogHandler_mixin</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">tearDown</span><span class="p">()</span>
+
+</div></div>
+<div class="viewcode-block" id="ManagedClock_mixin"><a class="viewcode-back" href="../../tests_support.html#tests.support.ManagedClock_mixin">[docs]</a><span class="k">class</span> <span class="nc">ManagedClock_mixin</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Extension that replaces :data:`coapy.clock` with an instance of</span>
+<span class="sd">    :class:`coapy.ManagedClock` to eliminate non-determinism in clock</span>
+<span class="sd">    queries.</span>
+
+<span class="sd">    This class should be mixed-in as a base class along with</span>
+<span class="sd">    :class:`python:unittest.TestCase` for tests that need to control</span>
+<span class="sd">    the CoAPy clock.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="ManagedClock_mixin.setUp"><a class="viewcode-back" href="../../tests_support.html#tests.support.ManagedClock_mixin.setUp">[docs]</a>    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Cooperative super-calling support to install managed clock.&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ManagedClock_mixin</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">setUp</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__clock</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">clock</span>
+        <span class="n">coapy</span><span class="o">.</span><span class="n">clock</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">ManagedClock</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="ManagedClock_mixin.tearDown"><a class="viewcode-back" href="../../tests_support.html#tests.support.ManagedClock_mixin.tearDown">[docs]</a>    <span class="k">def</span> <span class="nf">tearDown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Cooperative super-calling support to return to default</span>
+<span class="sd">        clock.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">coapy</span><span class="o">.</span><span class="n">clock</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__clock</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ManagedClock_mixin</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">tearDown</span><span class="p">()</span>
+
+</div></div>
+<div class="viewcode-block" id="DeterministicBEBO_mixin"><a class="viewcode-back" href="../../tests_support.html#tests.support.DeterministicBEBO_mixin">[docs]</a><span class="k">class</span> <span class="nc">DeterministicBEBO_mixin</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Extension that replaces :data:`coapy.transmissionParameters`</span>
+<span class="sd">    with an instance of :class:`coapy.message.TransmissionParameters`</span>
+<span class="sd">    that sets</span>
+<span class="sd">    :attr:`ACK_RANDOM_FACTOR&lt;coapy.message.TransmissionParameters.ACK_RANDOM_FACTOR&gt;`</span>
+<span class="sd">    to 1.0 to eliminate non-determinism in delays.</span>
+
+<span class="sd">    This class should be mixed-in as a base class along with</span>
+<span class="sd">    :class:`python:unittest.TestCase` for tests that need</span>
+<span class="sd">    deterministic retransmission behavior.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="DeterministicBEBO_mixin.setUp"><a class="viewcode-back" href="../../tests_support.html#tests.support.DeterministicBEBO_mixin.setUp">[docs]</a>    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Cooperative super-calling support to install deterministic</span>
+<span class="sd">        transmission parameters.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">DeterministicBEBO_mixin</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">setUp</span><span class="p">()</span>
+        <span class="kn">import</span> <span class="nn">coapy.message</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__transmission_parameters</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">transmissionParameters</span>
+        <span class="n">coapy</span><span class="o">.</span><span class="n">transmissionParameters</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">TransmissionParameters</span><span class="p">()</span>
+        <span class="n">coapy</span><span class="o">.</span><span class="n">transmissionParameters</span><span class="o">.</span><span class="n">ACK_RANDOM_FACTOR</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="n">coapy</span><span class="o">.</span><span class="n">transmissionParameters</span><span class="o">.</span><span class="n">recalculate_derived</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="DeterministicBEBO_mixin.tearDown"><a class="viewcode-back" href="../../tests_support.html#tests.support.DeterministicBEBO_mixin.tearDown">[docs]</a>    <span class="k">def</span> <span class="nf">tearDown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Cooperative super-calling support to return to default</span>
+<span class="sd">        transmission parameters.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">coapy</span><span class="o">.</span><span class="n">transmissionParameters</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__transmission_parameters</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">DeterministicBEBO_mixin</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">tearDown</span><span class="p">()</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">CoAPy 0.0.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Peter A. Bigot.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

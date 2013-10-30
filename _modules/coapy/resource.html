@@ -1,0 +1,222 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>coapy.resource &mdash; CoAPy 0.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="CoAPy 0.0.0 documentation" href="../../index.html" />
+    <link rel="up" title="coapy" href="../coapy.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">CoAPy 0.0.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../coapy.html" accesskey="U">coapy</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for coapy.resource</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="c"># Copyright 2013, Peter A. Bigot</span>
+<span class="c">#</span>
+<span class="c"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;); you may</span>
+<span class="c"># not use this file except in compliance with the License. You may obtain a</span>
+<span class="c"># copy of the License at:</span>
+<span class="c">#</span>
+<span class="c">#            http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c">#</span>
+<span class="c"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS, WITHOUT</span>
+<span class="c"># WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the</span>
+<span class="c"># License for the specific language governing permissions and limitations</span>
+<span class="c"># under the License.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">:copyright: Copyright 2013, Peter A. Bigot</span>
+<span class="sd">:license: Apache-2.0</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">division</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="n">_log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+
+<span class="kn">import</span> <span class="nn">re</span>
+
+
+<div class="viewcode-block" id="LinkValue"><a class="viewcode-back" href="../../coapy_resource.html#coapy.resource.LinkValue">[docs]</a><span class="k">class</span> <span class="nc">LinkValue</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="c">#: Regular expression to match strings enclosed in double quotes,</span>
+    <span class="c">#: allowing escaped double quotes inside.</span>
+    <span class="n">_DQUOTED_re</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">&#39;&quot;(?P&lt;text&gt;(?:[^&quot;</span><span class="se">\\\\</span><span class="s">]|(?:</span><span class="se">\\\\</span><span class="s">.))*)&quot;&#39;</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">DOTALL</span><span class="p">)</span>
+
+    <span class="c">#: Regular expression to match Link Format parameter value as</span>
+    <span class="c">#: unquoted token.</span>
+    <span class="n">_PTOKEN_re</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">&#39;^[!#$%&amp;</span><span class="se">\&#39;</span><span class="s">()*+\-./0-9:&lt;=&gt;?@a-zA-Z\[\]^_`{|}~]{1,}$&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="LinkValue.target_uri"><a class="viewcode-back" href="../../coapy_resource.html#coapy.resource.LinkValue.target_uri">[docs]</a>    <span class="k">def</span> <span class="nf">target_uri</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The URI-reference that is the target URI.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__target_uri</span>
+</div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="LinkValue.params"><a class="viewcode-back" href="../../coapy_resource.html#coapy.resource.LinkValue.params">[docs]</a>    <span class="k">def</span> <span class="nf">params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The map from parameter names to tokens.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__params</span>
+</div>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_uri</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__target_uri</span> <span class="o">=</span> <span class="n">target_uri</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__params</span> <span class="o">=</span> <span class="n">params</span>
+
+<div class="viewcode-block" id="LinkValue.to_link_format"><a class="viewcode-back" href="../../coapy_resource.html#coapy.resource.LinkValue.to_link_format">[docs]</a>    <span class="k">def</span> <span class="nf">to_link_format</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Express link value as :rfc:`6690` link-value.</span>
+
+<span class="sd">        The :attr:`target_uri` is wrapped in angle brackets.</span>
+<span class="sd">        Parameters are converted to text &quot;key=value&quot; elements, where</span>
+<span class="sd">        *value* is enclosed in double quotes if necessary.  All values</span>
+<span class="sd">        are combined to a string using semicolon separators, and that</span>
+<span class="sd">        string returned to the caller.</span>
+
+<span class="sd">        Where *value* is wrapped in double quotes and itself contains</span>
+<span class="sd">        double-quote characters, those are preceded with a backslash</span>
+<span class="sd">        to escape them for the purposes of parsing the resulting</span>
+<span class="sd">        string.  This is an attempt to avoid syntax errors; there is</span>
+<span class="sd">        no corresponding conversion of ``\\&quot;`` sequences to</span>
+<span class="sd">        double-quote characters when the string representation is</span>
+<span class="sd">        processed by :meth:`from_link_format`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">rv</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">rv</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;&lt;{}&gt;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__target_uri</span><span class="p">))</span>
+        <span class="k">if</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__params</span><span class="p">):</span>
+            <span class="c"># Sort for reproducibility</span>
+            <span class="k">for</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__params</span><span class="o">.</span><span class="n">iteritems</span><span class="p">()):</span>
+                <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="n">rv</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_PTOKEN_re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+                    <span class="n">rv</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;{}={}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">rv</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;{}=&quot;{}&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">r&#39;&quot;&#39;</span><span class="p">,</span> <span class="s">r&#39;\&quot;&#39;</span><span class="p">)))</span>
+        <span class="k">return</span> <span class="s">&#39;;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">rv</span><span class="p">)</span>
+</div>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_link_format</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">text</span><span class="p">):</span>
+        <span class="n">link_values</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">len_text</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+        <span class="n">ofs</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">while</span> <span class="p">(</span><span class="n">ofs</span> <span class="o">&lt;</span> <span class="n">len_text</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="s">&#39;&lt;&#39;</span> <span class="o">==</span> <span class="n">text</span><span class="p">[</span><span class="n">ofs</span><span class="p">]):</span>
+            <span class="n">rbi</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s">&#39;&gt;&#39;</span><span class="p">,</span> <span class="n">ofs</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">rbi</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span>
+            <span class="n">uri</span> <span class="o">=</span> <span class="n">text</span><span class="p">[</span><span class="n">ofs</span><span class="o">+</span><span class="mi">1</span><span class="p">:</span><span class="n">rbi</span><span class="p">]</span>
+            <span class="n">ofs</span> <span class="o">=</span> <span class="n">rbi</span><span class="o">+</span><span class="mi">1</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">while</span> <span class="p">(</span><span class="n">ofs</span> <span class="o">&lt;</span> <span class="n">len_text</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="s">&#39;;&#39;</span> <span class="o">==</span> <span class="n">text</span><span class="p">[</span><span class="n">ofs</span><span class="p">]):</span>
+                <span class="n">ofs</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">eqi</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s">&#39;=&#39;</span><span class="p">,</span> <span class="n">ofs</span><span class="p">)</span>
+                <span class="n">cmi</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s">&#39;,&#39;</span><span class="p">,</span> <span class="n">ofs</span><span class="p">)</span>
+                <span class="n">cli</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s">&#39;;&#39;</span><span class="p">,</span> <span class="n">ofs</span><span class="p">)</span>
+                <span class="n">ni</span> <span class="o">=</span> <span class="nb">min</span><span class="p">([</span><span class="n">_i</span> <span class="k">for</span> <span class="n">_i</span> <span class="ow">in</span> <span class="p">(</span><span class="n">eqi</span><span class="p">,</span> <span class="n">cmi</span><span class="p">,</span> <span class="n">cli</span><span class="p">,</span> <span class="n">len_text</span><span class="p">)</span> <span class="k">if</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">_i</span><span class="p">)])</span>
+                <span class="n">k</span> <span class="o">=</span> <span class="n">text</span><span class="p">[</span><span class="n">ofs</span><span class="p">:</span><span class="n">ni</span><span class="p">]</span>
+                <span class="n">ofs</span> <span class="o">=</span> <span class="n">ni</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">ofs</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">))</span> <span class="ow">and</span> <span class="p">(</span><span class="s">&#39;=&#39;</span> <span class="o">==</span> <span class="n">text</span><span class="p">[</span><span class="n">ofs</span><span class="p">]):</span>
+                    <span class="n">ofs</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="n">mo</span> <span class="o">=</span> <span class="n">cls</span><span class="o">.</span><span class="n">_DQUOTED_re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">ofs</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">mo</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                        <span class="n">v</span> <span class="o">=</span> <span class="n">mo</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s">&#39;text&#39;</span><span class="p">)</span>
+                        <span class="n">ofs</span> <span class="o">=</span> <span class="n">mo</span><span class="o">.</span><span class="n">end</span><span class="p">()</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">vei</span> <span class="o">=</span> <span class="nb">min</span><span class="p">([</span><span class="n">_i</span> <span class="k">for</span> <span class="n">_i</span> <span class="ow">in</span> <span class="p">(</span><span class="n">cmi</span><span class="p">,</span> <span class="n">cli</span><span class="p">,</span> <span class="n">len_text</span><span class="p">)</span> <span class="k">if</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">_i</span><span class="p">)])</span>
+                        <span class="n">v</span> <span class="o">=</span> <span class="n">text</span><span class="p">[</span><span class="n">ofs</span><span class="p">:</span><span class="n">vei</span><span class="p">]</span>
+                        <span class="n">ofs</span> <span class="o">=</span> <span class="n">vei</span>
+                    <span class="n">params</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">params</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="n">link_values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cls</span><span class="p">(</span><span class="n">uri</span><span class="p">,</span> <span class="n">params</span><span class="p">))</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">ofs</span> <span class="o">&lt;</span> <span class="n">len_text</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="s">&#39;,&#39;</span> <span class="o">==</span> <span class="n">text</span><span class="p">[</span><span class="n">ofs</span><span class="p">]):</span>
+                <span class="n">ofs</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">break</span>
+        <span class="k">if</span> <span class="n">ofs</span> <span class="o">&lt;</span> <span class="n">len_text</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span>
+        <span class="k">return</span> <span class="n">link_values</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">CoAPy 0.0.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../coapy.html" >coapy</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Peter A. Bigot.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

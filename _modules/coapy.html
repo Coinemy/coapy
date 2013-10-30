@@ -1,0 +1,229 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>coapy &mdash; CoAPy 0.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="CoAPy 0.0.0 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">CoAPy 0.0.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for coapy</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="c"># Copyright 2013, Peter A. Bigot</span>
+<span class="c">#</span>
+<span class="c"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;); you may</span>
+<span class="c"># not use this file except in compliance with the License. You may obtain a</span>
+<span class="c"># copy of the License at:</span>
+<span class="c">#</span>
+<span class="c">#            http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c">#</span>
+<span class="c"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS, WITHOUT</span>
+<span class="c"># WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the</span>
+<span class="c"># License for the specific language governing permissions and limitations</span>
+<span class="c"># under the License.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    *****</span>
+<span class="sd">    coapy</span>
+<span class="sd">    *****</span>
+
+<span class="sd">    :copyright: Copyright 2013, Peter A. Bigot</span>
+<span class="sd">    :license: Apache-2.0</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">division</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="n">_log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+
+
+<span class="n">COAP_PORT</span> <span class="o">=</span> <span class="mi">5683</span>
+<span class="sd">&quot;&quot;&quot;The IANA-assigned default port number for unsecured CoAP (the</span>
+<span class="sd">&quot;coap&quot; URI scheme).</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="n">COAPS_PORT</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="sd">&quot;&quot;&quot;The IANA-assigned default port number for secured CoAP (the &quot;coaps&quot;</span>
+<span class="sd">URI scheme).</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="k">class</span> <span class="nc">CoAPyException</span> <span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+
+<span class="k">class</span> <span class="nc">InfrastructureError</span> <span class="p">(</span><span class="n">CoAPyException</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+
+<span class="n">transmissionParameters</span> <span class="o">=</span> <span class="bp">None</span>
+<span class="sd">&quot;&quot;&quot;The default instance of</span>
+<span class="sd">:class:`TransmissionParameters&lt;coapy.message.TransmissionParameters&gt;`</span>
+<span class="sd">for the system.</span>
+
+<span class="sd">This is initialized when :mod:`coapy.message` is first loaded.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="_Clock"><a class="viewcode-back" href="../api.html#coapy._Clock">[docs]</a><span class="k">class</span> <span class="nc">_Clock</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Base class for CoAPy clock abstraction.</span>
+
+<span class="sd">    An instance of (a subclass of) this class is made available</span>
+<span class="sd">    globally at :data:`coapy.clock`.</span>
+
+<span class="sd">    The current clock value is obtained by invoking the instance as a</span>
+<span class="sd">    callable object.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="_Clock.epoch"><a class="viewcode-back" href="../api.html#coapy._Clock.epoch">[docs]</a>    <span class="k">def</span> <span class="nf">epoch</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The value of this clock at a point corresponding to &quot;system</span>
+<span class="sd">        start&quot;.</span>
+
+<span class="sd">        Set implicitly when the clock instance is created.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__epoch</span>
+</div>
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">NotImplementedException</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__epoch</span> <span class="o">=</span> <span class="bp">self</span><span class="p">()</span>
+
+</div>
+<div class="viewcode-block" id="ManagedClock"><a class="viewcode-back" href="../api.html#coapy.ManagedClock">[docs]</a><span class="k">class</span> <span class="nc">ManagedClock</span><span class="p">(</span><span class="n">_Clock</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A clock that increments under program control.</span>
+
+<span class="sd">    An instance of this class may be placed in :data:`coapy.clock` to</span>
+<span class="sd">    ensure deterministic behavior for simulation and automated</span>
+<span class="sd">    testing.  The value of the clock is initially zero; it is changed</span>
+<span class="sd">    only through the :meth:`adjust` method.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__clock</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ManagedClock</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__clock</span>
+
+<div class="viewcode-block" id="ManagedClock.adjust"><a class="viewcode-back" href="../api.html#coapy.ManagedClock.adjust">[docs]</a>    <span class="k">def</span> <span class="nf">adjust</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adj</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Add *adj* to the clock value.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__clock</span> <span class="o">+=</span> <span class="n">adj</span>
+
+</div></div>
+<div class="viewcode-block" id="RealTimeClock"><a class="viewcode-back" href="../api.html#coapy.RealTimeClock">[docs]</a><span class="k">class</span> <span class="nc">RealTimeClock</span><span class="p">(</span><span class="n">_Clock</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A clock that increments in lock-step with real-time.</span>
+
+<span class="sd">    This uses :func:`python:time.time` to obtain the current time.</span>
+<span class="sd">    :attr:`epoch&lt;_Clock.epoch&gt;` is a record of the time at which the</span>
+<span class="sd">    clock was created.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="kn">import</span> <span class="nn">time</span>
+        <span class="k">return</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+</div>
+<span class="n">clock</span> <span class="o">=</span> <span class="n">RealTimeClock</span><span class="p">()</span>
+<span class="sd">&quot;&quot;&quot;The system clock.</span>
+
+<span class="sd">This is an instance of :class:`_Clock` that returns a non-decreasing</span>
+<span class="sd">ordinal when invoked (probably a :class:`python:float` but possibly an</span>
+<span class="sd">:class:`python:int`).  The integer part increments in &quot;seconds&quot;.  It</span>
+<span class="sd">is used for :class:`Max-Age&lt;coapy.option.MaxAge&gt;`, state related to</span>
+<span class="sd">:coapsect:`congestion control&lt;4.7&gt;` and :coapsect:`message</span>
+<span class="sd">retransmission&lt;4.2&gt;`, and other time-related phenomena.</span>
+
+<span class="sd">.. note::</span>
+<span class="sd">   The default value is an instance of :class:`RealTimeClock`, but</span>
+<span class="sd">   this may be overridden with an instance of :class:`ManagedClock`</span>
+<span class="sd">   for the purposes of simulation or testing.  Unless you&#39;re doing</span>
+<span class="sd">   this sort of thing, you should assume the clock increments in lock</span>
+<span class="sd">   step with real-world time.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">CoAPy 0.0.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Peter A. Bigot.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

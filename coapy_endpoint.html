@@ -1,0 +1,1087 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>coapy.endpoint &mdash; CoAPy 0.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="CoAPy 0.0.0 documentation" href="index.html" />
+    <link rel="up" title="API" href="api.html" />
+    <link rel="next" title="coapy.resource" href="coapy_resource.html" />
+    <link rel="prev" title="coapy.option" href="coapy_option.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="coapy_resource.html" title="coapy.resource"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="coapy_option.html" title="coapy.option"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">CoAPy 0.0.0 documentation</a> &raquo;</li>
+          <li><a href="api.html" accesskey="U">API</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-coapy.endpoint">
+<span id="coapy-endpoint"></span><h1>coapy.endpoint<a class="headerlink" href="#module-coapy.endpoint" title="Permalink to this headline">¶</a></h1>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">copyright:</th><td class="field-body">Copyright 2013, Peter A. Bigot</td>
+</tr>
+<tr class="field-even field"><th class="field-name">license:</th><td class="field-body">Apache-2.0</td>
+</tr>
+</tbody>
+</table>
+<dl class="class">
+<dt id="coapy.endpoint.Endpoint">
+<em class="property">class </em><tt class="descclassname">coapy.endpoint.</tt><tt class="descname">Endpoint</tt><big>(</big><em>sockaddr=None</em>, <em>family=0</em>, <em>security_mode=None</em>, <em>host=None</em>, <em>port=5683</em><big>)</big><a class="reference internal" href="_modules/coapy/endpoint.html#Endpoint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.endpoint.Endpoint" title="Permalink to this definition">¶</a></dt>
+<dd><p>A CoAP endpoint.</p>
+<p>Per <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-1.2">CoAP Section 1.2</a> this is an entity participating in the CoAP
+protocol.  In CoAPy it is used to aggregate all material related
+to such an endpoint, which is uniquely identified by an IP
+address, port, and security information.  Various constraints in
+CoAP such as <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-4.7">congestion control</a>,
+<a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.10.1">default values for options</a>, and re-usability
+of message IDs, are associated with specific endpoints.</p>
+<p>Note that although all endpoints have socket addresses, the base
+<a class="reference internal" href="#coapy.endpoint.Endpoint" title="coapy.endpoint.Endpoint"><tt class="xref py py-class docutils literal"><span class="pre">Endpoint</span></tt></a> class does not provide any communications
+infrastructure.  Subclasses of <a class="reference internal" href="#coapy.endpoint.LocalEndpoint" title="coapy.endpoint.LocalEndpoint"><tt class="xref py py-class docutils literal"><span class="pre">LocalEndpoint</span></tt></a> provide
+the communication methods.</p>
+<p><em>sockaddr</em>, if not <tt class="docutils literal"><span class="pre">None</span></tt>, must be a tuple the first two
+elements of which are <tt class="docutils literal"><span class="pre">host,</span> <span class="pre">port</span></tt> which override the
+user-provided <em>host</em> and <em>port</em>.</p>
+<p><em>host</em> specifies the host of the endpoint as a Unicode string,
+representing a host name, an IP address literal, or other unique
+key.</p>
+<p><em>family</em> is by default <tt class="xref py py-data docutils literal"><span class="pre">socket.AF_UNSPEC</span></tt> supporting
+resolution of <em>host</em> to any address family.  A non-<tt class="docutils literal"><span class="pre">None</span></tt> value
+is passed to <a class="reference external" href="http://docs.python.org/2.7/library/socket.html#socket.getaddrinfo" title="(in Python v2.7)"><tt class="docutils literal"><span class="pre">socket.getaddrinfo()</span></tt></a> when attempting to
+resolve <em>host</em> as an address; the actual <em>family</em> value will be
+the one selected by the resolution process (normally
+<a class="reference external" href="http://docs.python.org/2.7/library/socket.html#socket.AF_INET" title="(in Python v2.7)"><tt class="docutils literal"><span class="pre">socket.AF_INET</span></tt></a> or <a class="reference external" href="http://docs.python.org/2.7/library/socket.html#socket.AF_INET6" title="(in Python v2.7)"><tt class="docutils literal"><span class="pre">socket.AF_INET6</span></tt></a>)
+Failure to successfully resolve <em>host</em> will raise
+<a class="reference external" href="http://docs.python.org/2.7/library/socket.html#socket.gaierror" title="(in Python v2.7)"><tt class="docutils literal"><span class="pre">socket.gaierror</span></tt></a>.  If you want a dummy endpoint
+associated with <em>host</em> but that does not have an IP host
+associated with it, make sure that <em>family</em> is <tt class="docutils literal"><span class="pre">None</span></tt> so that
+<em>host</em> is left unresolved and instead serves as an <em>name</em> as
+described in <a class="reference internal" href="#coapy.endpoint.Endpoint.sockaddr" title="coapy.endpoint.Endpoint.sockaddr"><tt class="xref py py-attr docutils literal"><span class="pre">sockaddr</span></tt></a>.</p>
+<p><em>port</em> is the integer transport-layer port of the endpoint.  This
+would normally be either <a class="reference internal" href="api.html#coapy.COAP_PORT" title="coapy.COAP_PORT"><tt class="xref py py-const docutils literal"><span class="pre">coapy.COAP_PORT</span></tt></a> or
+<a class="reference internal" href="api.html#coapy.COAPS_PORT" title="coapy.COAPS_PORT"><tt class="xref py py-const docutils literal"><span class="pre">coapy.COAPS_PORT</span></tt></a>.</p>
+<p><em>security_mode</em> is used to determine the DTLS protocol used for
+secure CoAP, and at this time had probably better be left as
+<tt class="docutils literal"><span class="pre">None</span></tt>.</p>
+<p>To ensure consistency, <a class="reference internal" href="#coapy.endpoint.Endpoint" title="coapy.endpoint.Endpoint"><tt class="xref py py-class docutils literal"><span class="pre">Endpoint</span></tt></a> instances are unique for
+a given key comprising <a class="reference internal" href="#coapy.endpoint.Endpoint.family" title="coapy.endpoint.Endpoint.family"><tt class="xref py py-attr docutils literal"><span class="pre">family</span></tt></a>, <tt class="xref py py-attr docutils literal"><span class="pre">ip_addr</span></tt>,
+<a class="reference internal" href="#coapy.endpoint.Endpoint.port" title="coapy.endpoint.Endpoint.port"><tt class="xref py py-attr docutils literal"><span class="pre">port</span></tt></a>, and <a class="reference internal" href="#coapy.endpoint.Endpoint.security_mode" title="coapy.endpoint.Endpoint.security_mode"><tt class="xref py py-attr docutils literal"><span class="pre">security_mode</span></tt></a>.  Attempts to instantiate
+a new endpoint with parameters that match a previously-created one
+will return a reference to the original instance.</p>
+<dl class="staticmethod">
+<dt id="coapy.endpoint.Endpoint._canonical_sockinfo">
+<em class="property">static </em><tt class="descname">_canonical_sockinfo</tt><big>(</big><em>sockaddr=None</em>, <em>family=0</em>, <em>security_mode=None</em>, <em>host=None</em>, <em>port=5683</em><big>)</big><a class="reference internal" href="_modules/coapy/endpoint.html#Endpoint._canonical_sockinfo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.endpoint.Endpoint._canonical_sockinfo" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get canonical socket information for an endpoint.</p>
+<p>Returns a tuple <tt class="docutils literal"><span class="pre">(family,</span> <span class="pre">sockaddr)</span></tt> where <em>sockaddr</em> is a
+an <a class="reference internal" href="#coapy.endpoint.Endpoint.sockaddr" title="coapy.endpoint.Endpoint.sockaddr"><tt class="xref py py-attr docutils literal"><span class="pre">address</span></tt></a> as constrained by <em>family</em>.</p>
+<p>Failure to resolve the socket <em>host</em> to a numeric IP literal
+within <em>family</em> (if required) will raise
+<a class="reference external" href="http://docs.python.org/2.7/library/socket.html#socket.gaierror" title="(in Python v2.7)"><tt class="docutils literal"><span class="pre">socket.gaierror</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="coapy.endpoint.Endpoint._key_for_sockaddr">
+<em class="property">static </em><tt class="descname">_key_for_sockaddr</tt><big>(</big><em>sockaddr</em>, <em>family</em>, <em>security_mode=None</em><big>)</big><a class="reference internal" href="_modules/coapy/endpoint.html#Endpoint._key_for_sockaddr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.endpoint.Endpoint._key_for_sockaddr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create the key used to look up endpoints.</p>
+<p><em>sockaddr</em> must be a tuple the first two elements of which are
+<tt class="docutils literal"><span class="pre">(host,</span> <span class="pre">port)</span></tt>.  Unless <em>family</em> is <tt class="docutils literal"><span class="pre">None</span></tt>, <em>host</em> must be
+a text representation of an IP address that can be converted
+with <a class="reference external" href="http://docs.python.org/2.7/library/socket.html#socket.inet_pton" title="(in Python v2.7)"><tt class="docutils literal"><span class="pre">socket.inet_pton()</span></tt></a> using <em>family</em>, not a
+hostname.  <em>port</em> must be a numeric port number.</p>
+<p>If <em>family</em> is <tt class="xref py py-data docutils literal"><span class="pre">socket.AF_UNSPEC</span></tt> a
+<tt class="xref py py-exc docutils literal"><span class="pre">exception.ValueError</span></tt> exception will be raised as
+the system does not know how to decode the <em>host</em>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.endpoint.Endpoint._reset">
+<tt class="descname">_reset</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/coapy/endpoint.html#Endpoint._reset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.endpoint.Endpoint._reset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return all data to its initial state.</p>
+<p>This is a back-door for unit-testing from a known state.  It&#8217;s
+also used when a new Endpoint is constructed for the first
+time.  Only mutable state is reset; immutable values like
+<a class="reference internal" href="#coapy.endpoint.Endpoint.family" title="coapy.endpoint.Endpoint.family"><tt class="xref py py-attr docutils literal"><span class="pre">family</span></tt></a> and <a class="reference internal" href="#coapy.endpoint.Endpoint.sockaddr" title="coapy.endpoint.Endpoint.sockaddr"><tt class="xref py py-attr docutils literal"><span class="pre">sockaddr</span></tt></a> are not affected.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This method uses cooperative super-calling for subclass
+extension.</p>
+</div>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.endpoint.Endpoint.base_uri">
+<tt class="descname">base_uri</tt><a class="reference internal" href="_modules/coapy/endpoint.html#Endpoint.base_uri"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.endpoint.Endpoint.base_uri" title="Permalink to this definition">¶</a></dt>
+<dd><p>The base CoAP URI for resources on this endpoint.</p>
+<p>This is used by <a class="reference internal" href="#coapy.endpoint.Endpoint.uri_to_options" title="coapy.endpoint.Endpoint.uri_to_options"><tt class="xref py py-meth docutils literal"><span class="pre">uri_to_options()</span></tt></a> to avoid the need to
+specify the protocol and netloc when creating option lists.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.endpoint.Endpoint.create_request">
+<tt class="descname">create_request</tt><big>(</big><em>uri</em>, <em>confirmable=False</em>, <em>code=(0</em>, <em>1)</em>, <em>messageID=None</em>, <em>token=None</em>, <em>options=None</em>, <em>payload=None</em><big>)</big><a class="reference internal" href="_modules/coapy/endpoint.html#Endpoint.create_request"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.endpoint.Endpoint.create_request" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create and return a <a class="reference internal" href="coapy_message.html#coapy.message.Request" title="coapy.message.Request"><tt class="xref py py-class docutils literal"><span class="pre">Request</span></tt></a>
+instance to retrieve <em>uri</em> from this endpoint.</p>
+<p><em>uri</em> should generally be a relative URI hosted on the
+endpoint.</p>
+<p>By default this creates a non-confirmable
+<a class="reference internal" href="coapy_message.html#coapy.message.Request.GET" title="coapy.message.Request.GET"><tt class="xref py py-attr docutils literal"><span class="pre">GET</span></tt></a> message.  These
+features can be overridden with <em>confirmable</em> and <em>code</em>.  The
+<em>messageID</em> normally remains unassigned (it will be assigned
+to an available ID when it is transmitted).  The caller may
+specify a token; if none is provided, an empty token will be
+used.  Any <em>options</em> are appended to the options derived from
+<em>uri</em>, and <em>payload</em> is as in the
+<a class="reference internal" href="coapy_message.html#coapy.message.Message" title="coapy.message.Message"><tt class="xref py py-class docutils literal"><span class="pre">coapy.message.Message</span></tt></a> constructor.  The message
+<a class="reference internal" href="coapy_message.html#coapy.message.Message.destination_endpoint" title="coapy.message.Message.destination_endpoint"><tt class="xref py py-attr docutils literal"><span class="pre">destination_endpoint</span></tt></a>
+is set to <em>self</em>, and finally the message is returned to the
+caller.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.endpoint.Endpoint.family">
+<tt class="descname">family</tt><a class="reference internal" href="_modules/coapy/endpoint.html#Endpoint.family"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.endpoint.Endpoint.family" title="Permalink to this definition">¶</a></dt>
+<dd><p>The address family used for <a class="reference internal" href="#coapy.endpoint.Endpoint.sockaddr" title="coapy.endpoint.Endpoint.sockaddr"><tt class="xref py py-attr docutils literal"><span class="pre">sockaddr</span></tt></a>.</p>
+<p>This is normally <a class="reference external" href="http://docs.python.org/2.7/library/socket.html#socket.AF_INET" title="(in Python v2.7)"><tt class="docutils literal"><span class="pre">socket.AF_INET</span></tt></a> or
+<a class="reference external" href="http://docs.python.org/2.7/library/socket.html#socket.AF_INET6" title="(in Python v2.7)"><tt class="docutils literal"><span class="pre">socket.AF_INET6</span></tt></a>.  It may be <tt class="docutils literal"><span class="pre">None</span></tt> for
+testing situations where the actual endpoint does not
+correspond to an network node.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.endpoint.Endpoint.finalize_message">
+<tt class="descname">finalize_message</tt><big>(</big><em>message</em><big>)</big><a class="reference internal" href="_modules/coapy/endpoint.html#Endpoint.finalize_message"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.endpoint.Endpoint.finalize_message" title="Permalink to this definition">¶</a></dt>
+<dd><p>Final checks and refinements for <em>message</em> relative to this
+endpoint.</p>
+<p>The <em>message</em> is
+<a class="reference internal" href="coapy_message.html#coapy.message.Message.validate" title="coapy.message.Message.validate"><tt class="xref py py-meth docutils literal"><span class="pre">validated</span></tt></a>, then the
+following final cleanup in its
+<a class="reference internal" href="coapy_message.html#coapy.message.Message.options" title="coapy.message.Message.options"><tt class="xref py py-attr docutils literal"><span class="pre">options</span></tt></a> is done:</p>
+<ul class="simple">
+<li>A <a class="reference internal" href="coapy_option.html#coapy.option.UriHost" title="coapy.option.UriHost"><tt class="xref py py-class docutils literal"><span class="pre">coapy.option.UriHost</span></tt></a> that is the <a class="reference internal" href="#coapy.endpoint.Endpoint.is_same_host" title="coapy.endpoint.Endpoint.is_same_host"><tt class="xref py py-meth docutils literal"><span class="pre">same</span>
+<span class="pre">host</span></tt></a> as the endpoint will be removed.</li>
+<li>A <a class="reference internal" href="coapy_option.html#coapy.option.UriPort" title="coapy.option.UriPort"><tt class="xref py py-class docutils literal"><span class="pre">coapy.option.UriPort</span></tt></a> that is the same port as the
+endpoint is removed.</li>
+</ul>
+<p>The finalized message is returned.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.endpoint.Endpoint.get_peer_endpoint">
+<tt class="descname">get_peer_endpoint</tt><big>(</big><em>sockaddr=None</em>, <em>host=None</em>, <em>port=5683</em><big>)</big><a class="reference internal" href="_modules/coapy/endpoint.html#Endpoint.get_peer_endpoint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.endpoint.Endpoint.get_peer_endpoint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find the endpoint at <em>sockaddr</em> that this endpoint can talk to.</p>
+<p>This invokes <a class="reference internal" href="#coapy.endpoint.Endpoint" title="coapy.endpoint.Endpoint"><tt class="xref py py-class docutils literal"><span class="pre">Endpoint</span></tt></a> with <em>family</em> and
+<em>security_mode</em> set to the parameters used by this endpoint.
+It is used to identify the source endpoint of a message
+received by <a class="reference external" href="http://docs.python.org/2.7/library/socket.html#socket.socket.recvfrom" title="(in Python v2.7)"><tt class="docutils literal"><span class="pre">socket.socket.recvfrom()</span></tt></a>.  <em>sockaddr</em>
+will be constructed from <em>host</em> and <em>port</em> if not provided
+explicitly; at least one of <em>sockaddr</em> and <em>host</em> must be
+given.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.endpoint.Endpoint.in_addr">
+<tt class="descname">in_addr</tt><a class="reference internal" href="_modules/coapy/endpoint.html#Endpoint.in_addr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.endpoint.Endpoint.in_addr" title="Permalink to this definition">¶</a></dt>
+<dd><p>The address of the endpoint.</p>
+<p>The representation is binary data encoding part of
+<a class="reference internal" href="#coapy.endpoint.Endpoint.sockaddr" title="coapy.endpoint.Endpoint.sockaddr"><tt class="xref py py-attr docutils literal"><span class="pre">sockaddr</span></tt></a>.  Decoding it depends on <a class="reference internal" href="#coapy.endpoint.Endpoint.family" title="coapy.endpoint.Endpoint.family"><tt class="xref py py-attr docutils literal"><span class="pre">family</span></tt></a>:</p>
+<p>When <a class="reference internal" href="#coapy.endpoint.Endpoint.family" title="coapy.endpoint.Endpoint.family"><tt class="xref py py-attr docutils literal"><span class="pre">family</span></tt></a> is <a class="reference external" href="http://docs.python.org/2.7/library/socket.html#socket.AF_INET" title="(in Python v2.7)"><tt class="docutils literal"><span class="pre">socket.AF_INET</span></tt></a> this is
+the IPv4 address in network byte order.</p>
+<p>When <a class="reference internal" href="#coapy.endpoint.Endpoint.family" title="coapy.endpoint.Endpoint.family"><tt class="xref py py-attr docutils literal"><span class="pre">family</span></tt></a> is <a class="reference external" href="http://docs.python.org/2.7/library/socket.html#socket.AF_INET6" title="(in Python v2.7)"><tt class="docutils literal"><span class="pre">socket.AF_INET6</span></tt></a> this is
+the IPv6 address in network byte order.</p>
+<p>When <a class="reference internal" href="#coapy.endpoint.Endpoint.family" title="coapy.endpoint.Endpoint.family"><tt class="xref py py-attr docutils literal"><span class="pre">family</span></tt></a> is <tt class="docutils literal"><span class="pre">None</span></tt> this is the <em>name</em> in
+Net-Unicode format.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.endpoint.Endpoint.is_same_host">
+<tt class="descname">is_same_host</tt><big>(</big><em>host</em><big>)</big><a class="reference internal" href="_modules/coapy/endpoint.html#Endpoint.is_same_host"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.endpoint.Endpoint.is_same_host" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determine whether <em>host</em> resolves to the same address as
+this endpoint.</p>
+<p>This is used for the algorithm in <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-6.4">CoAP Section 6.4</a> to determine
+that a <a class="reference internal" href="coapy_option.html#coapy.option.UriHost" title="coapy.option.UriHost"><tt class="xref py py-class docutils literal"><span class="pre">UriHost</span></tt></a> option may be
+elided in favor of the default derived from an endpoint.  This
+can only be done if <em>host</em> is an <tt class="docutils literal"><span class="pre">IP-literal</span></tt> or
+<tt class="docutils literal"><span class="pre">IPv4address</span></tt> equivalent to <a class="reference internal" href="#coapy.endpoint.Endpoint.in_addr" title="coapy.endpoint.Endpoint.in_addr"><tt class="xref py py-attr docutils literal"><span class="pre">in_addr</span></tt></a> in
+<a class="reference internal" href="#coapy.endpoint.Endpoint.family" title="coapy.endpoint.Endpoint.family"><tt class="xref py py-attr docutils literal"><span class="pre">family</span></tt></a>.  DNS resolution is not used.</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="coapy.endpoint.Endpoint.lookup_endpoint">
+<em class="property">classmethod </em><tt class="descname">lookup_endpoint</tt><big>(</big><em>sockaddr=None</em>, <em>family=0</em>, <em>security_mode=None</em>, <em>host=None</em>, <em>port=5683</em><big>)</big><a class="reference internal" href="_modules/coapy/endpoint.html#Endpoint.lookup_endpoint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.endpoint.Endpoint.lookup_endpoint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Look up an endpoint using the same algorithm as endpoint
+creation.</p>
+<p>Returns <tt class="docutils literal"><span class="pre">None</span></tt> if passing these parameters to
+<a class="reference internal" href="#coapy.endpoint.Endpoint" title="coapy.endpoint.Endpoint"><tt class="xref py py-class docutils literal"><span class="pre">Endpoint</span></tt></a> would result in creation of a new endpoint.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.endpoint.Endpoint.port">
+<tt class="descname">port</tt><a class="reference internal" href="_modules/coapy/endpoint.html#Endpoint.port"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.endpoint.Endpoint.port" title="Permalink to this definition">¶</a></dt>
+<dd><p>The transport-level port of the endpoint.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.endpoint.Endpoint.security_mode">
+<tt class="descname">security_mode</tt><a class="reference internal" href="_modules/coapy/endpoint.html#Endpoint.security_mode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.endpoint.Endpoint.security_mode" title="Permalink to this definition">¶</a></dt>
+<dd><p>The security mode of the endpoint.  Generally <tt class="docutils literal"><span class="pre">None</span></tt>
+though if <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-9">DTLS</a> CoAP is used it would be some
+other value.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.endpoint.Endpoint.sockaddr">
+<tt class="descname">sockaddr</tt><a class="reference internal" href="_modules/coapy/endpoint.html#Endpoint.sockaddr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.endpoint.Endpoint.sockaddr" title="Permalink to this definition">¶</a></dt>
+<dd><p>The Python <a class="reference external" href="http://docs.python.org/2.7/library/socket.html#socket" title="(in Python v2.7)"><tt class="docutils literal"><span class="pre">socket</span></tt></a> address of the endpoint.</p>
+<p>When <a class="reference internal" href="#coapy.endpoint.Endpoint.family" title="coapy.endpoint.Endpoint.family"><tt class="xref py py-attr docutils literal"><span class="pre">family</span></tt></a> is <a class="reference external" href="http://docs.python.org/2.7/library/socket.html#socket.AF_INET" title="(in Python v2.7)"><tt class="docutils literal"><span class="pre">socket.AF_INET</span></tt></a> this is
+the tuple <tt class="docutils literal"><span class="pre">(host,</span> <span class="pre">port)</span></tt>.</p>
+<p>When <a class="reference internal" href="#coapy.endpoint.Endpoint.family" title="coapy.endpoint.Endpoint.family"><tt class="xref py py-attr docutils literal"><span class="pre">family</span></tt></a> is <a class="reference external" href="http://docs.python.org/2.7/library/socket.html#socket.AF_INET6" title="(in Python v2.7)"><tt class="docutils literal"><span class="pre">socket.AF_INET6</span></tt></a> this is
+the tuple <tt class="docutils literal"><span class="pre">(host,</span> <span class="pre">port,</span> <span class="pre">flowinfo,</span> <span class="pre">scopeid)</span></tt>.</p>
+<p>When <a class="reference internal" href="#coapy.endpoint.Endpoint.family" title="coapy.endpoint.Endpoint.family"><tt class="xref py py-attr docutils literal"><span class="pre">family</span></tt></a> is <tt class="docutils literal"><span class="pre">None</span></tt> this is the tuple <tt class="docutils literal"><span class="pre">(name,</span>
+<span class="pre">port)</span></tt>.  <em>name</em> functions like <em>host</em> but is not a resolvable
+host name.</p>
+<p><em>host</em> will be the text representation of <a class="reference internal" href="#coapy.endpoint.Endpoint.in_addr" title="coapy.endpoint.Endpoint.in_addr"><tt class="xref py py-attr docutils literal"><span class="pre">in_addr</span></tt></a>; it
+will not be a host name.  <em>port</em> will be a numeric port
+<em>number</em>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.endpoint.Endpoint.uri_from_options">
+<tt class="descname">uri_from_options</tt><big>(</big><em>opts</em><big>)</big><a class="reference internal" href="_modules/coapy/endpoint.html#Endpoint.uri_from_options"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.endpoint.Endpoint.uri_from_options" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a URI from endpoint data and the options.</p>
+<p>The resulting URI scheme is &#8220;coap&#8221; unless
+<a class="reference internal" href="#coapy.endpoint.Endpoint.security_mode" title="coapy.endpoint.Endpoint.security_mode"><tt class="xref py py-attr docutils literal"><span class="pre">security_mode</span></tt></a> is set (in which case it is &#8220;coaps&#8221;).</p>
+<p>The authority is derived from
+<a class="reference internal" href="coapy_option.html#coapy.option.UriHost" title="coapy.option.UriHost"><tt class="xref py py-class docutils literal"><span class="pre">UriHost</span></tt></a> and
+<a class="reference internal" href="coapy_option.html#coapy.option.UriPort" title="coapy.option.UriPort"><tt class="xref py py-class docutils literal"><span class="pre">UriPort</span></tt></a> options in <em>opts</em>,
+defaulting to <a class="reference internal" href="#coapy.endpoint.Endpoint.uri_host" title="coapy.endpoint.Endpoint.uri_host"><tt class="xref py py-attr docutils literal"><span class="pre">uri_host</span></tt></a> and <a class="reference internal" href="#coapy.endpoint.Endpoint.port" title="coapy.endpoint.Endpoint.port"><tt class="xref py py-attr docutils literal"><span class="pre">port</span></tt></a> if the
+respective options are not provided.</p>
+<p>The remainder of the URI is built up from
+<a class="reference internal" href="coapy_option.html#coapy.option.UriPath" title="coapy.option.UriPath"><tt class="xref py py-class docutils literal"><span class="pre">UriPath</span></tt></a> and
+<a class="reference internal" href="coapy_option.html#coapy.option.UriQuery" title="coapy.option.UriQuery"><tt class="xref py py-class docutils literal"><span class="pre">UriQuery</span></tt></a> options in <em>opts</em>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.endpoint.Endpoint.uri_host">
+<tt class="descname">uri_host</tt><a class="reference internal" href="_modules/coapy/endpoint.html#Endpoint.uri_host"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.endpoint.Endpoint.uri_host" title="Permalink to this definition">¶</a></dt>
+<dd><p>The text value for the <tt class="docutils literal"><span class="pre">host</span></tt> subcomponent of the
+authority part of a URI involving this endpoint.</p>
+<p>This is almost always either an <tt class="docutils literal"><span class="pre">IPv4address</span></tt> or
+<tt class="docutils literal"><span class="pre">IP-literal</span></tt> as defined by <a class="reference external" href="http://tools.ietf.org/html/rfc3986#section-3.2.2">section 3.2.2 of RFC3986</a>.  If
+an <a class="reference internal" href="#coapy.endpoint.Endpoint" title="coapy.endpoint.Endpoint"><tt class="xref py py-class docutils literal"><span class="pre">Endpoint</span></tt></a> is created by an application using a host
+name, the resolved address of the host is used for
+<a class="reference internal" href="#coapy.endpoint.Endpoint.sockaddr" title="coapy.endpoint.Endpoint.sockaddr"><tt class="xref py py-attr docutils literal"><span class="pre">sockaddr</span></tt></a> and for this property.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.endpoint.Endpoint.uri_to_options">
+<tt class="descname">uri_to_options</tt><big>(</big><em>uri</em>, <em>base_uri=None</em><big>)</big><a class="reference internal" href="_modules/coapy/endpoint.html#Endpoint.uri_to_options"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.endpoint.Endpoint.uri_to_options" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert a URI to a list of CoAP options relative to this endpoint.</p>
+<p><em>uri</em> should be an <span class="target" id="index-0"></span><a class="rfc reference external" href="http://tools.ietf.org/html/rfc3986.html"><strong>RFC 3986</strong></a> conformant absolute URI.  For
+convenience, if <em>base_uri</em> is not None the value of <em>uri</em> will
+be recalculated assuming it is relative to <em>base_uri</em>.
+<em>base_uri</em> itself will default to <a class="reference internal" href="#coapy.endpoint.Endpoint.base_uri" title="coapy.endpoint.Endpoint.base_uri"><tt class="xref py py-attr docutils literal"><span class="pre">base_uri</span></tt></a> if no
+non-<tt class="docutils literal"><span class="pre">None</span></tt> value is provided.</p>
+<p>The scheme part of <em>uri</em> must be either &#8220;coap&#8221; or &#8220;coaps&#8221;.</p>
+<p>Options will be returned in a list in the following order.</p>
+<ul class="simple">
+<li><a class="reference internal" href="coapy_option.html#coapy.option.UriHost" title="coapy.option.UriHost"><tt class="xref py py-class docutils literal"><span class="pre">coapy.option.UriHost</span></tt></a>, absent if the URI host
+matches the endpoint <a class="reference internal" href="#coapy.endpoint.Endpoint.family" title="coapy.endpoint.Endpoint.family"><tt class="xref py py-attr docutils literal"><span class="pre">family</span></tt></a> and <a class="reference internal" href="#coapy.endpoint.Endpoint.in_addr" title="coapy.endpoint.Endpoint.in_addr"><tt class="xref py py-attr docutils literal"><span class="pre">in_addr</span></tt></a>;</li>
+<li><a class="reference internal" href="coapy_option.html#coapy.option.UriPort" title="coapy.option.UriPort"><tt class="xref py py-class docutils literal"><span class="pre">coapy.option.UriPort</span></tt></a>, absent if the URI port
+matches the endpoint <a class="reference internal" href="#coapy.endpoint.Endpoint.port" title="coapy.endpoint.Endpoint.port"><tt class="xref py py-attr docutils literal"><span class="pre">port</span></tt></a>;</li>
+<li><a class="reference internal" href="coapy_option.html#coapy.option.UriPath" title="coapy.option.UriPath"><tt class="xref py py-class docutils literal"><span class="pre">coapy.option.UriPath</span></tt></a>, absent if the path is empty,
+otherwise occurs once per path segment;</li>
+<li><a class="reference internal" href="coapy_option.html#coapy.option.UriQuery" title="coapy.option.UriQuery"><tt class="xref py py-class docutils literal"><span class="pre">coapy.option.UriQuery</span></tt></a>, absent if there is no query
+part, otherwise occurs once per <tt class="docutils literal"><span class="pre">&amp;</span></tt>-separated query
+element.</li>
+</ul>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="coapy.endpoint.LocalEndpoint">
+<em class="property">class </em><tt class="descclassname">coapy.endpoint.</tt><tt class="descname">LocalEndpoint</tt><big>(</big><em>sockaddr=None</em>, <em>family=0</em>, <em>security_mode=None</em>, <em>host=None</em>, <em>port=5683</em><big>)</big><a class="headerlink" href="#coapy.endpoint.LocalEndpoint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#coapy.endpoint.Endpoint" title="coapy.endpoint.Endpoint"><tt class="xref py py-class docutils literal"><span class="pre">coapy.endpoint.Endpoint</span></tt></a></p>
+<p>Extends <a class="reference internal" href="#coapy.endpoint.Endpoint" title="coapy.endpoint.Endpoint"><tt class="xref py py-class docutils literal"><span class="pre">Endpoint</span></tt></a> with methods to send and receive messages.</p>
+<p>This is an abstract class; a subclass must implement the
+underlying communications operations invoked through
+<a class="reference internal" href="#coapy.endpoint.LocalEndpoint.rawsendto" title="coapy.endpoint.LocalEndpoint.rawsendto"><tt class="xref py py-meth docutils literal"><span class="pre">rawsendto()</span></tt></a> and <a class="reference internal" href="#coapy.endpoint.LocalEndpoint.rawrecvfrom" title="coapy.endpoint.LocalEndpoint.rawrecvfrom"><tt class="xref py py-meth docutils literal"><span class="pre">rawrecvfrom()</span></tt></a>.  The most likely
+subclass is <a class="reference internal" href="#coapy.endpoint.SocketEndpoint" title="coapy.endpoint.SocketEndpoint"><tt class="xref py py-class docutils literal"><span class="pre">SocketEndpoint</span></tt></a>, but for simulation and
+testing purposes alternative implementations like
+<a class="reference internal" href="tests_support.html#tests.support.FIFOEndpoint" title="tests.support.FIFOEndpoint"><tt class="xref py py-class docutils literal"><span class="pre">tests.support.FIFOEndpoint</span></tt></a> may be used.</p>
+<dl class="method">
+<dt id="coapy.endpoint.LocalEndpoint._rawrecvfrom">
+<tt class="descname">_rawrecvfrom</tt><big>(</big><em>bufsize</em><big>)</big><a class="headerlink" href="#coapy.endpoint.LocalEndpoint._rawrecvfrom" title="Permalink to this definition">¶</a></dt>
+<dd><p>Receive <em>data</em> from a <em>source_endpoint</em>.</p>
+<p>Returns tuple <tt class="docutils literal"><span class="pre">(data,</span> <span class="pre">source_endpoint)</span></tt> where <em>data</em> is
+<tt class="xref py py-class docutils literal"><span class="pre">bytes</span></tt> data and <em>source_endpoint</em> is the instance
+<a class="reference internal" href="#coapy.endpoint.Endpoint" title="coapy.endpoint.Endpoint"><tt class="xref py py-class docutils literal"><span class="pre">Endpoint</span></tt></a> associated with the origin of <em>data</em>.</p>
+<p>Subclasses must override this method.  The method of
+communication is determined by the subclass.  Whether the call
+blocks or raises an exception if communication is unavailable
+is not specified, but if no exception is raised the return
+value must be as described above.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.endpoint.LocalEndpoint._rawsendto">
+<tt class="descname">_rawsendto</tt><big>(</big><em>data</em>, <em>destination_endpoint</em><big>)</big><a class="headerlink" href="#coapy.endpoint.LocalEndpoint._rawsendto" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send <em>data</em> from this endpoint to <em>destination_endpoint</em>.</p>
+<p><em>data</em> is <tt class="xref py py-class docutils literal"><span class="pre">bytes</span></tt> data.  <em>destination_endpoint</em> is an
+instance of <a class="reference internal" href="#coapy.endpoint.Endpoint" title="coapy.endpoint.Endpoint"><tt class="xref py py-class docutils literal"><span class="pre">Endpoint</span></tt></a>.</p>
+<p>The mechanism by which the data is transferred depends on
+subclass support for communications, and a subclass must
+override this method.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.endpoint.LocalEndpoint._reset">
+<tt class="descname">_reset</tt><big>(</big><big>)</big><a class="headerlink" href="#coapy.endpoint.LocalEndpoint._reset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return all data to its initial state.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.endpoint.LocalEndpoint.next_messageID">
+<tt class="descname">next_messageID</tt><big>(</big><big>)</big><a class="headerlink" href="#coapy.endpoint.LocalEndpoint.next_messageID" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a new messageID suitable for a message to this endpoint.</p>
+<p>This is sequentially generated starting from an initial value
+that was randomly generated when the state was created.  It
+is filtered so message IDs still present in the sent message
+cache are not re-used.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.endpoint.LocalEndpoint.rawrecvfrom">
+<tt class="descname">rawrecvfrom</tt><big>(</big><em>bufsize=2048</em><big>)</big><a class="headerlink" href="#coapy.endpoint.LocalEndpoint.rawrecvfrom" title="Permalink to this definition">¶</a></dt>
+<dd><p>Receive <em>data</em> from a <em>source_endpoint</em>.</p>
+<p>Returns tuple <tt class="docutils literal"><span class="pre">(data,</span> <span class="pre">source_endpoint)</span></tt> where <em>data</em> is
+<tt class="xref py py-class docutils literal"><span class="pre">bytes</span></tt> data and <em>source_endpoint</em> is the instance
+<a class="reference internal" href="#coapy.endpoint.Endpoint" title="coapy.endpoint.Endpoint"><tt class="xref py py-class docutils literal"><span class="pre">Endpoint</span></tt></a> associated with the origin of <em>data</em>.
+<em>bufsize</em> is a hint of the maximum expected size of the
+incoming data.</p>
+<p>This method delegates to a subclass implementation of
+<a class="reference internal" href="#coapy.endpoint.LocalEndpoint._rawrecvfrom" title="coapy.endpoint.LocalEndpoint._rawrecvfrom"><tt class="xref py py-meth docutils literal"><span class="pre">_rawrecvfrom()</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.endpoint.LocalEndpoint.rawsendto">
+<tt class="descname">rawsendto</tt><big>(</big><em>data</em>, <em>destination_endpoint</em><big>)</big><a class="headerlink" href="#coapy.endpoint.LocalEndpoint.rawsendto" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send <em>data</em> from this endpoint to <em>destination_endpoint</em>.</p>
+<p><em>data</em> is <tt class="xref py py-class docutils literal"><span class="pre">bytes</span></tt> data.  <em>destination_endpoint</em> is an
+instance of <a class="reference internal" href="#coapy.endpoint.Endpoint" title="coapy.endpoint.Endpoint"><tt class="xref py py-class docutils literal"><span class="pre">Endpoint</span></tt></a>.</p>
+<p>This method delegates to a subclass implementation of
+<a class="reference internal" href="#coapy.endpoint.LocalEndpoint._rawsendto" title="coapy.endpoint.LocalEndpoint._rawsendto"><tt class="xref py py-meth docutils literal"><span class="pre">_rawsendto()</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.endpoint.LocalEndpoint.receive">
+<tt class="descname">receive</tt><big>(</big><big>)</big><a class="headerlink" href="#coapy.endpoint.LocalEndpoint.receive" title="Permalink to this definition">¶</a></dt>
+<dd><p>Receive and decode a message from another endpoint.</p>
+<p>Returns <tt class="docutils literal"><span class="pre">None</span></tt> if the message is so corrupt it should be
+ignored, or if the received message is a duplicate.  Raises
+<a class="reference internal" href="coapy_message.html#coapy.message.MessageFormatError" title="coapy.message.MessageFormatError"><tt class="xref py py-exc docutils literal"><span class="pre">coapy.message.MessageFormatError</span></tt></a> if the message cannot
+be fully decoded.  Otherwise returns the message, in which
+<a class="reference internal" href="coapy_message.html#coapy.message.Message.destination_endpoint" title="coapy.message.Message.destination_endpoint"><tt class="xref py py-attr docutils literal"><span class="pre">destination_endpoint</span></tt></a>
+will be set to <em>self</em> and
+<a class="reference internal" href="coapy_message.html#coapy.message.Message.source_endpoint" title="coapy.message.Message.source_endpoint"><tt class="xref py py-attr docutils literal"><span class="pre">source_endpoint</span></tt></a>
+will be set to <em>source_endpoint</em>.</p>
+<p>Any message-layer processing (e.g. re-sending duplicate ACK or
+RST, or sending a RST due to a message format error) will have
+been done before this call returns.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.endpoint.LocalEndpoint.remote_state">
+<tt class="descname">remote_state</tt><big>(</big><em>endpoint</em><big>)</big><a class="headerlink" href="#coapy.endpoint.LocalEndpoint.remote_state" title="Permalink to this definition">¶</a></dt>
+<dd><p>Obtain the <a class="reference internal" href="#coapy.endpoint.RemoteEndpointState" title="coapy.endpoint.RemoteEndpointState"><tt class="xref py py-class docutils literal"><span class="pre">RemoteEndpointState</span></tt></a> instance relevant
+to communication between <em>self</em> and <em>endpoint</em>.</p>
+<p>A new instance is created and returned if <em>endpoint</em> has not
+been contacted before.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.endpoint.LocalEndpoint.send">
+<tt class="descname">send</tt><big>(</big><em>msg</em>, <em>destination_endpoint=None</em><big>)</big><a class="headerlink" href="#coapy.endpoint.LocalEndpoint.send" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send <em>msg</em> to <em>destination_endpoint</em>.</p>
+<p><em>msg</em> must be an instance of <a class="reference internal" href="coapy_message.html#coapy.message.Message" title="coapy.message.Message"><tt class="xref py py-class docutils literal"><span class="pre">coapy.message.Message</span></tt></a>.</p>
+<p><em>destination_endpoint</em> specifies where the packed message will
+be sent and defaults to <em>msg</em>&#8216;s
+<a class="reference internal" href="coapy_message.html#coapy.message.Message.destination_endpoint" title="coapy.message.Message.destination_endpoint"><tt class="xref py py-attr docutils literal"><span class="pre">destination_endpoint</span></tt></a>.</p>
+<p>The return value is the <a class="reference internal" href="#coapy.endpoint.SentMessageCacheEntry" title="coapy.endpoint.SentMessageCacheEntry"><tt class="xref py py-class docutils literal"><span class="pre">SentMessageCacheEntry</span></tt></a> that
+has message-level transmission state.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="coapy.endpoint.SocketEndpoint">
+<em class="property">class </em><tt class="descclassname">coapy.endpoint.</tt><tt class="descname">SocketEndpoint</tt><big>(</big><em>sockaddr=None</em>, <em>family=0</em>, <em>security_mode=None</em>, <em>host=None</em>, <em>port=5683</em><big>)</big><a class="headerlink" href="#coapy.endpoint.SocketEndpoint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#coapy.endpoint.LocalEndpoint" title="coapy.endpoint.LocalEndpoint"><tt class="xref py py-class docutils literal"><span class="pre">coapy.endpoint.LocalEndpoint</span></tt></a></p>
+<p>An endpoint that has a Python <a class="reference external" href="http://docs.python.org/2.7/library/socket.html#socket.socket" title="(in Python v2.7)"><tt class="docutils literal"><span class="pre">socket.socket()</span></tt></a>
+bound to it to be used for network communications.</p>
+<p>While all <a class="reference internal" href="#coapy.endpoint.Endpoint" title="coapy.endpoint.Endpoint"><tt class="xref py py-class docutils literal"><span class="pre">Endpoint</span></tt></a> instances have a socket address, only
+endpoints that belong to the local node have sockets associated
+with them.  These sockets are used to exchange messages with
+remote endpoints.</p>
+<dl class="method">
+<dt id="coapy.endpoint.SocketEndpoint._rawrecvfrom">
+<tt class="descname">_rawrecvfrom</tt><big>(</big><em>bufsize</em><big>)</big><a class="headerlink" href="#coapy.endpoint.SocketEndpoint._rawrecvfrom" title="Permalink to this definition">¶</a></dt>
+<dd><p>Receive <em>data</em> from a <em>source_endpoint</em>.</p>
+<p>Invokes <a class="reference external" href="http://docs.python.org/2.7/library/socket.html#socket.socket.recvfrom" title="(in Python v2.7)"><tt class="xref py py-meth docutils literal"><span class="pre">recvfrom</span></tt></a> on
+<a class="reference internal" href="#coapy.endpoint.SocketEndpoint.bound_socket" title="coapy.endpoint.SocketEndpoint.bound_socket"><tt class="xref py py-attr docutils literal"><span class="pre">bound_socket</span></tt></a> and uses the resulting source address to
+identify the corresponding <a class="reference internal" href="#coapy.endpoint.Endpoint" title="coapy.endpoint.Endpoint"><tt class="xref py py-class docutils literal"><span class="pre">Endpoint</span></tt></a> instance as
+<em>source_endpoint</em>.  Returns <tt class="docutils literal"><span class="pre">(data,</span> <span class="pre">source_endpoint)</span></tt>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.endpoint.SocketEndpoint._rawsendto">
+<tt class="descname">_rawsendto</tt><big>(</big><em>data</em>, <em>destination_endpoint</em><big>)</big><a class="headerlink" href="#coapy.endpoint.SocketEndpoint._rawsendto" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send <em>data</em> from this endpoint to <em>destination_endpoint</em>.</p>
+<p>This invokes <a class="reference external" href="http://docs.python.org/2.7/library/socket.html#socket.socket.sendto" title="(in Python v2.7)"><tt class="xref py py-meth docutils literal"><span class="pre">sendto</span></tt></a> on
+<a class="reference internal" href="#coapy.endpoint.SocketEndpoint.bound_socket" title="coapy.endpoint.SocketEndpoint.bound_socket"><tt class="xref py py-attr docutils literal"><span class="pre">bound_socket</span></tt></a> to transmit <em>data</em> to the
+<em>destination_endpoint</em> at its <tt class="xref py py-attr docutils literal"><span class="pre">sockaddr</span></tt>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.endpoint.SocketEndpoint.bound_socket">
+<tt class="descname">bound_socket</tt><a class="headerlink" href="#coapy.endpoint.SocketEndpoint.bound_socket" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a <a class="reference external" href="http://docs.python.org/2.7/library/socket.html#socket.socket" title="(in Python v2.7)"><tt class="xref py py-func docutils literal"><span class="pre">socket</span> <span class="pre">object</span></tt></a>
+instance that is bound to <tt class="xref py py-attr docutils literal"><span class="pre">sockaddr</span></tt>.</p>
+<p>This may only be set for endpoints that are local to the host.
+It may set to <tt class="docutils literal"><span class="pre">None</span></tt> to disassociate the endpoint from a
+socket, and may be changed from <tt class="docutils literal"><span class="pre">None</span></tt> to an object that
+returns <tt class="xref py py-attr docutils literal"><span class="pre">sockaddr</span></tt> when
+<a class="reference external" href="http://docs.python.org/2.7/library/socket.html#socket.socket.getsockname" title="(in Python v2.7)"><tt class="xref py py-meth docutils literal"><span class="pre">socket.getsockname</span></tt></a>
+is invoked on it.</p>
+<p>See <a class="reference internal" href="#coapy.endpoint.SocketEndpoint.create_bound_endpoint" title="coapy.endpoint.SocketEndpoint.create_bound_endpoint"><tt class="xref py py-meth docutils literal"><span class="pre">create_bound_endpoint()</span></tt></a> and
+<a class="reference internal" href="#coapy.endpoint.SocketEndpoint.set_bound_socket" title="coapy.endpoint.SocketEndpoint.set_bound_socket"><tt class="xref py py-meth docutils literal"><span class="pre">set_bound_socket()</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="coapy.endpoint.SocketEndpoint.create_bound_endpoint">
+<em class="property">classmethod </em><tt class="descname">create_bound_endpoint</tt><big>(</big><em>sockaddr=None</em>, <em>family=0</em>, <em>security_mode=None</em>, <em>host=None</em>, <em>port=5683</em><big>)</big><a class="headerlink" href="#coapy.endpoint.SocketEndpoint.create_bound_endpoint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create an endpoint with a local socket bound to it.</p>
+<p><em>sockaddr</em>, <em>family</em>, <em>security_mode</em>, <em>host</em>, and <em>port</em> are
+all as used with <a class="reference internal" href="#coapy.endpoint.Endpoint" title="coapy.endpoint.Endpoint"><tt class="xref py py-class docutils literal"><span class="pre">Endpoint</span></tt></a>.</p>
+<p>For use with a CoAP service on the local host (<em>host</em> as
+<tt class="docutils literal"><span class="pre">127.0.0.1</span></tt> or <tt class="docutils literal"><span class="pre">::1</span></tt>), <em>port</em> may be 0 in this call.  This
+allows the bind operation to select an unused local port.</p>
+<p>Returns the created endpoint with <a class="reference internal" href="#coapy.endpoint.SocketEndpoint.bound_socket" title="coapy.endpoint.SocketEndpoint.bound_socket"><tt class="xref py py-attr docutils literal"><span class="pre">bound_socket</span></tt></a>
+initialized and ready to send and receive messages.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.endpoint.SocketEndpoint.set_bound_socket">
+<tt class="descname">set_bound_socket</tt><big>(</big><em>socket</em><big>)</big><a class="headerlink" href="#coapy.endpoint.SocketEndpoint.set_bound_socket" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the <a class="reference internal" href="#coapy.endpoint.SocketEndpoint.bound_socket" title="coapy.endpoint.SocketEndpoint.bound_socket"><tt class="xref py py-attr docutils literal"><span class="pre">bound_socket</span></tt></a>.</p>
+<p><em>socket</em> may be <tt class="docutils literal"><span class="pre">None</span></tt>, in which case the endpoint is
+disassociated from any socket.</p>
+<p>If <em>socket</em> is not <tt class="docutils literal"><span class="pre">None</span></tt> it must be an object suitable for
+assignment to <a class="reference internal" href="#coapy.endpoint.SocketEndpoint.bound_socket" title="coapy.endpoint.SocketEndpoint.bound_socket"><tt class="xref py py-attr docutils literal"><span class="pre">bound_socket</span></tt></a>.  The endpoint adopts the
+socket, in that if/when the endpoint is destroyed the socket
+will be closed if it remains bound to the endpoint.  (Since
+<a class="reference internal" href="#coapy.endpoint.Endpoint" title="coapy.endpoint.Endpoint"><tt class="xref py py-class docutils literal"><span class="pre">Endpoint</span></tt></a> instances are almost impossible to destroy,
+this has little relevance at this time.)</p>
+<p>In either case if the assignment succeed the previous value of
+<a class="reference internal" href="#coapy.endpoint.SocketEndpoint.bound_socket" title="coapy.endpoint.SocketEndpoint.bound_socket"><tt class="xref py py-attr docutils literal"><span class="pre">bound_socket</span></tt></a> is returned, with the caller taking
+responsibility to close it when finished.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>For simulation and testing purposes <em>socket</em> might not be
+a <a class="reference external" href="http://docs.python.org/2.7/library/socket.html#socket.socket" title="(in Python v2.7)"><tt class="xref py py-func docutils literal"><span class="pre">socket</span> <span class="pre">object</span></tt></a>, but it must
+act like one with respect to the methods CoAPy expects it
+to provide, including but not limited to:</p>
+<ul class="last simple">
+<li><a class="reference external" href="http://docs.python.org/2.7/library/socket.html#socket.socket.getsockname" title="(in Python v2.7)"><tt class="xref py py-meth docutils literal"><span class="pre">getsockname()</span></tt></a></li>
+<li><a class="reference external" href="http://docs.python.org/2.7/library/socket.html#socket.socket.sendto" title="(in Python v2.7)"><tt class="xref py py-meth docutils literal"><span class="pre">sendto()</span></tt></a></li>
+</ul>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<div class="section" id="message-caches">
+<h2>Message Caches<a class="headerlink" href="#message-caches" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="coapy.endpoint.MessageCache">
+<em class="property">class </em><tt class="descclassname">coapy.endpoint.</tt><tt class="descname">MessageCache</tt><big>(</big><em>endpoint</em>, <em>is_sent_cache</em><big>)</big><a class="reference internal" href="_modules/coapy/endpoint.html#MessageCache"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.endpoint.MessageCache" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
+<p>Dual-view collection used for caches of
+<a class="reference internal" href="#coapy.endpoint.MessageCacheEntry" title="coapy.endpoint.MessageCacheEntry"><tt class="xref py py-class docutils literal"><span class="pre">MessageCacheEntry</span></tt></a> instances.</p>
+<p>The class simulates a dictionary allowing lookup of items using
+the integer <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-3">message ID</a>.  Most lookup
+<a class="reference external" href="http://docs.python.org/2.7/library/stdtypes.html#dict" title="(in Python v2.7)"><tt class="docutils literal"><span class="pre">dict</span></tt></a> operations are supported on the message ID.
+If a message is used as the key its
+<a class="reference internal" href="coapy_message.html#coapy.message.Message.messageID" title="coapy.message.Message.messageID"><tt class="xref py py-attr docutils literal"><span class="pre">messageID</span></tt></a> is substituted
+automatically.</p>
+<p>The collection also implements a <a class="reference internal" href="#coapy.endpoint.MessageCache.queue" title="coapy.endpoint.MessageCache.queue"><tt class="xref py py-meth docutils literal"><span class="pre">priority</span> <span class="pre">queue</span></tt></a>,
+allowing time-driven events to be processed for cache elements
+based on <a class="reference internal" href="#coapy.endpoint.MessageCacheEntry.time_due" title="coapy.endpoint.MessageCacheEntry.time_due"><tt class="xref py py-attr docutils literal"><span class="pre">time_due</span></tt></a>.  Items in
+the cache for which no
+<a class="reference internal" href="#coapy.endpoint.MessageCacheEntry.time_due" title="coapy.endpoint.MessageCacheEntry.time_due"><tt class="xref py py-attr docutils literal"><span class="pre">time_due</span></tt></a> has been specified
+are held on a <a class="reference internal" href="#coapy.endpoint.MessageCache.pending" title="coapy.endpoint.MessageCache.pending"><tt class="xref py py-meth docutils literal"><span class="pre">pending()</span></tt></a> FIFO.</p>
+<p>Cache entries are placed in a cache when they are created.  It
+is an error to create a new cache entry when one with the same
+<a class="reference internal" href="#coapy.endpoint.MessageCacheEntry.message_id" title="coapy.endpoint.MessageCacheEntry.message_id"><tt class="xref py py-attr docutils literal"><span class="pre">MessageCacheEntry.message_id</span></tt></a> is already present in that
+cache.</p>
+<p>Entry content may be updated while in the cache (in particular,
+modifying <a class="reference internal" href="#coapy.endpoint.MessageCacheEntry.time_due" title="coapy.endpoint.MessageCacheEntry.time_due"><tt class="xref py py-attr docutils literal"><span class="pre">MessageCacheEntry.time_due</span></tt></a> will
+<a class="reference internal" href="#coapy.endpoint.MessageCacheEntry.activated_clk" title="coapy.endpoint.MessageCacheEntry.activated_clk"><tt class="xref py py-attr docutils literal"><span class="pre">activate</span></tt></a> or reposition
+the entry within the <a class="reference internal" href="#coapy.endpoint.MessageCache.queue" title="coapy.endpoint.MessageCache.queue"><tt class="xref py py-meth docutils literal"><span class="pre">queue()</span></tt></a>).  Entries proceed through a
+defined life cycle; after all active stages have been completed an
+event to automatically remove the entry from its cache will be
+scheduled to occur at <tt class="xref py py-attr docutils literal"><span class="pre">expire</span></tt>.</p>
+<dl class="method">
+<dt id="coapy.endpoint.MessageCache._activate">
+<tt class="descname">_activate</tt><big>(</big><em>entry</em><big>)</big><a class="headerlink" href="#coapy.endpoint.MessageCache._activate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Move <em>entry</em> from the pending list to its correct location
+in the queue.</p>
+<p>This will be invoked when the underlying
+<a class="reference internal" href="coapy_util.html#coapy.util.TimeDueOrdinal.time_due" title="coapy.util.TimeDueOrdinal.time_due"><tt class="xref py py-attr docutils literal"><span class="pre">coapy.util.TimeDueOrdinal.time_due</span></tt></a> attribute value is
+first assigned.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.endpoint.MessageCache._add">
+<tt class="descname">_add</tt><big>(</big><em>entry</em><big>)</big><a class="reference internal" href="_modules/coapy/endpoint.html#MessageCache._add"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.endpoint.MessageCache._add" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add <em>entry</em> to the cache.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.endpoint.MessageCache._remove">
+<tt class="descname">_remove</tt><big>(</big><em>entry</em><big>)</big><a class="reference internal" href="_modules/coapy/endpoint.html#MessageCache._remove"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.endpoint.MessageCache._remove" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove <em>entry</em> from the cache.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.endpoint.MessageCache._reposition">
+<tt class="descname">_reposition</tt><big>(</big><em>entry</em><big>)</big><a class="reference internal" href="_modules/coapy/endpoint.html#MessageCache._reposition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.endpoint.MessageCache._reposition" title="Permalink to this definition">¶</a></dt>
+<dd><p>Re-place <em>entry</em> at its correct location in the queue.</p>
+<p>This will be invoked whenever the underlying
+<a class="reference internal" href="coapy_util.html#coapy.util.TimeDueOrdinal.time_due" title="coapy.util.TimeDueOrdinal.time_due"><tt class="xref py py-attr docutils literal"><span class="pre">coapy.util.TimeDueOrdinal.time_due</span></tt></a> attribute value is
+changed.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.endpoint.MessageCache.clear">
+<tt class="descname">clear</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/coapy/endpoint.html#MessageCache.clear"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.endpoint.MessageCache.clear" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove all entries in the cache.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.endpoint.MessageCache.endpoint">
+<tt class="descname">endpoint</tt><a class="reference internal" href="_modules/coapy/endpoint.html#MessageCache.endpoint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.endpoint.MessageCache.endpoint" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference internal" href="#coapy.endpoint.Endpoint" title="coapy.endpoint.Endpoint"><tt class="xref py py-class docutils literal"><span class="pre">Endpoint</span></tt></a> to which the cache belongs.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.endpoint.MessageCache.is_sent_cache">
+<tt class="descname">is_sent_cache</tt><a class="reference internal" href="_modules/coapy/endpoint.html#MessageCache.is_sent_cache"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.endpoint.MessageCache.is_sent_cache" title="Permalink to this definition">¶</a></dt>
+<dd><p><tt class="docutils literal"><span class="pre">True</span></tt> if this cache is the sent-message cache for its
+<a class="reference internal" href="#coapy.endpoint.MessageCache.endpoint" title="coapy.endpoint.MessageCache.endpoint"><tt class="xref py py-attr docutils literal"><span class="pre">endpoint</span></tt></a>.  <tt class="docutils literal"><span class="pre">False</span></tt> if this is the received-message
+cache.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.endpoint.MessageCache.pending">
+<tt class="descname">pending</tt><big>(</big><big>)</big><a class="headerlink" href="#coapy.endpoint.MessageCache.pending" title="Permalink to this definition">¶</a></dt>
+<dd><p>The list of pending cache entries in FIFO order.  These are
+cache entries for which no <a class="reference internal" href="#coapy.endpoint.MessageCacheEntry.time_due" title="coapy.endpoint.MessageCacheEntry.time_due"><tt class="xref py py-attr docutils literal"><span class="pre">MessageCacheEntry.time_due</span></tt></a>
+has been assigned, so their lifecycle has not yet started.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">This method returns a reference to the underlying list.
+Callers are expected to refrain from changing the list.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.endpoint.MessageCache.queue">
+<tt class="descname">queue</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/coapy/endpoint.html#MessageCache.queue"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.endpoint.MessageCache.queue" title="Permalink to this definition">¶</a></dt>
+<dd><p>The queue of cache entries sorted by
+<a class="reference internal" href="#coapy.endpoint.MessageCacheEntry.time_due" title="coapy.endpoint.MessageCacheEntry.time_due"><tt class="xref py py-attr docutils literal"><span class="pre">MessageCacheEntry.time_due</span></tt></a>.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">This method returns a reference to the underlying sorted
+list.  Callers are expected to refrain from changing the
+list in any way other than through methods exposed on the
+cache itself.</p>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="coapy.endpoint.MessageCacheEntry">
+<em class="property">class </em><tt class="descclassname">coapy.endpoint.</tt><tt class="descname">MessageCacheEntry</tt><big>(</big><em>cache</em>, <em>message</em>, <em>activate=True</em>, <em>time_due_offset=None</em><big>)</big><a class="reference internal" href="_modules/coapy/endpoint.html#MessageCacheEntry"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.endpoint.MessageCacheEntry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="coapy_util.html#coapy.util.TimeDueOrdinal" title="coapy.util.TimeDueOrdinal"><tt class="xref py py-class docutils literal"><span class="pre">coapy.util.TimeDueOrdinal</span></tt></a></p>
+<p>A class holding data stored in a <a class="reference internal" href="#coapy.endpoint.MessageCache" title="coapy.endpoint.MessageCache"><tt class="xref py py-class docutils literal"><span class="pre">MessageCache</span></tt></a>.</p>
+<p>Instances sort based on
+<a class="reference internal" href="coapy_util.html#coapy.util.TimeDueOrdinal.time_due" title="coapy.util.TimeDueOrdinal.time_due"><tt class="xref py py-attr docutils literal"><span class="pre">coapy.util.TimeDueOrdinal.time_due</span></tt></a>, and may be looked up
+based on <a class="reference internal" href="#coapy.endpoint.MessageCacheEntry.message_id" title="coapy.endpoint.MessageCacheEntry.message_id"><tt class="xref py py-attr docutils literal"><span class="pre">message_id</span></tt></a>.</p>
+<p><em>cache</em> identifies the <a class="reference internal" href="#coapy.endpoint.MessageCache" title="coapy.endpoint.MessageCache"><tt class="xref py py-class docutils literal"><span class="pre">MessageCache</span></tt></a> instance to which
+this entry will belong.  Entries are associated with <em>cache</em> when
+they are created, and can be removed from that cache.  Once
+removed, an entry cannot be inserted into another cache.</p>
+<p><em>message</em> is a <a class="reference internal" href="coapy_message.html#coapy.message.Message" title="coapy.message.Message"><tt class="xref py py-class docutils literal"><span class="pre">coapy.message.Message</span></tt></a> instance of type
+<a class="reference internal" href="coapy_message.html#coapy.message.Message.Type_CON" title="coapy.message.Message.Type_CON"><tt class="xref py py-attr docutils literal"><span class="pre">CON</span></tt></a> or
+<a class="reference internal" href="coapy_message.html#coapy.message.Message.Type_NON" title="coapy.message.Message.Type_NON"><tt class="xref py py-attr docutils literal"><span class="pre">NON</span></tt></a>.
+<a class="reference internal" href="coapy_message.html#coapy.message.Message.Type_ACK" title="coapy.message.Message.Type_ACK"><tt class="xref py py-attr docutils literal"><span class="pre">ACK</span></tt></a> and
+<a class="reference internal" href="coapy_message.html#coapy.message.Message.Type_RST" title="coapy.message.Message.Type_RST"><tt class="xref py py-attr docutils literal"><span class="pre">RST</span></tt></a> messages cannot be
+cached.
+<a class="reference internal" href="coapy_message.html#coapy.message.Message.messageID" title="coapy.message.Message.messageID"><tt class="xref py py-attr docutils literal"><span class="pre">message.messageID</span></tt></a> is used
+as the key for cache entry lookups.</p>
+<p><em>activate</em>, if <tt class="docutils literal"><span class="pre">True</span></tt>, starts the cache entry into its lifecycle
+immediately by setting <a class="reference internal" href="#coapy.endpoint.MessageCacheEntry.activated_clk" title="coapy.endpoint.MessageCacheEntry.activated_clk"><tt class="xref py py-attr docutils literal"><span class="pre">activated_clk</span></tt></a> to
+<a class="reference internal" href="#coapy.endpoint.MessageCacheEntry.created_clk" title="coapy.endpoint.MessageCacheEntry.created_clk"><tt class="xref py py-attr docutils literal"><span class="pre">created_clk</span></tt></a> and setting <a class="reference internal" href="#coapy.endpoint.MessageCacheEntry.time_due" title="coapy.endpoint.MessageCacheEntry.time_due"><tt class="xref py py-attr docutils literal"><span class="pre">time_due</span></tt></a> to either
+<a class="reference internal" href="#coapy.endpoint.MessageCacheEntry.activated_clk" title="coapy.endpoint.MessageCacheEntry.activated_clk"><tt class="xref py py-attr docutils literal"><span class="pre">activated_clk</span></tt></a> plus <em>time_due_offset</em> if the latter is
+provided, or to <a class="reference internal" href="#coapy.endpoint.MessageCacheEntry.expires_clk" title="coapy.endpoint.MessageCacheEntry.expires_clk"><tt class="xref py py-attr docutils literal"><span class="pre">expires_clk</span></tt></a> if it is not provided.</p>
+<p>If <em>activate</em> is <tt class="docutils literal"><span class="pre">False</span></tt> the entry is held
+<a class="reference internal" href="#coapy.endpoint.MessageCache.pending" title="coapy.endpoint.MessageCache.pending"><tt class="xref py py-attr docutils literal"><span class="pre">pending</span></tt></a> until something assigns an
+initial <a class="reference internal" href="#coapy.endpoint.MessageCacheEntry.time_due" title="coapy.endpoint.MessageCacheEntry.time_due"><tt class="xref py py-attr docutils literal"><span class="pre">time_due</span></tt></a>.</p>
+<dl class="method">
+<dt id="coapy.endpoint.MessageCacheEntry._dissociate">
+<tt class="descname">_dissociate</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/coapy/endpoint.html#MessageCacheEntry._dissociate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.endpoint.MessageCacheEntry._dissociate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove the connection between the instance and the cache.</p>
+<p>This is invoked by <a class="reference internal" href="#coapy.endpoint.MessageCache" title="coapy.endpoint.MessageCache"><tt class="xref py py-class docutils literal"><span class="pre">MessageCache</span></tt></a> when the entry is
+removed from its cache.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.endpoint.MessageCacheEntry._get_time_due">
+<tt class="descname">_get_time_due</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/coapy/endpoint.html#MessageCacheEntry._get_time_due"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.endpoint.MessageCacheEntry._get_time_due" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <a class="reference internal" href="coapy_util.html#coapy.util.TimeDueOrdinal.time_due" title="coapy.util.TimeDueOrdinal.time_due"><tt class="xref py py-attr docutils literal"><span class="pre">coapy.util.TimeDueOrdinal.time_due</span></tt></a>.  In this
+class, modification of the value has the side-effect
+potentially <a class="reference internal" href="#coapy.endpoint.MessageCacheEntry.activated_clk" title="coapy.endpoint.MessageCacheEntry.activated_clk"><tt class="xref py py-meth docutils literal"><span class="pre">activating</span></tt></a> the entry and of
+moving the entry within the <a class="reference internal" href="#coapy.endpoint.MessageCacheEntry.cache" title="coapy.endpoint.MessageCacheEntry.cache"><tt class="xref py py-attr docutils literal"><span class="pre">cache</span></tt></a> queue.</p>
+<p>The value assigned to <a class="reference internal" href="#coapy.endpoint.MessageCacheEntry.time_due" title="coapy.endpoint.MessageCacheEntry.time_due"><tt class="xref py py-attr docutils literal"><span class="pre">time_due</span></tt></a> must be an ordinal in
+the domain of <a class="reference internal" href="api.html#coapy.clock" title="coapy.clock"><tt class="xref py py-func docutils literal"><span class="pre">coapy.clock()</span></tt></a>.  It cannot be <tt class="docutils literal"><span class="pre">None</span></tt> if a
+non-<tt class="docutils literal"><span class="pre">None</span></tt> value had already been assigned.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.endpoint.MessageCacheEntry.activated_clk">
+<tt class="descname">activated_clk</tt><a class="headerlink" href="#coapy.endpoint.MessageCacheEntry.activated_clk" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference internal" href="api.html#coapy.clock" title="coapy.clock"><tt class="xref py py-func docutils literal"><span class="pre">coapy.clock()</span></tt></a> value at the time the cache entry
+was activated: i.e., it starts executing its lifecycle by
+defining a non-<tt class="docutils literal"><span class="pre">None</span></tt> <a class="reference internal" href="#coapy.endpoint.MessageCacheEntry.time_due" title="coapy.endpoint.MessageCacheEntry.time_due"><tt class="xref py py-attr docutils literal"><span class="pre">time_due</span></tt></a>.  Distinguish this
+from <a class="reference internal" href="#coapy.endpoint.MessageCacheEntry.created_clk" title="coapy.endpoint.MessageCacheEntry.created_clk"><tt class="xref py py-attr docutils literal"><span class="pre">created_clk</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.endpoint.MessageCacheEntry.cache">
+<tt class="descname">cache</tt><a class="reference internal" href="_modules/coapy/endpoint.html#MessageCacheEntry.cache"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.endpoint.MessageCacheEntry.cache" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference internal" href="#coapy.endpoint.MessageCache" title="coapy.endpoint.MessageCache"><tt class="xref py py-class docutils literal"><span class="pre">MessageCache</span></tt></a> to which this entry belongs.
+This is a read-only property, set when the entry is created
+and cleared when it has been removed from its cache.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.endpoint.MessageCacheEntry.created_clk">
+<tt class="descname">created_clk</tt><a class="headerlink" href="#coapy.endpoint.MessageCacheEntry.created_clk" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference internal" href="api.html#coapy.clock" title="coapy.clock"><tt class="xref py py-func docutils literal"><span class="pre">coapy.clock()</span></tt></a> value at the time the cache entry
+was created.  Distinguish this from <a class="reference internal" href="#coapy.endpoint.MessageCacheEntry.activated_clk" title="coapy.endpoint.MessageCacheEntry.activated_clk"><tt class="xref py py-attr docutils literal"><span class="pre">activated_clk</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.endpoint.MessageCacheEntry.expires_clk">
+<tt class="descname">expires_clk</tt><a class="headerlink" href="#coapy.endpoint.MessageCacheEntry.expires_clk" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference internal" href="api.html#coapy.clock" title="coapy.clock"><tt class="xref py py-func docutils literal"><span class="pre">coapy.clock()</span></tt></a> value at the time the cache entry
+is obsolete.  <tt class="docutils literal"><span class="pre">None</span></tt> is returned if the entry has not been
+<a class="reference internal" href="#coapy.endpoint.MessageCacheEntry.activated_clk" title="coapy.endpoint.MessageCacheEntry.activated_clk"><tt class="xref py py-attr docutils literal"><span class="pre">activated</span></tt></a>.</p>
+<p>This is calculated by adding
+<a class="reference internal" href="coapy_message.html#coapy.message.TransmissionParameters.EXCHANGE_LIFETIME" title="coapy.message.TransmissionParameters.EXCHANGE_LIFETIME"><tt class="xref py py-attr docutils literal"><span class="pre">EXCHANGE_LIFETIME</span></tt></a>
+(for <a class="reference internal" href="coapy_message.html#coapy.message.Message.Type_CON" title="coapy.message.Message.Type_CON"><tt class="xref py py-attr docutils literal"><span class="pre">CON</span></tt></a> messages) or
+<a class="reference internal" href="coapy_message.html#coapy.message.TransmissionParameters.NON_LIFETIME" title="coapy.message.TransmissionParameters.NON_LIFETIME"><tt class="xref py py-attr docutils literal"><span class="pre">NON_LIFETIME</span></tt></a>
+(for <a class="reference internal" href="coapy_message.html#coapy.message.Message.Type_NON" title="coapy.message.Message.Type_NON"><tt class="xref py py-attr docutils literal"><span class="pre">NON</span></tt></a> messages) to
+<a class="reference internal" href="#coapy.endpoint.MessageCacheEntry.activated_clk" title="coapy.endpoint.MessageCacheEntry.activated_clk"><tt class="xref py py-attr docutils literal"><span class="pre">activated_clk</span></tt></a>.  Entries must remain in the cache until
+this point to detect duplicates.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.endpoint.MessageCacheEntry.message">
+<tt class="descname">message</tt><a class="headerlink" href="#coapy.endpoint.MessageCacheEntry.message" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference internal" href="coapy_message.html#coapy.message.Message" title="coapy.message.Message"><tt class="xref py py-class docutils literal"><span class="pre">coapy.message.Message</span></tt></a> being cached.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.endpoint.MessageCacheEntry.message_id">
+<tt class="descname">message_id</tt><a class="headerlink" href="#coapy.endpoint.MessageCacheEntry.message_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Short-cut access to <a class="reference internal" href="coapy_message.html#coapy.message.Message.messageID" title="coapy.message.Message.messageID"><tt class="xref py py-attr docutils literal"><span class="pre">message.messageID</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.endpoint.MessageCacheEntry.process_timeout">
+<tt class="descname">process_timeout</tt><big>(</big><big>)</big><a class="headerlink" href="#coapy.endpoint.MessageCacheEntry.process_timeout" title="Permalink to this definition">¶</a></dt>
+<dd><p>Process a timeout at the cache entry.</p>
+<p>This should normally be invoked on an entry by some external
+system as a consequence of <a class="reference internal" href="api.html#coapy.clock" title="coapy.clock"><tt class="xref py py-func docutils literal"><span class="pre">coapy.clock()</span></tt></a> having reached
+<a class="reference internal" href="#coapy.endpoint.MessageCacheEntry.time_due" title="coapy.endpoint.MessageCacheEntry.time_due"><tt class="xref py py-attr docutils literal"><span class="pre">time_due</span></tt></a>.  Operations performed by this method depend
+on the state of the entry within its lifecycle.  It is an
+error to invoke this on an entry that is no longer present in
+its cache.  Invoking this may cause an entry to be removed
+from its cache.</p>
+<p>The implementation is provided by a subclass.  There is no
+return value.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The implementation does not attempt to verify that the
+current <a class="reference internal" href="#coapy.endpoint.MessageCacheEntry.time_due" title="coapy.endpoint.MessageCacheEntry.time_due"><tt class="xref py py-attr docutils literal"><span class="pre">time_due</span></tt></a> has been reached; an entry may be
+processed early or late.  The caller is responsible for
+determining whether it is appropriate to invoke this
+method.</p>
+</div>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.endpoint.MessageCacheEntry.time_due">
+<tt class="descname">time_due</tt><a class="headerlink" href="#coapy.endpoint.MessageCacheEntry.time_due" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <a class="reference internal" href="coapy_util.html#coapy.util.TimeDueOrdinal.time_due" title="coapy.util.TimeDueOrdinal.time_due"><tt class="xref py py-attr docutils literal"><span class="pre">coapy.util.TimeDueOrdinal.time_due</span></tt></a>.  In this
+class, modification of the value has the side-effect
+potentially <a class="reference internal" href="#coapy.endpoint.MessageCacheEntry.activated_clk" title="coapy.endpoint.MessageCacheEntry.activated_clk"><tt class="xref py py-meth docutils literal"><span class="pre">activating</span></tt></a> the entry and of
+moving the entry within the <a class="reference internal" href="#coapy.endpoint.MessageCacheEntry.cache" title="coapy.endpoint.MessageCacheEntry.cache"><tt class="xref py py-attr docutils literal"><span class="pre">cache</span></tt></a> queue.</p>
+<p>The value assigned to <a class="reference internal" href="#coapy.endpoint.MessageCacheEntry.time_due" title="coapy.endpoint.MessageCacheEntry.time_due"><tt class="xref py py-attr docutils literal"><span class="pre">time_due</span></tt></a> must be an ordinal in
+the domain of <a class="reference internal" href="api.html#coapy.clock" title="coapy.clock"><tt class="xref py py-func docutils literal"><span class="pre">coapy.clock()</span></tt></a>.  It cannot be <tt class="docutils literal"><span class="pre">None</span></tt> if a
+non-<tt class="docutils literal"><span class="pre">None</span></tt> value had already been assigned.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="coapy.endpoint.SentMessageCacheEntry">
+<em class="property">class </em><tt class="descclassname">coapy.endpoint.</tt><tt class="descname">SentMessageCacheEntry</tt><big>(</big><em>cache</em>, <em>message</em>, <em>destination_endpoint</em><big>)</big><a class="reference internal" href="_modules/coapy/endpoint.html#SentMessageCacheEntry"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.endpoint.SentMessageCacheEntry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#coapy.endpoint.MessageCacheEntry" title="coapy.endpoint.MessageCacheEntry"><tt class="xref py py-class docutils literal"><span class="pre">coapy.endpoint.MessageCacheEntry</span></tt></a></p>
+<p>Data related to a message sent from a specific endpoint.</p>
+<p>This cache holds a message that originated from a local
+<a class="reference internal" href="coapy_message.html#coapy.message.Message.source_endpoint" title="coapy.message.Message.source_endpoint"><tt class="xref py py-attr docutils literal"><span class="pre">coapy.message.Message.source_endpoint</span></tt></a>, along with the
+necessary state to retransmit it if it is
+<a class="reference internal" href="coapy_message.html#coapy.message.Message.is_confirmable" title="coapy.message.Message.is_confirmable"><tt class="xref py py-meth docutils literal"><span class="pre">confirmable</span></tt></a>.</p>
+<dl class="attribute">
+<dt id="coapy.endpoint.SentMessageCacheEntry.destination_endpoint">
+<tt class="descname">destination_endpoint</tt><a class="reference internal" href="_modules/coapy/endpoint.html#SentMessageCacheEntry.destination_endpoint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.endpoint.SentMessageCacheEntry.destination_endpoint" title="Permalink to this definition">¶</a></dt>
+<dd><p>The endpoint to which the message is being sent.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.endpoint.SentMessageCacheEntry.reply_message">
+<tt class="descname">reply_message</tt><a class="reference internal" href="_modules/coapy/endpoint.html#SentMessageCacheEntry.reply_message"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.endpoint.SentMessageCacheEntry.reply_message" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference internal" href="coapy_message.html#coapy.message.Message" title="coapy.message.Message"><tt class="xref py py-class docutils literal"><span class="pre">coapy.message.Message</span></tt></a> that was received in response to <tt class="xref py py-attr docutils literal"><span class="pre">message</span></tt>.</p>
+<p>The value is <tt class="docutils literal"><span class="pre">None</span></tt> unless either an
+<a class="reference internal" href="coapy_message.html#coapy.message.Message.Type_ACK" title="coapy.message.Message.Type_ACK"><tt class="xref py py-attr docutils literal"><span class="pre">acknowledgement</span></tt></a> (empty
+or with a piggy-backed response) or a
+<a class="reference internal" href="coapy_message.html#coapy.message.Message.Type_RST" title="coapy.message.Message.Type_RST"><tt class="xref py py-attr docutils literal"><span class="pre">reset</span></tt></a> has been
+received.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.endpoint.SentMessageCacheEntry.stale_at">
+<tt class="descname">stale_at</tt><a class="reference internal" href="_modules/coapy/endpoint.html#SentMessageCacheEntry.stale_at"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.endpoint.SentMessageCacheEntry.stale_at" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the time at which the content of a response message is outdated.</p>
+<p>This is calculated at the time the cache entry is created by
+adding the <a class="reference internal" href="coapy_option.html#coapy.option.MaxAge" title="coapy.option.MaxAge"><tt class="xref py py-class docutils literal"><span class="pre">coapy.option.MaxAge</span></tt></a> option value to
+<a class="reference internal" href="#coapy.endpoint.MessageCacheEntry.created_clk" title="coapy.endpoint.MessageCacheEntry.created_clk"><tt class="xref py py-attr docutils literal"><span class="pre">created_clk</span></tt></a>.  Prior to
+retransmission callers may wish to update the
+<a class="reference internal" href="#coapy.endpoint.MessageCacheEntry.message" title="coapy.endpoint.MessageCacheEntry.message"><tt class="xref py py-attr docutils literal"><span class="pre">message</span></tt></a> options to reflect
+the change in age on subsequent retransmissions.</p>
+<p>The value is <tt class="docutils literal"><span class="pre">None</span></tt> if the message is not a response.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.endpoint.SentMessageCacheEntry.transmissions">
+<tt class="descname">transmissions</tt><a class="reference internal" href="_modules/coapy/endpoint.html#SentMessageCacheEntry.transmissions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.endpoint.SentMessageCacheEntry.transmissions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of times this message has been transmitted.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="coapy.endpoint.RcvdMessageCacheEntry">
+<em class="property">class </em><tt class="descclassname">coapy.endpoint.</tt><tt class="descname">RcvdMessageCacheEntry</tt><big>(</big><em>cache</em>, <em>message</em><big>)</big><a class="reference internal" href="_modules/coapy/endpoint.html#RcvdMessageCacheEntry"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.endpoint.RcvdMessageCacheEntry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#coapy.endpoint.MessageCacheEntry" title="coapy.endpoint.MessageCacheEntry"><tt class="xref py py-class docutils literal"><span class="pre">coapy.endpoint.MessageCacheEntry</span></tt></a></p>
+<p>Data related to a message received by a specific endpoint.</p>
+<p>This cache holds a message that originated from a remote
+<a class="reference internal" href="coapy_message.html#coapy.message.Message.source_endpoint" title="coapy.message.Message.source_endpoint"><tt class="xref py py-attr docutils literal"><span class="pre">coapy.message.Message.source_endpoint</span></tt></a>, along with the
+necessary state to cache the reply to that message.</p>
+<p><em>cache</em> must be the source endpoint cache for received messages.</p>
+<p><em>message</em> must be a message that originated on that host, and is
+either a <a class="reference internal" href="coapy_message.html#coapy.message.Message.is_confirmable" title="coapy.message.Message.is_confirmable"><tt class="xref py py-meth docutils literal"><span class="pre">confirmable</span></tt></a>
+or
+<a class="reference internal" href="coapy_message.html#coapy.message.Message.is_non_confirmable" title="coapy.message.Message.is_non_confirmable"><tt class="xref py py-meth docutils literal"><span class="pre">non-confirmable</span></tt></a>
+message.  Acknowledgements and Resets are not recorded in the
+cache.</p>
+<dl class="attribute">
+<dt id="coapy.endpoint.RcvdMessageCacheEntry.reception_count">
+<tt class="descname">reception_count</tt><a class="reference internal" href="_modules/coapy/endpoint.html#RcvdMessageCacheEntry.reception_count"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.endpoint.RcvdMessageCacheEntry.reception_count" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of times a message with this entry&#8217;s
+<a class="reference internal" href="#coapy.endpoint.MessageCacheEntry.message_id" title="coapy.endpoint.MessageCacheEntry.message_id"><tt class="xref py py-attr docutils literal"><span class="pre">message_id</span></tt></a> has been
+received while this cache entry is live.  Diagnostics may be
+emitted in a situation where it appears a message ID has been
+re-used prematurely.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.endpoint.RcvdMessageCacheEntry.reply">
+<tt class="descname">reply</tt><big>(</big><em>reset=False</em>, <em>message=None</em><big>)</big><a class="reference internal" href="_modules/coapy/endpoint.html#RcvdMessageCacheEntry.reply"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.endpoint.RcvdMessageCacheEntry.reply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create the <a class="reference internal" href="#coapy.endpoint.RcvdMessageCacheEntry.reply_message" title="coapy.endpoint.RcvdMessageCacheEntry.reply_message"><tt class="xref py py-attr docutils literal"><span class="pre">reply_message</span></tt></a> for the reception in this entry.</p>
+<p>If <em>message</em> is provided, it should be an
+<a class="reference internal" href="coapy_message.html#coapy.message.Response" title="coapy.message.Response"><tt class="xref py py-class docutils literal"><span class="pre">coapy.message.Response</span></tt></a> message with type
+<a class="reference internal" href="coapy_message.html#coapy.message.Message.Type_ACK" title="coapy.message.Message.Type_ACK"><tt class="xref py py-attr docutils literal"><span class="pre">ACK</span></tt></a> that is to be sent
+as a <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.2.1">piggy-backed response</a>.</p>
+<p>If <em>message</em> is <tt class="docutils literal"><span class="pre">None</span></tt>, this method will create an empty
+<a class="reference internal" href="coapy_message.html#coapy.message.Message.Type_ACK" title="coapy.message.Message.Type_ACK"><tt class="xref py py-attr docutils literal"><span class="pre">ACK</span></tt></a> (<em>reset</em> is
+<tt class="docutils literal"><span class="pre">False</span></tt>) or
+<a class="reference internal" href="coapy_message.html#coapy.message.Message.Type_RST" title="coapy.message.Message.Type_RST"><tt class="xref py py-attr docutils literal"><span class="pre">RST</span></tt></a> (<em>reset</em> is
+<tt class="docutils literal"><span class="pre">True</span></tt>) message.</p>
+<p>The reply message will be transmitted to the source endpoint
+of the received message.</p>
+<p>Erroneous use will raise <a class="reference internal" href="#coapy.endpoint.ReplyMessageError" title="coapy.endpoint.ReplyMessageError"><tt class="xref py py-exc docutils literal"><span class="pre">ReplyMessageError</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.endpoint.RcvdMessageCacheEntry.reply_message">
+<tt class="descname">reply_message</tt><a class="reference internal" href="_modules/coapy/endpoint.html#RcvdMessageCacheEntry.reply_message"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.endpoint.RcvdMessageCacheEntry.reply_message" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference internal" href="coapy_message.html#coapy.message.Message" title="coapy.message.Message"><tt class="xref py py-class docutils literal"><span class="pre">coapy.message.Message</span></tt></a> that was sent in
+response to this message.  <tt class="docutils literal"><span class="pre">None</span></tt> until a response is sent,
+then either an
+<a class="reference internal" href="coapy_message.html#coapy.message.Message.is_acknowledgement" title="coapy.message.Message.is_acknowledgement"><tt class="xref py py-meth docutils literal"><span class="pre">acknowledgement</span></tt></a>
+(which may or may not have a <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-">piggy-backed
+response</a>) or a
+<a class="reference internal" href="coapy_message.html#coapy.message.Message.is_reset" title="coapy.message.Message.is_reset"><tt class="xref py py-meth docutils literal"><span class="pre">reset</span></tt></a> message.  A
+non-confirmable message may have no response at all.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="coapy.endpoint.RemoteEndpointState">
+<em class="property">class </em><tt class="descclassname">coapy.endpoint.</tt><tt class="descname">RemoteEndpointState</tt><big>(</big><em>endpoint</em><big>)</big><a class="headerlink" href="#coapy.endpoint.RemoteEndpointState" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
+<p>State relevant to communication with a non-local endpoint from
+the perspective of a local endpoint.</p>
+<dl class="attribute">
+<dt id="coapy.endpoint.RemoteEndpointState.endpoint">
+<tt class="descname">endpoint</tt><a class="headerlink" href="#coapy.endpoint.RemoteEndpointState.endpoint" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference internal" href="#coapy.endpoint.Endpoint" title="coapy.endpoint.Endpoint"><tt class="xref py py-class docutils literal"><span class="pre">Endpoint</span></tt></a> to which the state in this instance applies.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.endpoint.RemoteEndpointState.last_heard_clk">
+<tt class="descname">last_heard_clk</tt><em class="property"> = None</em><a class="headerlink" href="#coapy.endpoint.RemoteEndpointState.last_heard_clk" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference internal" href="api.html#coapy.clock" title="coapy.clock"><tt class="xref py py-func docutils literal"><span class="pre">coapy.clock()</span></tt></a> time at which the last message was
+received from this endpoint.  The value contributes to
+verification that
+<a class="reference internal" href="coapy_message.html#coapy.message.TransmissionParameters.PROBING_RATE" title="coapy.message.TransmissionParameters.PROBING_RATE"><tt class="xref py py-attr docutils literal"><span class="pre">coapy.message.TransmissionParameters.PROBING_RATE</span></tt></a> is not
+exceeded.</p>
+<p>The value is <tt class="docutils literal"><span class="pre">None</span></tt> if no messages have ever been received from
+this endpoint.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.endpoint.RemoteEndpointState.rcvd_cache">
+<tt class="descname">rcvd_cache</tt><em class="property"> = None</em><a class="headerlink" href="#coapy.endpoint.RemoteEndpointState.rcvd_cache" title="Permalink to this definition">¶</a></dt>
+<dd><p>A <a class="reference internal" href="#coapy.endpoint.MessageCache" title="coapy.endpoint.MessageCache"><tt class="xref py py-class docutils literal"><span class="pre">MessageCache</span></tt></a> instance recording messages from
+<a class="reference internal" href="#coapy.endpoint.RemoteEndpointState.endpoint" title="coapy.endpoint.RemoteEndpointState.endpoint"><tt class="xref py py-attr docutils literal"><span class="pre">endpoint</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.endpoint.RemoteEndpointState.rx_messages">
+<tt class="descname">rx_messages</tt><em class="property"> = None</em><a class="headerlink" href="#coapy.endpoint.RemoteEndpointState.rx_messages" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of messages received from this endpoint, including
+duplicates.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.endpoint.RemoteEndpointState.rx_octets">
+<tt class="descname">rx_octets</tt><em class="property"> = None</em><a class="headerlink" href="#coapy.endpoint.RemoteEndpointState.rx_octets" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of octets received from this endpoint, including
+duplicates.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.endpoint.RemoteEndpointState.tx_messages">
+<tt class="descname">tx_messages</tt><em class="property"> = None</em><a class="headerlink" href="#coapy.endpoint.RemoteEndpointState.tx_messages" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of messages transmitted to this endpoint, including
+retransmissions.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.endpoint.RemoteEndpointState.tx_octets">
+<tt class="descname">tx_octets</tt><em class="property"> = None</em><a class="headerlink" href="#coapy.endpoint.RemoteEndpointState.tx_octets" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of octets transmitted to this endpoint, including
+retransmissions.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.endpoint.RemoteEndpointState.tx_octets_since_heard">
+<tt class="descname">tx_octets_since_heard</tt><em class="property"> = None</em><a class="headerlink" href="#coapy.endpoint.RemoteEndpointState.tx_octets_since_heard" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of octets transmitted to this endpoint since
+<a class="reference internal" href="#coapy.endpoint.RemoteEndpointState.last_heard_clk" title="coapy.endpoint.RemoteEndpointState.last_heard_clk"><tt class="xref py py-attr docutils literal"><span class="pre">last_heard_clk</span></tt></a> was last updated.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="exceptions">
+<h2>Exceptions<a class="headerlink" href="#exceptions" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="coapy.endpoint.ReplyMessageError">
+<em class="property">class </em><tt class="descclassname">coapy.endpoint.</tt><tt class="descname">ReplyMessageError</tt><a class="reference internal" href="_modules/coapy/endpoint.html#ReplyMessageError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.endpoint.ReplyMessageError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">coapy.CoAPyException</span></tt></p>
+<p>Exception raised when <a class="reference internal" href="#coapy.endpoint.RcvdMessageCacheEntry.reply" title="coapy.endpoint.RcvdMessageCacheEntry.reply"><tt class="xref py py-meth docutils literal"><span class="pre">RcvdMessageCacheEntry.reply()</span></tt></a> is
+invoked improperly.</p>
+<p>The <em>args</em> are <tt class="docutils literal"><span class="pre">(diagnostic,</span> <span class="pre">cache_entry,</span> <span class="pre">message)</span></tt> where
+<em>diagnostic</em> is one of the string values in this class,
+<em>cache_entry</em> is the <a class="reference internal" href="#coapy.endpoint.RcvdMessageCacheEntry" title="coapy.endpoint.RcvdMessageCacheEntry"><tt class="xref py py-class docutils literal"><span class="pre">RcvdMessageCacheEntry</span></tt></a>, and <em>message</em> is
+the proposed reply message that was rejected.</p>
+<dl class="attribute">
+<dt id="coapy.endpoint.ReplyMessageError.ALREADY_GIVEN">
+<tt class="descname">ALREADY_GIVEN</tt><em class="property"> = u'Message already has reply'</em><a class="headerlink" href="#coapy.endpoint.ReplyMessageError.ALREADY_GIVEN" title="Permalink to this definition">¶</a></dt>
+<dd><p>A <a class="reference internal" href="#coapy.endpoint.RcvdMessageCacheEntry.reply_message" title="coapy.endpoint.RcvdMessageCacheEntry.reply_message"><tt class="xref py py-attr docutils literal"><span class="pre">reply_message</span></tt></a>
+has already been assigned.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.endpoint.ReplyMessageError.ID_MISMATCH">
+<tt class="descname">ID_MISMATCH</tt><em class="property"> = u'Message IDs do not match'</em><a class="headerlink" href="#coapy.endpoint.ReplyMessageError.ID_MISMATCH" title="Permalink to this definition">¶</a></dt>
+<dd><p>A reply message must match using the
+<a class="reference internal" href="coapy_message.html#coapy.message.Message.messageID" title="coapy.message.Message.messageID"><tt class="xref py py-attr docutils literal"><span class="pre">messageID</span></tt></a> attributes.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.endpoint.ReplyMessageError.NOT_RESPONSE">
+<tt class="descname">NOT_RESPONSE</tt><em class="property"> = u'Non-empty reply is not a response'</em><a class="headerlink" href="#coapy.endpoint.ReplyMessageError.NOT_RESPONSE" title="Permalink to this definition">¶</a></dt>
+<dd><p>A piggy-backed response must be a <a class="reference internal" href="coapy_message.html#coapy.message.Response" title="coapy.message.Response"><tt class="xref py py-class docutils literal"><span class="pre">response</span>
+<span class="pre">message</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.endpoint.ReplyMessageError.RESPONSE_NOT_ACK">
+<tt class="descname">RESPONSE_NOT_ACK</tt><em class="property"> = u'Piggy-backed response is not ACK'</em><a class="headerlink" href="#coapy.endpoint.ReplyMessageError.RESPONSE_NOT_ACK" title="Permalink to this definition">¶</a></dt>
+<dd><p>A piggy-backed response must have type
+<a class="reference internal" href="coapy_message.html#coapy.message.Message.Type_ACK" title="coapy.message.Message.Type_ACK"><tt class="xref py py-attr docutils literal"><span class="pre">ACK</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.endpoint.ReplyMessageError.TOKEN_MISMATCH">
+<tt class="descname">TOKEN_MISMATCH</tt><em class="property"> = u'Tokens do not match'</em><a class="headerlink" href="#coapy.endpoint.ReplyMessageError.TOKEN_MISMATCH" title="Permalink to this definition">¶</a></dt>
+<dd><p>A piggy-backed response must match the
+<a class="reference internal" href="coapy_message.html#coapy.message.Message.token" title="coapy.message.Message.token"><tt class="xref py py-attr docutils literal"><span class="pre">Token</span></tt></a> of the request.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">coapy.endpoint</a><ul>
+<li><a class="reference internal" href="#message-caches">Message Caches</a></li>
+<li><a class="reference internal" href="#exceptions">Exceptions</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="coapy_option.html"
+                        title="previous chapter">coapy.option</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="coapy_resource.html"
+                        title="next chapter">coapy.resource</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/coapy_endpoint.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="coapy_resource.html" title="coapy.resource"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="coapy_option.html" title="coapy.option"
+             >previous</a> |</li>
+        <li><a href="index.html">CoAPy 0.0.0 documentation</a> &raquo;</li>
+          <li><a href="api.html" >API</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Peter A. Bigot.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

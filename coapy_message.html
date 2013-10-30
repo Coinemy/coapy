@@ -1,0 +1,1441 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>coapy.message &mdash; CoAPy 0.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="CoAPy 0.0.0 documentation" href="index.html" />
+    <link rel="up" title="API" href="api.html" />
+    <link rel="next" title="coapy.option" href="coapy_option.html" />
+    <link rel="prev" title="API" href="api.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="coapy_option.html" title="coapy.option"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="api.html" title="API"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">CoAPy 0.0.0 documentation</a> &raquo;</li>
+          <li><a href="api.html" accesskey="U">API</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-coapy.message">
+<span id="coapy-message"></span><h1>coapy.message<a class="headerlink" href="#module-coapy.message" title="Permalink to this headline">¶</a></h1>
+<p>Something</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">copyright:</th><td class="field-body">Copyright 2013, Peter A. Bigot</td>
+</tr>
+<tr class="field-even field"><th class="field-name">license:</th><td class="field-body">Apache-2.0</td>
+</tr>
+</tbody>
+</table>
+<div class="section" id="messages">
+<h2>Messages<a class="headerlink" href="#messages" title="Permalink to this headline">¶</a></h2>
+<p>The following message types are available:</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#coapy.message.Request" title="coapy.message.Request"><tt class="xref py py-obj docutils literal"><span class="pre">Request</span></tt></a></td>
+<td>Subclass for messages that are requests.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#coapy.message.SuccessResponse" title="coapy.message.SuccessResponse"><tt class="xref py py-obj docutils literal"><span class="pre">SuccessResponse</span></tt></a></td>
+<td>Subclass for messages that are responses that indicate the request was successfully received, understood, and accepted.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#coapy.message.ClientErrorResponse" title="coapy.message.ClientErrorResponse"><tt class="xref py py-obj docutils literal"><span class="pre">ClientErrorResponse</span></tt></a></td>
+<td>Subclass for messages that are responses in cases where the server detects an error in the client&#8217;s request.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#coapy.message.ServerErrorResponse" title="coapy.message.ServerErrorResponse"><tt class="xref py py-obj docutils literal"><span class="pre">ServerErrorResponse</span></tt></a></td>
+<td>Subclass for messages that are responses that indicate the server is incapable of performing the request.</td>
+</tr>
+</tbody>
+</table>
+<dl class="class">
+<dt id="coapy.message.Message">
+<em class="property">class </em><tt class="descclassname">coapy.message.</tt><tt class="descname">Message</tt><big>(</big><em>confirmable=False</em>, <em>acknowledgement=False</em>, <em>reset=False</em>, <em>code=None</em>, <em>messageID=None</em>, <em>token=None</em>, <em>options=None</em>, <em>payload=None</em><big>)</big><a class="reference internal" href="_modules/coapy/message.html#Message"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.message.Message" title="Permalink to this definition">¶</a></dt>
+<dd><p>A CoAP message, per <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-3">CoAP Section 3</a>.</p>
+<p>A message may be created as <em>confirmable</em>, an <em>acknowledgement</em>,
+or a <em>reset</em> message.  If none of these is specified, it is
+created as a non-confirmable message.</p>
+<p><em>code</em>, <em>messageID</em>, <em>token</em>, <em>options</em>, and <em>payload</em> all
+initialize the corresponding attributes of this class and if
+provided must be acceptable values for those attributes.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The default values for <em>code</em>, <em>messageID</em>, and <em>token</em> are not
+valid for <a class="reference internal" href="#coapy.message.Message.code" title="coapy.message.Message.code"><tt class="xref py py-attr docutils literal"><span class="pre">code</span></tt></a>, <a class="reference internal" href="#coapy.message.Message.messageID" title="coapy.message.Message.messageID"><tt class="xref py py-attr docutils literal"><span class="pre">messageID</span></tt></a>, and <a class="reference internal" href="#coapy.message.Message.token" title="coapy.message.Message.token"><tt class="xref py py-attr docutils literal"><span class="pre">token</span></tt></a>
+respectively.  Valid values must be assigned before the message
+is used.</p>
+</div>
+<dl class="attribute">
+<dt id="coapy.message.Message.CodeClass">
+<tt class="descname">CodeClass</tt><em class="property"> = None</em><a class="headerlink" href="#coapy.message.Message.CodeClass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Identifier for message class.</p>
+<p>In subclasses this is a read-only attribute giving the numeric
+value of the <em>class</em> component of <a class="reference internal" href="#coapy.message.Message.code" title="coapy.message.Message.code"><tt class="xref py py-attr docutils literal"><span class="pre">code</span></tt></a> values for classes.
+This serves as a key to identify the appropriate constructor when
+creating messages from packed format.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.Message.Empty">
+<tt class="descname">Empty</tt><em class="property"> = (0, 0)</em><a class="headerlink" href="#coapy.message.Message.Empty" title="Permalink to this definition">¶</a></dt>
+<dd><p>Code for a message that is neither a request nor a response.
+This is used for message-layer non-piggybacked ACK and for RST.</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="coapy.message.Message.RegisterClassCode">
+<em class="property">classmethod </em><tt class="descname">RegisterClassCode</tt><big>(</big><em>clazz</em>, <em>constructor=None</em><big>)</big><a class="reference internal" href="_modules/coapy/message.html#Message.RegisterClassCode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.message.Message.RegisterClassCode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Register a fallback-constructor for messages in a code
+<em>class</em>.</p>
+<p>This is used when no more specific information can be resolved
+by using the <em>details</em> field of the message code.</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="coapy.message.Message.RegisterCode">
+<em class="property">classmethod </em><tt class="descname">RegisterCode</tt><big>(</big><em>code</em>, <em>name</em>, <em>constructor=None</em><big>)</big><a class="reference internal" href="_modules/coapy/message.html#Message.RegisterCode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.message.Message.RegisterCode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Register some information about messages with a particular code.</p>
+<p>This allows extensions to add new codes as the IANA registries
+are updated.  It also allows the Python version of decoded
+messages to be created using the most appropriate subclass of
+<a class="reference internal" href="#coapy.message.Message" title="coapy.message.Message"><tt class="xref py py-class docutils literal"><span class="pre">Message</span></tt></a>.</p>
+<p><em>code</em> must be a valid code expressed in tuple form.  <em>name</em>
+is the standardized text name or description from the
+corresponding IANA registry.  <em>constructor</em> is the callable
+that takes the same arguments as <a class="reference internal" href="#coapy.message.Message" title="coapy.message.Message"><tt class="xref py py-class docutils literal"><span class="pre">Message</span></tt></a> and creates
+a new instance of the class best suited for messages with code
+<em>code</em>.  The constructor defaults to <em>cls</em> if not provided.</p>
+<p>This method should be invoked through the subclass that is
+responsible for <em>code</em>, e.g. <a class="reference internal" href="#coapy.message.Request" title="coapy.message.Request"><tt class="xref py py-class docutils literal"><span class="pre">Request</span></tt></a> for
+<a class="reference internal" href="#coapy.message.Request.GET" title="coapy.message.Request.GET"><tt class="xref py py-attr docutils literal"><span class="pre">Request.GET</span></tt></a>.  See examples of use in the
+<a class="reference internal" href="#module-coapy.message" title="coapy.message"><tt class="xref py py-mod docutils literal"><span class="pre">coapy.message</span></tt></a> source code.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.Message.Type_ACK">
+<tt class="descname">Type_ACK</tt><em class="property"> = 2</em><a class="headerlink" href="#coapy.message.Message.Type_ACK" title="Permalink to this definition">¶</a></dt>
+<dd><p>Type for a <a class="reference internal" href="#coapy.message.Message.is_acknowledgement" title="coapy.message.Message.is_acknowledgement"><tt class="xref py py-meth docutils literal"><span class="pre">acknowledgement</span> <span class="pre">(ACK)</span></tt></a> message.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.Message.Type_CON">
+<tt class="descname">Type_CON</tt><em class="property"> = 0</em><a class="headerlink" href="#coapy.message.Message.Type_CON" title="Permalink to this definition">¶</a></dt>
+<dd><p>Type for a <a class="reference internal" href="#coapy.message.Message.is_confirmable" title="coapy.message.Message.is_confirmable"><tt class="xref py py-meth docutils literal"><span class="pre">confirmable</span> <span class="pre">(CON)</span></tt></a> message.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.Message.Type_NON">
+<tt class="descname">Type_NON</tt><em class="property"> = 1</em><a class="headerlink" href="#coapy.message.Message.Type_NON" title="Permalink to this definition">¶</a></dt>
+<dd><p>Type for a <a class="reference internal" href="#coapy.message.Message.is_non_confirmable" title="coapy.message.Message.is_non_confirmable"><tt class="xref py py-meth docutils literal"><span class="pre">non-confirmable</span> <span class="pre">(NON)</span></tt></a> message.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.Message.Type_RST">
+<tt class="descname">Type_RST</tt><em class="property"> = 3</em><a class="headerlink" href="#coapy.message.Message.Type_RST" title="Permalink to this definition">¶</a></dt>
+<dd><p>Type for a <a class="reference internal" href="#coapy.message.Message.is_reset" title="coapy.message.Message.is_reset"><tt class="xref py py-meth docutils literal"><span class="pre">reset</span> <span class="pre">(RST)</span></tt></a> message.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.Message.Ver">
+<tt class="descname">Ver</tt><em class="property"> = 1</em><a class="headerlink" href="#coapy.message.Message.Ver" title="Permalink to this definition">¶</a></dt>
+<dd><p>Version of the CoAP protocol.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.message.Message._get_code">
+<tt class="descname">_get_code</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/coapy/message.html#Message._get_code"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.message.Message._get_code" title="Permalink to this definition">¶</a></dt>
+<dd><p>The message code, expressed as a tuple <tt class="docutils literal"><span class="pre">(class,</span> <span class="pre">detail)</span></tt>
+where <em>class</em> is an integer value from 0 through 7 and
+<em>detail</em> is an integer value from 0 through 31.</p>
+<p>A code of <tt class="docutils literal"><span class="pre">None</span></tt> is allowed only when a raw <a class="reference internal" href="#coapy.message.Message" title="coapy.message.Message"><tt class="xref py py-class docutils literal"><span class="pre">Message</span></tt></a>
+is created, and a valid code must be assigned before the
+message may be transmitted.</p>
+<p>For convenience, the code may also be set from its packed
+format defined by <tt class="docutils literal"><span class="pre">(class</span> <span class="pre">&lt;&lt;</span> <span class="pre">5)</span> <span class="pre">|</span> <span class="pre">detail</span></tt>.  Decimal code
+representation such as <tt class="docutils literal"><span class="pre">4.03</span></tt> is not supported.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.message.Message._get_destination_endpoint">
+<tt class="descname">_get_destination_endpoint</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/coapy/message.html#Message._get_destination_endpoint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.message.Message._get_destination_endpoint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-1.2">destination endpoint</a> of the message.</p>
+<p>This is the <a class="reference internal" href="coapy_endpoint.html#coapy.endpoint.Endpoint" title="coapy.endpoint.Endpoint"><tt class="xref py py-class docutils literal"><span class="pre">coapy.endpoint.Endpoint</span></tt></a> instance to which
+the message was (or will be) sent, i.e. the one on which it
+was (or should be) received.  It starts as <tt class="docutils literal"><span class="pre">None</span></tt>, and can
+be assigned a value once after which it is immutable.
+Generally the infrastructure should be responsible for
+assigning a destination endpoint to a message.</p>
+<p>See also <a class="reference internal" href="#coapy.message.Message.source_endpoint" title="coapy.message.Message.source_endpoint"><tt class="xref py py-attr docutils literal"><span class="pre">source_endpoint</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.message.Message._get_messageID">
+<tt class="descname">_get_messageID</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/coapy/message.html#Message._get_messageID"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.message.Message._get_messageID" title="Permalink to this definition">¶</a></dt>
+<dd><p>An integer between 0 and 65535, inclusive, uniquely
+identifying a confirmable or non-confirmable message among
+those recently transmitted by its sender.  This value is used
+to correlate confirmable and non-confirmable messages with
+acknowledgement and reset messages.  It is not used for
+request/response correlation.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.message.Message._get_options">
+<tt class="descname">_get_options</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/coapy/message.html#Message._get_options"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.message.Message._get_options" title="Permalink to this definition">¶</a></dt>
+<dd><p>The list of <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.10">options</a> associated with the
+message.</p>
+<p>Absence of options is represented by an empty list.  Elements
+of the list must be <a class="reference internal" href="coapy_option.html#coapy.option.UrOption" title="coapy.option.UrOption"><tt class="xref py py-class docutils literal"><span class="pre">coapy.option.UrOption</span></tt></a> (subclass)
+instances.  The list object is owned by the message instance.
+Assignment to it will replace its contents.  The contents will
+be rearranged in a stable sort by option
+<a class="reference internal" href="coapy_option.html#coapy.option.UrOption.number" title="coapy.option.UrOption.number"><tt class="xref py py-attr docutils literal"><span class="pre">number</span></tt></a> as needed by
+operations performed on the message.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.message.Message._get_packed_code">
+<tt class="descname">_get_packed_code</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/coapy/message.html#Message._get_packed_code"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.message.Message._get_packed_code" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return <a class="reference internal" href="#coapy.message.Message.code" title="coapy.message.Message.code"><tt class="xref py py-attr docutils literal"><span class="pre">code</span></tt></a> in its packed form as an unsigned 8-bit integer.</p>
+<p>This will raise
+<a class="reference external" href="http://docs.python.org/2.7/library/exceptions.html#exceptions.ValueError" title="(in Python v2.7)"><tt class="xref py py-exc docutils literal"><span class="pre">ValueError</span></tt></a> if
+<a class="reference internal" href="#coapy.message.Message.code" title="coapy.message.Message.code"><tt class="xref py py-attr docutils literal"><span class="pre">code</span></tt></a> has not been assigned.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.message.Message._get_payload">
+<tt class="descname">_get_payload</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/coapy/message.html#Message._get_payload"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.message.Message._get_payload" title="Permalink to this definition">¶</a></dt>
+<dd><p>The payload or content of the message.  This may be
+<tt class="docutils literal"><span class="pre">None</span></tt> if no payload exists; otherwise it must be a
+non-empty <tt class="xref py py-class docutils literal"><span class="pre">bytes</span></tt> instance.  As a convenience, an empty
+<tt class="xref py py-class docutils literal"><span class="pre">bytes</span></tt> string is equivalent to setting the payload to
+<tt class="docutils literal"><span class="pre">None</span></tt>.</p>
+<p>The representation of the payload should be conveyed by a
+<a class="reference internal" href="coapy_option.html#coapy.option.ContentFormat" title="coapy.option.ContentFormat"><tt class="xref py py-class docutils literal"><span class="pre">ContentFormat</span></tt></a> option.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.message.Message._get_source_endpoint">
+<tt class="descname">_get_source_endpoint</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/coapy/message.html#Message._get_source_endpoint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.message.Message._get_source_endpoint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-1.2">source endpoint</a> of the message.</p>
+<p>This is the <a class="reference internal" href="coapy_endpoint.html#coapy.endpoint.Endpoint" title="coapy.endpoint.Endpoint"><tt class="xref py py-class docutils literal"><span class="pre">coapy.endpoint.Endpoint</span></tt></a> instance that
+sent (or will send) the message.  It starts as <tt class="docutils literal"><span class="pre">None</span></tt>, and
+can be assigned a value once after which it is immutable.
+Generally the infrastructure should be responsible for
+assigning a source endpoint to a message.</p>
+<p>See also <a class="reference internal" href="#coapy.message.Message.destination_endpoint" title="coapy.message.Message.destination_endpoint"><tt class="xref py py-attr docutils literal"><span class="pre">destination_endpoint</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.message.Message._get_token">
+<tt class="descname">_get_token</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/coapy/message.html#Message._get_token"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.message.Message._get_token" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.3.1">token</a> associated with the message.</p>
+<p>Tokens are used to <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.3.2">match</a> requests with
+responses.  The token must be a <tt class="xref py py-class docutils literal"><span class="pre">bytes</span></tt> instance with
+length between 0 and 8 octets, inclusive.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.message.Message._get_type">
+<tt class="descname">_get_type</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/coapy/message.html#Message._get_type"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.message.Message._get_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>The type of the message as <a class="reference internal" href="#coapy.message.Message.Type_CON" title="coapy.message.Message.Type_CON"><tt class="xref py py-attr docutils literal"><span class="pre">Type_CON</span></tt></a>,
+<a class="reference internal" href="#coapy.message.Message.Type_NON" title="coapy.message.Message.Type_NON"><tt class="xref py py-attr docutils literal"><span class="pre">Type_NON</span></tt></a>, <a class="reference internal" href="#coapy.message.Message.Type_ACK" title="coapy.message.Message.Type_ACK"><tt class="xref py py-attr docutils literal"><span class="pre">Type_ACK</span></tt></a>, or <a class="reference internal" href="#coapy.message.Message.Type_RST" title="coapy.message.Message.Type_RST"><tt class="xref py py-attr docutils literal"><span class="pre">Type_RST</span></tt></a>.  This
+is a read-only attribute.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.message.Message._get_type_name">
+<tt class="descname">_get_type_name</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/coapy/message.html#Message._get_type_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.message.Message._get_type_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>The type of the message as a three-letter descriptive name
+(<a class="reference internal" href="#coapy.message.Message.Type_CON" title="coapy.message.Message.Type_CON"><tt class="xref py py-attr docutils literal"><span class="pre">CON</span></tt></a>, <a class="reference internal" href="#coapy.message.Message.Type_NON" title="coapy.message.Message.Type_NON"><tt class="xref py py-attr docutils literal"><span class="pre">NON</span></tt></a>,
+<a class="reference internal" href="#coapy.message.Message.Type_ACK" title="coapy.message.Message.Type_ACK"><tt class="xref py py-attr docutils literal"><span class="pre">ACK</span></tt></a>, <a class="reference internal" href="#coapy.message.Message.Type_RST" title="coapy.message.Message.Type_RST"><tt class="xref py py-attr docutils literal"><span class="pre">RST</span></tt></a>).  This is a
+read-only attribute.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.message.Message._sort_options">
+<tt class="descname">_sort_options</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/coapy/message.html#Message._sort_options"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.message.Message._sort_options" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sort the <a class="reference internal" href="#coapy.message.Message.options" title="coapy.message.Message.options"><tt class="xref py py-attr docutils literal"><span class="pre">options</span></tt></a> list and return a reference to it.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.Message.code">
+<tt class="descname">code</tt><a class="headerlink" href="#coapy.message.Message.code" title="Permalink to this definition">¶</a></dt>
+<dd><p>The message code, expressed as a tuple <tt class="docutils literal"><span class="pre">(class,</span> <span class="pre">detail)</span></tt>
+where <em>class</em> is an integer value from 0 through 7 and
+<em>detail</em> is an integer value from 0 through 31.</p>
+<p>A code of <tt class="docutils literal"><span class="pre">None</span></tt> is allowed only when a raw <a class="reference internal" href="#coapy.message.Message" title="coapy.message.Message"><tt class="xref py py-class docutils literal"><span class="pre">Message</span></tt></a>
+is created, and a valid code must be assigned before the
+message may be transmitted.</p>
+<p>For convenience, the code may also be set from its packed
+format defined by <tt class="docutils literal"><span class="pre">(class</span> <span class="pre">&lt;&lt;</span> <span class="pre">5)</span> <span class="pre">|</span> <span class="pre">detail</span></tt>.  Decimal code
+representation such as <tt class="docutils literal"><span class="pre">4.03</span></tt> is not supported.</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="coapy.message.Message.code_as_integer">
+<em class="property">static </em><tt class="descname">code_as_integer</tt><big>(</big><em>code</em><big>)</big><a class="reference internal" href="_modules/coapy/message.html#Message.code_as_integer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.message.Message.code_as_integer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Validate <em>code</em> and return it as an integer.</p>
+<p>The packed encoding of <tt class="docutils literal"><span class="pre">(class,</span> <span class="pre">detail)</span></tt> has the 3-bit code
+class combined with the 5-bit code detail, as: <tt class="docutils literal"><span class="pre">(class</span> <span class="pre">&lt;&lt;</span> <span class="pre">5)</span>
+<span class="pre">|</span> <span class="pre">detail</span></tt>.</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="coapy.message.Message.code_as_tuple">
+<em class="property">static </em><tt class="descname">code_as_tuple</tt><big>(</big><em>code</em><big>)</big><a class="reference internal" href="_modules/coapy/message.html#Message.code_as_tuple"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.message.Message.code_as_tuple" title="Permalink to this definition">¶</a></dt>
+<dd><p>Validate <em>code</em> and return it as a <tt class="docutils literal"><span class="pre">(class,</span> <span class="pre">detail)</span></tt> tuple.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.message.Message.create_reply">
+<tt class="descname">create_reply</tt><big>(</big><em>reset=False</em><big>)</big><a class="reference internal" href="_modules/coapy/message.html#Message.create_reply"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.message.Message.create_reply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a message-layer reply to this message.</p>
+<p>This method creates an empty message of either type
+<a class="reference internal" href="#coapy.message.Message.Type_ACK" title="coapy.message.Message.Type_ACK"><tt class="xref py py-attr docutils literal"><span class="pre">ACK</span></tt></a> (by default) or <a class="reference internal" href="#coapy.message.Message.Type_RST" title="coapy.message.Message.Type_RST"><tt class="xref py py-attr docutils literal"><span class="pre">RST</span></tt></a>
+(if <em>reset</em> is <tt class="docutils literal"><span class="pre">True</span></tt>) with the same message ID as this
+message.  The <a class="reference internal" href="#coapy.message.Message.source_endpoint" title="coapy.message.Message.source_endpoint"><tt class="xref py py-attr docutils literal"><span class="pre">source_endpoint</span></tt></a> and
+<a class="reference internal" href="#coapy.message.Message.destination_endpoint" title="coapy.message.Message.destination_endpoint"><tt class="xref py py-attr docutils literal"><span class="pre">destination_endpoint</span></tt></a> of the returned message are set
+appropriately.</p>
+<p><a class="reference internal" href="#coapy.message.MessageReplyError" title="coapy.message.MessageReplyError"><tt class="xref py py-exc docutils literal"><span class="pre">MessageReplyError</span></tt></a> is raised if this message is
+<a class="reference internal" href="#coapy.message.Message.is_non_confirmable" title="coapy.message.Message.is_non_confirmable"><tt class="xref py py-meth docutils literal"><span class="pre">non-confirmable</span></tt></a> and <em>reset</em> is
+false, or if <em>self</em> is an <a class="reference internal" href="#coapy.message.Message.Type_ACK" title="coapy.message.Message.Type_ACK"><tt class="xref py py-attr docutils literal"><span class="pre">ACK</span></tt></a> or
+<a class="reference internal" href="#coapy.message.Message.Type_RST" title="coapy.message.Message.Type_RST"><tt class="xref py py-attr docutils literal"><span class="pre">RST</span></tt></a> message.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.Message.destination_endpoint">
+<tt class="descname">destination_endpoint</tt><a class="headerlink" href="#coapy.message.Message.destination_endpoint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-1.2">destination endpoint</a> of the message.</p>
+<p>This is the <a class="reference internal" href="coapy_endpoint.html#coapy.endpoint.Endpoint" title="coapy.endpoint.Endpoint"><tt class="xref py py-class docutils literal"><span class="pre">coapy.endpoint.Endpoint</span></tt></a> instance to which
+the message was (or will be) sent, i.e. the one on which it
+was (or should be) received.  It starts as <tt class="docutils literal"><span class="pre">None</span></tt>, and can
+be assigned a value once after which it is immutable.
+Generally the infrastructure should be responsible for
+assigning a destination endpoint to a message.</p>
+<p>See also <a class="reference internal" href="#coapy.message.Message.source_endpoint" title="coapy.message.Message.source_endpoint"><tt class="xref py py-attr docutils literal"><span class="pre">source_endpoint</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="coapy.message.Message.from_packed">
+<em class="property">classmethod </em><tt class="descname">from_packed</tt><big>(</big><em>packed_message</em><big>)</big><a class="reference internal" href="_modules/coapy/message.html#Message.from_packed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.message.Message.from_packed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a <a class="reference internal" href="#coapy.message.Message" title="coapy.message.Message"><tt class="xref py py-class docutils literal"><span class="pre">Message</span></tt></a> (or subclass) instance from the
+packed representation of a message, per <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-3">CoAP Section 3</a>.</p>
+<p>This will return <tt class="docutils literal"><span class="pre">None</span></tt> if the first four octets cannot be
+successfully decoded; such messages should be silently ignored.</p>
+<p>It will raise a <a class="reference internal" href="#coapy.message.MessageFormatError" title="coapy.message.MessageFormatError"><tt class="xref py py-exc docutils literal"><span class="pre">MessageFormatError</span></tt></a> when
+<a class="reference internal" href="#coapy.message.Message.messageType" title="coapy.message.Message.messageType"><tt class="xref py py-attr docutils literal"><span class="pre">type</span></tt></a>, <a class="reference internal" href="#coapy.message.Message.code" title="coapy.message.Message.code"><tt class="xref py py-attr docutils literal"><span class="pre">code</span></tt></a> and <a class="reference internal" href="#coapy.message.Message.messageID" title="coapy.message.Message.messageID"><tt class="xref py py-attr docutils literal"><span class="pre">messageID</span></tt></a>
+information can be extracted but the message as a whole is
+malformatted. <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-4">CoAP Section 4</a> specifies the receiver MUST
+(<a class="reference internal" href="#coapy.message.Message.Type_CON" title="coapy.message.Message.Type_CON"><tt class="xref py py-attr docutils literal"><span class="pre">CON</span></tt></a>) or may (<a class="reference internal" href="#coapy.message.Message.Type_NON" title="coapy.message.Message.Type_NON"><tt class="xref py py-attr docutils literal"><span class="pre">NON</span></tt></a>) or MUST
+NOT (<a class="reference internal" href="#coapy.message.Message.Type_ACK" title="coapy.message.Message.Type_ACK"><tt class="xref py py-attr docutils literal"><span class="pre">ACK</span></tt></a>, <a class="reference internal" href="#coapy.message.Message.Type_RST" title="coapy.message.Message.Type_RST"><tt class="xref py py-attr docutils literal"><span class="pre">RST</span></tt></a>) reply with
+a Reset message, and otherwise the message is ignored (from a
+protocol perspective; the receiver may use the failure as a
+cue to perform some other action; see <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.7.1">CoAP Section 5.7.1</a> for
+example).</p>
+<p>Otherwise it will return an instance of <a class="reference internal" href="#coapy.message.Message" title="coapy.message.Message"><tt class="xref py py-class docutils literal"><span class="pre">Message</span></tt></a> or a
+refined subclass based on the <a class="reference internal" href="#coapy.message.Message.code" title="coapy.message.Message.code"><tt class="xref py py-attr docutils literal"><span class="pre">code</span></tt></a> within the packed
+representation.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.message.Message.is_acknowledgement">
+<tt class="descname">is_acknowledgement</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/coapy/message.html#Message.is_acknowledgement"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.message.Message.is_acknowledgement" title="Permalink to this definition">¶</a></dt>
+<dd><p>True if this message is an <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-1.2">acknowledgement</a>
+that a particular confirmable message with <a class="reference internal" href="#coapy.message.Message.messageID" title="coapy.message.Message.messageID"><tt class="xref py py-attr docutils literal"><span class="pre">messageID</span></tt></a>
+was received.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.message.Message.is_confirmable">
+<tt class="descname">is_confirmable</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/coapy/message.html#Message.is_confirmable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.message.Message.is_confirmable" title="Permalink to this definition">¶</a></dt>
+<dd><p>True if this message is <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-2.1">confirmable</a>,
+i.e. will be <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-4.2">retransmitted</a> for reliability,
+and an acknowledgement or reset is expected.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.message.Message.is_non_confirmable">
+<tt class="descname">is_non_confirmable</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/coapy/message.html#Message.is_non_confirmable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.message.Message.is_non_confirmable" title="Permalink to this definition">¶</a></dt>
+<dd><p>True if this message is <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-2.1">non-confirmable</a>,
+meaning the CoAP layer <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-4.3">will not retransmit</a>
+it, and an acknowledgement is not expected.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.message.Message.is_reset">
+<tt class="descname">is_reset</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/coapy/message.html#Message.is_reset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.message.Message.is_reset" title="Permalink to this definition">¶</a></dt>
+<dd><p>True if this message is an indication that a particular
+message with <a class="reference internal" href="#coapy.message.Message.messageID" title="coapy.message.Message.messageID"><tt class="xref py py-attr docutils literal"><span class="pre">messageID</span></tt></a> arrived but that the receiver
+could not process it.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.message.Message.maxAge">
+<tt class="descname">maxAge</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/coapy/message.html#Message.maxAge"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.message.Message.maxAge" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.6.1">Max-Age</a> value for the message.</p>
+<p>This is the value of the <a class="reference internal" href="coapy_option.html#coapy.option.MaxAge" title="coapy.option.MaxAge"><tt class="xref py py-meth docutils literal"><span class="pre">coapy.option.MaxAge()</span></tt></a> option if
+present, or its default value of 60 (seconds) if the option is
+missing.  The value <tt class="docutils literal"><span class="pre">None</span></tt> is returned if the message is
+not one in which <a class="reference internal" href="coapy_option.html#coapy.option.MaxAge" title="coapy.option.MaxAge"><tt class="xref py py-meth docutils literal"><span class="pre">coapy.option.MaxAge()</span></tt></a> may appear (i.e.,
+not a <a class="reference internal" href="#coapy.message.Response" title="coapy.message.Response"><tt class="xref py py-class docutils literal"><span class="pre">Response</span></tt></a> message).</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.Message.messageID">
+<tt class="descname">messageID</tt><a class="headerlink" href="#coapy.message.Message.messageID" title="Permalink to this definition">¶</a></dt>
+<dd><p>An integer between 0 and 65535, inclusive, uniquely
+identifying a confirmable or non-confirmable message among
+those recently transmitted by its sender.  This value is used
+to correlate confirmable and non-confirmable messages with
+acknowledgement and reset messages.  It is not used for
+request/response correlation.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.Message.messageType">
+<tt class="descname">messageType</tt><a class="headerlink" href="#coapy.message.Message.messageType" title="Permalink to this definition">¶</a></dt>
+<dd><p>The type of the message as <a class="reference internal" href="#coapy.message.Message.Type_CON" title="coapy.message.Message.Type_CON"><tt class="xref py py-attr docutils literal"><span class="pre">Type_CON</span></tt></a>,
+<a class="reference internal" href="#coapy.message.Message.Type_NON" title="coapy.message.Message.Type_NON"><tt class="xref py py-attr docutils literal"><span class="pre">Type_NON</span></tt></a>, <a class="reference internal" href="#coapy.message.Message.Type_ACK" title="coapy.message.Message.Type_ACK"><tt class="xref py py-attr docutils literal"><span class="pre">Type_ACK</span></tt></a>, or <a class="reference internal" href="#coapy.message.Message.Type_RST" title="coapy.message.Message.Type_RST"><tt class="xref py py-attr docutils literal"><span class="pre">Type_RST</span></tt></a>.  This
+is a read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.Message.messageTypeName">
+<tt class="descname">messageTypeName</tt><a class="headerlink" href="#coapy.message.Message.messageTypeName" title="Permalink to this definition">¶</a></dt>
+<dd><p>The type of the message as a three-letter descriptive name
+(<a class="reference internal" href="#coapy.message.Message.Type_CON" title="coapy.message.Message.Type_CON"><tt class="xref py py-attr docutils literal"><span class="pre">CON</span></tt></a>, <a class="reference internal" href="#coapy.message.Message.Type_NON" title="coapy.message.Message.Type_NON"><tt class="xref py py-attr docutils literal"><span class="pre">NON</span></tt></a>,
+<a class="reference internal" href="#coapy.message.Message.Type_ACK" title="coapy.message.Message.Type_ACK"><tt class="xref py py-attr docutils literal"><span class="pre">ACK</span></tt></a>, <a class="reference internal" href="#coapy.message.Message.Type_RST" title="coapy.message.Message.Type_RST"><tt class="xref py py-attr docutils literal"><span class="pre">RST</span></tt></a>).  This is a
+read-only attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.Message.options">
+<tt class="descname">options</tt><a class="headerlink" href="#coapy.message.Message.options" title="Permalink to this definition">¶</a></dt>
+<dd><p>The list of <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.10">options</a> associated with the
+message.</p>
+<p>Absence of options is represented by an empty list.  Elements
+of the list must be <a class="reference internal" href="coapy_option.html#coapy.option.UrOption" title="coapy.option.UrOption"><tt class="xref py py-class docutils literal"><span class="pre">coapy.option.UrOption</span></tt></a> (subclass)
+instances.  The list object is owned by the message instance.
+Assignment to it will replace its contents.  The contents will
+be rearranged in a stable sort by option
+<a class="reference internal" href="coapy_option.html#coapy.option.UrOption.number" title="coapy.option.UrOption.number"><tt class="xref py py-attr docutils literal"><span class="pre">number</span></tt></a> as needed by
+operations performed on the message.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.Message.packed_code">
+<tt class="descname">packed_code</tt><a class="headerlink" href="#coapy.message.Message.packed_code" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return <a class="reference internal" href="#coapy.message.Message.code" title="coapy.message.Message.code"><tt class="xref py py-attr docutils literal"><span class="pre">code</span></tt></a> in its packed form as an unsigned 8-bit integer.</p>
+<p>This will raise
+<a class="reference external" href="http://docs.python.org/2.7/library/exceptions.html#exceptions.ValueError" title="(in Python v2.7)"><tt class="xref py py-exc docutils literal"><span class="pre">ValueError</span></tt></a> if
+<a class="reference internal" href="#coapy.message.Message.code" title="coapy.message.Message.code"><tt class="xref py py-attr docutils literal"><span class="pre">code</span></tt></a> has not been assigned.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.Message.payload">
+<tt class="descname">payload</tt><a class="headerlink" href="#coapy.message.Message.payload" title="Permalink to this definition">¶</a></dt>
+<dd><p>The payload or content of the message.  This may be
+<tt class="docutils literal"><span class="pre">None</span></tt> if no payload exists; otherwise it must be a
+non-empty <tt class="xref py py-class docutils literal"><span class="pre">bytes</span></tt> instance.  As a convenience, an empty
+<tt class="xref py py-class docutils literal"><span class="pre">bytes</span></tt> string is equivalent to setting the payload to
+<tt class="docutils literal"><span class="pre">None</span></tt>.</p>
+<p>The representation of the payload should be conveyed by a
+<a class="reference internal" href="coapy_option.html#coapy.option.ContentFormat" title="coapy.option.ContentFormat"><tt class="xref py py-class docutils literal"><span class="pre">ContentFormat</span></tt></a> option.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.message.Message.source_defines_messageID">
+<tt class="descname">source_defines_messageID</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/coapy/message.html#Message.source_defines_messageID"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.message.Message.source_defines_messageID" title="Permalink to this definition">¶</a></dt>
+<dd><p>True if this message is <a class="reference internal" href="#coapy.message.Message.Type_CON" title="coapy.message.Message.Type_CON"><tt class="xref py py-attr docutils literal"><span class="pre">CON</span></tt></a> or <a class="reference internal" href="#coapy.message.Message.Type_NON" title="coapy.message.Message.Type_NON"><tt class="xref py py-attr docutils literal"><span class="pre">NON</span></tt></a>.</p>
+<p><a class="reference internal" href="#coapy.message.Message.Type_CON" title="coapy.message.Message.Type_CON"><tt class="xref py py-attr docutils literal"><span class="pre">CON</span></tt></a> and <a class="reference internal" href="#coapy.message.Message.Type_NON" title="coapy.message.Message.Type_NON"><tt class="xref py py-attr docutils literal"><span class="pre">NON</span></tt></a> messages are
+responsible for selecting a <a class="reference internal" href="#coapy.message.Message.messageID" title="coapy.message.Message.messageID"><tt class="xref py py-attr docutils literal"><span class="pre">messageID</span></tt></a> at the
+<a class="reference internal" href="#coapy.message.Message.source_endpoint" title="coapy.message.Message.source_endpoint"><tt class="xref py py-attr docutils literal"><span class="pre">source_endpoint</span></tt></a>.</p>
+<p><a class="reference internal" href="#coapy.message.Message.Type_ACK" title="coapy.message.Message.Type_ACK"><tt class="xref py py-attr docutils literal"><span class="pre">ACK</span></tt></a> and <a class="reference internal" href="#coapy.message.Message.Type_RST" title="coapy.message.Message.Type_RST"><tt class="xref py py-attr docutils literal"><span class="pre">RST</span></tt></a> messages are
+message-level responses to a <a class="reference internal" href="#coapy.message.Message.messageID" title="coapy.message.Message.messageID"><tt class="xref py py-attr docutils literal"><span class="pre">messageID</span></tt></a> that was
+selected by their <a class="reference internal" href="#coapy.message.Message.destination_endpoint" title="coapy.message.Message.destination_endpoint"><tt class="xref py py-attr docutils literal"><span class="pre">destination_endpoint</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.Message.source_endpoint">
+<tt class="descname">source_endpoint</tt><a class="headerlink" href="#coapy.message.Message.source_endpoint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-1.2">source endpoint</a> of the message.</p>
+<p>This is the <a class="reference internal" href="coapy_endpoint.html#coapy.endpoint.Endpoint" title="coapy.endpoint.Endpoint"><tt class="xref py py-class docutils literal"><span class="pre">coapy.endpoint.Endpoint</span></tt></a> instance that
+sent (or will send) the message.  It starts as <tt class="docutils literal"><span class="pre">None</span></tt>, and
+can be assigned a value once after which it is immutable.
+Generally the infrastructure should be responsible for
+assigning a source endpoint to a message.</p>
+<p>See also <a class="reference internal" href="#coapy.message.Message.destination_endpoint" title="coapy.message.Message.destination_endpoint"><tt class="xref py py-attr docutils literal"><span class="pre">destination_endpoint</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="coapy.message.Message.source_originates_type">
+<em class="property">static </em><tt class="descname">source_originates_type</tt><big>(</big><em>mtype</em><big>)</big><a class="reference internal" href="_modules/coapy/message.html#Message.source_originates_type"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.message.Message.source_originates_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>True if <em>mtype</em> is <a class="reference internal" href="#coapy.message.Message.Type_CON" title="coapy.message.Message.Type_CON"><tt class="xref py py-attr docutils literal"><span class="pre">CON</span></tt></a> or <a class="reference internal" href="#coapy.message.Message.Type_NON" title="coapy.message.Message.Type_NON"><tt class="xref py py-attr docutils literal"><span class="pre">NON</span></tt></a>.</p>
+<p>CoAP defines a message layer where messages from a source to a
+destination may elicit message-layer replies from the
+destination to the source.  This is completely distinct from
+the transaction layer requests that elicit transaction-layer
+responses.</p>
+<p><a class="reference internal" href="#coapy.message.Message.Type_CON" title="coapy.message.Message.Type_CON"><tt class="xref py py-attr docutils literal"><span class="pre">CON</span></tt></a> and <a class="reference internal" href="#coapy.message.Message.Type_NON" title="coapy.message.Message.Type_NON"><tt class="xref py py-attr docutils literal"><span class="pre">NON</span></tt></a> type messages
+are message-layer initial messages.  These messages require
+cache entries for the source endpoint at the receiving node.
+This function returns <tt class="docutils literal"><span class="pre">True</span></tt> for these messages.</p>
+<p><a class="reference internal" href="#coapy.message.Message.Type_ACK" title="coapy.message.Message.Type_ACK"><tt class="xref py py-attr docutils literal"><span class="pre">ACK</span></tt></a> and <a class="reference internal" href="#coapy.message.Message.Type_RST" title="coapy.message.Message.Type_RST"><tt class="xref py py-attr docutils literal"><span class="pre">RST</span></tt></a> messages are
+message-layer responses.  These messages are processed
+relative to the destination endpoint at the receiving node.
+This function returns <tt class="docutils literal"><span class="pre">False</span></tt> for these messages.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.message.Message.to_packed">
+<tt class="descname">to_packed</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/coapy/message.html#Message.to_packed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.message.Message.to_packed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate the packed representation of the message, per <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-3">CoAP Section 3</a>.</p>
+<p>The result is a <tt class="xref py py-class docutils literal"><span class="pre">bytes</span></tt> instance.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.Message.token">
+<tt class="descname">token</tt><a class="headerlink" href="#coapy.message.Message.token" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.3.1">token</a> associated with the message.</p>
+<p>Tokens are used to <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.3.2">match</a> requests with
+responses.  The token must be a <tt class="xref py py-class docutils literal"><span class="pre">bytes</span></tt> instance with
+length between 0 and 8 octets, inclusive.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.message.Message.validate">
+<tt class="descname">validate</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/coapy/message.html#Message.validate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.message.Message.validate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Validate a message against generic CoAP requirements.</p>
+<p>A <a class="reference internal" href="#coapy.message.MessageValidationError" title="coapy.message.MessageValidationError"><tt class="xref py py-exc docutils literal"><span class="pre">MessageValidationError</span></tt></a> exception is raised if the
+validation fails.</p>
+<p>Diagnostics will be emitted for any
+<a class="reference internal" href="coapy_option.html#coapy.option.UnrecognizedOption" title="coapy.option.UnrecognizedOption"><tt class="xref py py-class docutils literal"><span class="pre">coapy.option.UnrecognizedOption</span></tt></a> remaining in the
+message after validation.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="coapy.message.Request">
+<em class="property">class </em><tt class="descclassname">coapy.message.</tt><tt class="descname">Request</tt><big>(</big><em>confirmable=False</em>, <em>acknowledgement=False</em>, <em>reset=False</em>, <em>code=None</em>, <em>messageID=None</em>, <em>token=None</em>, <em>options=None</em>, <em>payload=None</em><big>)</big><a class="reference internal" href="_modules/coapy/message.html#Request"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.message.Request" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#coapy.message.Message" title="coapy.message.Message"><tt class="xref py py-class docutils literal"><span class="pre">coapy.message.Message</span></tt></a></p>
+<p>Subclass for messages that are requests.</p>
+<p>The following table shows the pre-defined method code values <tt class="docutils literal"><span class="pre">(class,</span>
+<span class="pre">detail)</span></tt> as specified in <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-12.1.1">CoAP Section 12.1.1</a>:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="18%" />
+<col width="38%" />
+<col width="45%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Code</th>
+<th class="head">Name</th>
+<th class="head">Documentation</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>(0, 1)</td>
+<td><a class="reference internal" href="#coapy.message.Request.GET" title="coapy.message.Request.GET"><tt class="xref py py-attr docutils literal"><span class="pre">GET</span></tt></a></td>
+<td><a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.8.1">CoAP Section 5.8.1</a></td>
+</tr>
+<tr class="row-odd"><td>(0, 2)</td>
+<td><a class="reference internal" href="#coapy.message.Request.POST" title="coapy.message.Request.POST"><tt class="xref py py-attr docutils literal"><span class="pre">POST</span></tt></a></td>
+<td><a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.8.2">CoAP Section 5.8.2</a></td>
+</tr>
+<tr class="row-even"><td>(0, 3)</td>
+<td><a class="reference internal" href="#coapy.message.Request.PUT" title="coapy.message.Request.PUT"><tt class="xref py py-attr docutils literal"><span class="pre">PUT</span></tt></a></td>
+<td><a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.8.3">CoAP Section 5.8.3</a></td>
+</tr>
+<tr class="row-odd"><td>(0, 4)</td>
+<td><a class="reference internal" href="#coapy.message.Request.DELETE" title="coapy.message.Request.DELETE"><tt class="xref py py-attr docutils literal"><span class="pre">DELETE</span></tt></a></td>
+<td><a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.8.4">CoAP Section 5.8.4</a></td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="coapy.message.Request.CodeClass">
+<tt class="descname">CodeClass</tt><em class="property"> = 0</em><a class="headerlink" href="#coapy.message.Request.CodeClass" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference internal" href="#coapy.message.Message.code" title="coapy.message.Message.code"><tt class="xref py py-attr docutils literal"><span class="pre">Message.code</span></tt></a> <em>class</em> component for <a class="reference internal" href="#coapy.message.Request" title="coapy.message.Request"><tt class="xref py py-class docutils literal"><span class="pre">Request</span></tt></a>
+messages.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.Request.DELETE">
+<tt class="descname">DELETE</tt><em class="property"> = (0, 4)</em><a class="headerlink" href="#coapy.message.Request.DELETE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete the resource identified by the request URI.
+See <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.8.4">CoAP Section 5.8.4</a>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.Request.GET">
+<tt class="descname">GET</tt><em class="property"> = (0, 1)</em><a class="headerlink" href="#coapy.message.Request.GET" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve a representation for the requested resource.  See
+<a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.8.1">CoAP Section 5.8.1</a>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.Request.POST">
+<tt class="descname">POST</tt><em class="property"> = (0, 2)</em><a class="headerlink" href="#coapy.message.Request.POST" title="Permalink to this definition">¶</a></dt>
+<dd><p>Process the representation enclosed in the requested resource.
+See <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.8.2">CoAP Section 5.8.2</a>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.Request.PUT">
+<tt class="descname">PUT</tt><em class="property"> = (0, 3)</em><a class="headerlink" href="#coapy.message.Request.PUT" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update or create the resource using the enclosed representation.
+See <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.8.3">CoAP Section 5.8.3</a>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.message.Request.create_response">
+<tt class="descname">create_response</tt><big>(</big><em>rclass</em>, <em>piggy_backed=True</em>, <em>confirmable=False</em>, <em>**kw</em><big>)</big><a class="reference internal" href="_modules/coapy/message.html#Request.create_response"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.message.Request.create_response" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a response to this request.</p>
+<p><em>rclass</em> is a subclass of <a class="reference internal" href="#coapy.message.Response" title="coapy.message.Response"><tt class="xref py py-class docutils literal"><span class="pre">Response</span></tt></a> indicating the
+type of the response.  (For non-response replies, see
+<a class="reference internal" href="#coapy.message.Message.create_reply" title="coapy.message.Message.create_reply"><tt class="xref py py-meth docutils literal"><span class="pre">Message.create_reply()</span></tt></a>.)  If <em>piggy_backed</em> is <tt class="docutils literal"><span class="pre">True</span></tt>
+the response message will be an <a class="reference internal" href="#coapy.message.Message.Type_ACK" title="coapy.message.Message.Type_ACK"><tt class="xref py py-attr docutils literal"><span class="pre">ACK</span></tt></a>
+to this message; otherwise it will be either a
+<a class="reference internal" href="#coapy.message.Message.Type_CON" title="coapy.message.Message.Type_CON"><tt class="xref py py-attr docutils literal"><span class="pre">CON</span></tt></a> or <a class="reference internal" href="#coapy.message.Message.Type_NON" title="coapy.message.Message.Type_NON"><tt class="xref py py-attr docutils literal"><span class="pre">NON</span></tt></a>
+message, depending on <em>confirmable</em>, and must be assigned its
+own message ID.  In either case, the <tt class="xref py py-attr docutils literal"><span class="pre">token</span></tt> value will
+be copied from this message.  All other keyword parameters are
+passed to the <em>rclass</em> constructor.  The
+<tt class="xref py py-attr docutils literal"><span class="pre">source_endpoint</span></tt> and <tt class="xref py py-attr docutils literal"><span class="pre">destination_endpoint</span></tt>
+attributes will be set from this message.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="coapy.message.Response">
+<em class="property">class </em><tt class="descclassname">coapy.message.</tt><tt class="descname">Response</tt><big>(</big><em>confirmable=False</em>, <em>acknowledgement=False</em>, <em>reset=False</em>, <em>code=None</em>, <em>messageID=None</em>, <em>token=None</em>, <em>options=None</em>, <em>payload=None</em><big>)</big><a class="reference internal" href="_modules/coapy/message.html#Response"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.message.Response" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#coapy.message.Message" title="coapy.message.Message"><tt class="xref py py-class docutils literal"><span class="pre">coapy.message.Message</span></tt></a></p>
+<p>Subclass for messages that are responses.</p>
+<p>Some of the semantics of CoAP depends on distinguishing requests
+from responses; use this as an intermediary class for common
+handling of <a class="reference internal" href="#coapy.message.SuccessResponse" title="coapy.message.SuccessResponse"><tt class="xref py py-class docutils literal"><span class="pre">SuccessResponse</span></tt></a>,
+<a class="reference internal" href="#coapy.message.ClientErrorResponse" title="coapy.message.ClientErrorResponse"><tt class="xref py py-class docutils literal"><span class="pre">ClientErrorResponse</span></tt></a>, and <a class="reference internal" href="#coapy.message.ServerErrorResponse" title="coapy.message.ServerErrorResponse"><tt class="xref py py-class docutils literal"><span class="pre">ServerErrorResponse</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="coapy.message.SuccessResponse">
+<em class="property">class </em><tt class="descclassname">coapy.message.</tt><tt class="descname">SuccessResponse</tt><big>(</big><em>confirmable=False</em>, <em>acknowledgement=False</em>, <em>reset=False</em>, <em>code=None</em>, <em>messageID=None</em>, <em>token=None</em>, <em>options=None</em>, <em>payload=None</em><big>)</big><a class="reference internal" href="_modules/coapy/message.html#SuccessResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.message.SuccessResponse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#coapy.message.Response" title="coapy.message.Response"><tt class="xref py py-class docutils literal"><span class="pre">coapy.message.Response</span></tt></a></p>
+<p>Subclass for messages that are responses that indicate the
+request was successfully received, understood, and accepted.</p>
+<p>The following table shows the pre-defined <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.9.1">success
+response</a> code values <tt class="docutils literal"><span class="pre">(class,</span> <span class="pre">detail)</span></tt> as specified in
+<a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-12.1.2">CoAP Section 12.1.2</a>:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="16%" />
+<col width="37%" />
+<col width="47%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Code</th>
+<th class="head">Name</th>
+<th class="head">Documentation</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>(2, 1)</td>
+<td><a class="reference internal" href="#coapy.message.SuccessResponse.Created" title="coapy.message.SuccessResponse.Created"><tt class="xref py py-attr docutils literal"><span class="pre">Created</span></tt></a></td>
+<td><a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.9.1.1">CoAP Section 5.9.1.1</a></td>
+</tr>
+<tr class="row-odd"><td>(2, 2)</td>
+<td><a class="reference internal" href="#coapy.message.SuccessResponse.Deleted" title="coapy.message.SuccessResponse.Deleted"><tt class="xref py py-attr docutils literal"><span class="pre">Deleted</span></tt></a></td>
+<td><a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.9.1.2">CoAP Section 5.9.1.2</a></td>
+</tr>
+<tr class="row-even"><td>(2, 3)</td>
+<td><a class="reference internal" href="#coapy.message.SuccessResponse.Valid" title="coapy.message.SuccessResponse.Valid"><tt class="xref py py-attr docutils literal"><span class="pre">Valid</span></tt></a></td>
+<td><a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.9.1.3">CoAP Section 5.9.1.3</a></td>
+</tr>
+<tr class="row-odd"><td>(2, 4)</td>
+<td><a class="reference internal" href="#coapy.message.SuccessResponse.Changed" title="coapy.message.SuccessResponse.Changed"><tt class="xref py py-attr docutils literal"><span class="pre">Changed</span></tt></a></td>
+<td><a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.9.1.4">CoAP Section 5.9.1.4</a></td>
+</tr>
+<tr class="row-even"><td>(2, 5)</td>
+<td><a class="reference internal" href="#coapy.message.SuccessResponse.Content" title="coapy.message.SuccessResponse.Content"><tt class="xref py py-attr docutils literal"><span class="pre">Content</span></tt></a></td>
+<td><a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.9.1.4">CoAP Section 5.9.1.4</a></td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="coapy.message.SuccessResponse.Changed">
+<tt class="descname">Changed</tt><em class="property"> = (2, 4)</em><a class="headerlink" href="#coapy.message.SuccessResponse.Changed" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.9.1.4">CoAP Section 5.9.1.4</a>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.SuccessResponse.CodeClass">
+<tt class="descname">CodeClass</tt><em class="property"> = 2</em><a class="headerlink" href="#coapy.message.SuccessResponse.CodeClass" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference internal" href="#coapy.message.Message.code" title="coapy.message.Message.code"><tt class="xref py py-attr docutils literal"><span class="pre">Message.code</span></tt></a> <em>class</em> component for
+<a class="reference internal" href="#coapy.message.SuccessResponse" title="coapy.message.SuccessResponse"><tt class="xref py py-class docutils literal"><span class="pre">SuccessResponse</span></tt></a> messages.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.SuccessResponse.Content">
+<tt class="descname">Content</tt><em class="property"> = (2, 5)</em><a class="headerlink" href="#coapy.message.SuccessResponse.Content" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.9.1.5">CoAP Section 5.9.1.5</a>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.SuccessResponse.Created">
+<tt class="descname">Created</tt><em class="property"> = (2, 1)</em><a class="headerlink" href="#coapy.message.SuccessResponse.Created" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.9.1.1">CoAP Section 5.9.1.1</a>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.SuccessResponse.Deleted">
+<tt class="descname">Deleted</tt><em class="property"> = (2, 2)</em><a class="headerlink" href="#coapy.message.SuccessResponse.Deleted" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.9.1.2">CoAP Section 5.9.1.2</a>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.SuccessResponse.Valid">
+<tt class="descname">Valid</tt><em class="property"> = (2, 3)</em><a class="headerlink" href="#coapy.message.SuccessResponse.Valid" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.9.1.3">CoAP Section 5.9.1.3</a>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="coapy.message.ClientErrorResponse">
+<em class="property">class </em><tt class="descclassname">coapy.message.</tt><tt class="descname">ClientErrorResponse</tt><big>(</big><em>confirmable=False</em>, <em>acknowledgement=False</em>, <em>reset=False</em>, <em>code=None</em>, <em>messageID=None</em>, <em>token=None</em>, <em>options=None</em>, <em>payload=None</em><big>)</big><a class="reference internal" href="_modules/coapy/message.html#ClientErrorResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.message.ClientErrorResponse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#coapy.message.Response" title="coapy.message.Response"><tt class="xref py py-class docutils literal"><span class="pre">coapy.message.Response</span></tt></a></p>
+<p>Subclass for messages that are responses in cases where the
+server detects an error in the client&#8217;s request.</p>
+<p>The following table shows the pre-defined <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.9.2">client error
+response</a> code values <tt class="docutils literal"><span class="pre">(class,</span> <span class="pre">detail)</span></tt> as specified in
+<a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-12.1.2">CoAP Section 12.1.2</a>:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="13%" />
+<col width="53%" />
+<col width="34%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Code</th>
+<th class="head">Name</th>
+<th class="head">Documentation</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>(4, 0)</td>
+<td><a class="reference internal" href="#coapy.message.ClientErrorResponse.BadRequest" title="coapy.message.ClientErrorResponse.BadRequest"><tt class="xref py py-attr docutils literal"><span class="pre">BadRequest</span></tt></a></td>
+<td><a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.9.2.1">CoAP Section 5.9.2.1</a></td>
+</tr>
+<tr class="row-odd"><td>(4, 1)</td>
+<td><a class="reference internal" href="#coapy.message.ClientErrorResponse.Unauthorized" title="coapy.message.ClientErrorResponse.Unauthorized"><tt class="xref py py-attr docutils literal"><span class="pre">Unauthorized</span></tt></a></td>
+<td><a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.9.2.2">CoAP Section 5.9.2.2</a></td>
+</tr>
+<tr class="row-even"><td>(4, 2)</td>
+<td><a class="reference internal" href="#coapy.message.ClientErrorResponse.BadOption" title="coapy.message.ClientErrorResponse.BadOption"><tt class="xref py py-attr docutils literal"><span class="pre">BadOption</span></tt></a></td>
+<td><a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.9.2.3">CoAP Section 5.9.2.3</a></td>
+</tr>
+<tr class="row-odd"><td>(4, 3)</td>
+<td><a class="reference internal" href="#coapy.message.ClientErrorResponse.Forbidden" title="coapy.message.ClientErrorResponse.Forbidden"><tt class="xref py py-attr docutils literal"><span class="pre">Forbidden</span></tt></a></td>
+<td><a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.9.2.4">CoAP Section 5.9.2.4</a></td>
+</tr>
+<tr class="row-even"><td>(4, 4)</td>
+<td><a class="reference internal" href="#coapy.message.ClientErrorResponse.NotFound" title="coapy.message.ClientErrorResponse.NotFound"><tt class="xref py py-attr docutils literal"><span class="pre">NotFound</span></tt></a></td>
+<td><a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.9.2.5">CoAP Section 5.9.2.5</a></td>
+</tr>
+<tr class="row-odd"><td>(4, 5)</td>
+<td><a class="reference internal" href="#coapy.message.ClientErrorResponse.MethodNotAllowed" title="coapy.message.ClientErrorResponse.MethodNotAllowed"><tt class="xref py py-attr docutils literal"><span class="pre">MethodNotAllowed</span></tt></a></td>
+<td><a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.9.2.6">CoAP Section 5.9.2.6</a></td>
+</tr>
+<tr class="row-even"><td>(4, 6)</td>
+<td><a class="reference internal" href="#coapy.message.ClientErrorResponse.NotAcceptable" title="coapy.message.ClientErrorResponse.NotAcceptable"><tt class="xref py py-attr docutils literal"><span class="pre">NotAcceptable</span></tt></a></td>
+<td><a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.9.2.7">CoAP Section 5.9.2.7</a></td>
+</tr>
+<tr class="row-odd"><td>(4, 12)</td>
+<td><a class="reference internal" href="#coapy.message.ClientErrorResponse.PreconditionFailed" title="coapy.message.ClientErrorResponse.PreconditionFailed"><tt class="xref py py-attr docutils literal"><span class="pre">PreconditionFailed</span></tt></a></td>
+<td><a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.9.2.8">CoAP Section 5.9.2.8</a></td>
+</tr>
+<tr class="row-even"><td>(4, 13)</td>
+<td><a class="reference internal" href="#coapy.message.ClientErrorResponse.RequestEntityTooLarge" title="coapy.message.ClientErrorResponse.RequestEntityTooLarge"><tt class="xref py py-attr docutils literal"><span class="pre">RequestEntityTooLarge</span></tt></a></td>
+<td><a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.9.2.9">CoAP Section 5.9.2.9</a></td>
+</tr>
+<tr class="row-odd"><td>(4, 15)</td>
+<td><a class="reference internal" href="#coapy.message.ClientErrorResponse.UnsupportedContentFormat" title="coapy.message.ClientErrorResponse.UnsupportedContentFormat"><tt class="xref py py-attr docutils literal"><span class="pre">UnsupportedContentFormat</span></tt></a></td>
+<td><a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.9.2.10">CoAP Section 5.9.2.10</a></td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="coapy.message.ClientErrorResponse.BadOption">
+<tt class="descname">BadOption</tt><em class="property"> = (4, 2)</em><a class="headerlink" href="#coapy.message.ClientErrorResponse.BadOption" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.9.2.3">CoAP Section 5.9.2.3</a></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.ClientErrorResponse.BadRequest">
+<tt class="descname">BadRequest</tt><em class="property"> = (4, 0)</em><a class="headerlink" href="#coapy.message.ClientErrorResponse.BadRequest" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.9.2.1">CoAP Section 5.9.2.1</a></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.ClientErrorResponse.CodeClass">
+<tt class="descname">CodeClass</tt><em class="property"> = 4</em><a class="headerlink" href="#coapy.message.ClientErrorResponse.CodeClass" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference internal" href="#coapy.message.Message.code" title="coapy.message.Message.code"><tt class="xref py py-attr docutils literal"><span class="pre">Message.code</span></tt></a> <em>class</em> component for
+<a class="reference internal" href="#coapy.message.ClientErrorResponse" title="coapy.message.ClientErrorResponse"><tt class="xref py py-class docutils literal"><span class="pre">ClientErrorResponse</span></tt></a> messages.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.ClientErrorResponse.Forbidden">
+<tt class="descname">Forbidden</tt><em class="property"> = (4, 3)</em><a class="headerlink" href="#coapy.message.ClientErrorResponse.Forbidden" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.9.2.4">CoAP Section 5.9.2.4</a></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.ClientErrorResponse.MethodNotAllowed">
+<tt class="descname">MethodNotAllowed</tt><em class="property"> = (4, 5)</em><a class="headerlink" href="#coapy.message.ClientErrorResponse.MethodNotAllowed" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.9.2.6">CoAP Section 5.9.2.6</a></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.ClientErrorResponse.NotAcceptable">
+<tt class="descname">NotAcceptable</tt><em class="property"> = (4, 6)</em><a class="headerlink" href="#coapy.message.ClientErrorResponse.NotAcceptable" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.9.2.7">CoAP Section 5.9.2.7</a></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.ClientErrorResponse.NotFound">
+<tt class="descname">NotFound</tt><em class="property"> = (4, 4)</em><a class="headerlink" href="#coapy.message.ClientErrorResponse.NotFound" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.9.2.5">CoAP Section 5.9.2.5</a></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.ClientErrorResponse.PreconditionFailed">
+<tt class="descname">PreconditionFailed</tt><em class="property"> = (4, 12)</em><a class="headerlink" href="#coapy.message.ClientErrorResponse.PreconditionFailed" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.9.2.8">CoAP Section 5.9.2.8</a></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.ClientErrorResponse.RequestEntityTooLarge">
+<tt class="descname">RequestEntityTooLarge</tt><em class="property"> = (4, 13)</em><a class="headerlink" href="#coapy.message.ClientErrorResponse.RequestEntityTooLarge" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.9.2.9">CoAP Section 5.9.2.9</a></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.ClientErrorResponse.Unauthorized">
+<tt class="descname">Unauthorized</tt><em class="property"> = (4, 1)</em><a class="headerlink" href="#coapy.message.ClientErrorResponse.Unauthorized" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.9.2.2">CoAP Section 5.9.2.2</a></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.ClientErrorResponse.UnsupportedContentFormat">
+<tt class="descname">UnsupportedContentFormat</tt><em class="property"> = (4, 15)</em><a class="headerlink" href="#coapy.message.ClientErrorResponse.UnsupportedContentFormat" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.9.2.10">CoAP Section 5.9.2.10</a></p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="coapy.message.ServerErrorResponse">
+<em class="property">class </em><tt class="descclassname">coapy.message.</tt><tt class="descname">ServerErrorResponse</tt><big>(</big><em>confirmable=False</em>, <em>acknowledgement=False</em>, <em>reset=False</em>, <em>code=None</em>, <em>messageID=None</em>, <em>token=None</em>, <em>options=None</em>, <em>payload=None</em><big>)</big><a class="reference internal" href="_modules/coapy/message.html#ServerErrorResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.message.ServerErrorResponse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#coapy.message.Response" title="coapy.message.Response"><tt class="xref py py-class docutils literal"><span class="pre">coapy.message.Response</span></tt></a></p>
+<p>Subclass for messages that are responses that indicate the
+server is incapable of performing the request.</p>
+<p>The following table shows the pre-defined <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.9.3">server error
+response</a> code values <tt class="docutils literal"><span class="pre">(class,</span> <span class="pre">detail)</span></tt> as specified in
+<a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-12.1.2">CoAP Section 12.1.2</a>:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="13%" />
+<col width="53%" />
+<col width="34%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Code</th>
+<th class="head">Name</th>
+<th class="head">Documentation</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>(5, 0)</td>
+<td><a class="reference internal" href="#coapy.message.ServerErrorResponse.InternalServerError" title="coapy.message.ServerErrorResponse.InternalServerError"><tt class="xref py py-attr docutils literal"><span class="pre">InternalServerError</span></tt></a></td>
+<td><a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.9.3.1">CoAP Section 5.9.3.1</a></td>
+</tr>
+<tr class="row-odd"><td>(5, 1)</td>
+<td><a class="reference internal" href="#coapy.message.ServerErrorResponse.NotImplemented" title="coapy.message.ServerErrorResponse.NotImplemented"><tt class="xref py py-attr docutils literal"><span class="pre">NotImplemented</span></tt></a></td>
+<td><a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.9.3.2">CoAP Section 5.9.3.2</a></td>
+</tr>
+<tr class="row-even"><td>(5, 2)</td>
+<td><a class="reference internal" href="#coapy.message.ServerErrorResponse.BadGateway" title="coapy.message.ServerErrorResponse.BadGateway"><tt class="xref py py-attr docutils literal"><span class="pre">BadGateway</span></tt></a></td>
+<td><a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.9.3.3">CoAP Section 5.9.3.3</a></td>
+</tr>
+<tr class="row-odd"><td>(5, 3)</td>
+<td><a class="reference internal" href="#coapy.message.ServerErrorResponse.ServiceUnavailable" title="coapy.message.ServerErrorResponse.ServiceUnavailable"><tt class="xref py py-attr docutils literal"><span class="pre">ServiceUnavailable</span></tt></a></td>
+<td><a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.9.3.4">CoAP Section 5.9.3.4</a></td>
+</tr>
+<tr class="row-even"><td>(5, 4)</td>
+<td><a class="reference internal" href="#coapy.message.ServerErrorResponse.GatewayTimeout" title="coapy.message.ServerErrorResponse.GatewayTimeout"><tt class="xref py py-attr docutils literal"><span class="pre">GatewayTimeout</span></tt></a></td>
+<td><a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.9.3.5">CoAP Section 5.9.3.5</a></td>
+</tr>
+<tr class="row-odd"><td>(5, 5)</td>
+<td><a class="reference internal" href="#coapy.message.ServerErrorResponse.ProxyingNotSupported" title="coapy.message.ServerErrorResponse.ProxyingNotSupported"><tt class="xref py py-attr docutils literal"><span class="pre">ProxyingNotSupported</span></tt></a></td>
+<td><a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.9.3.6">CoAP Section 5.9.3.6</a></td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="coapy.message.ServerErrorResponse.BadGateway">
+<tt class="descname">BadGateway</tt><em class="property"> = (5, 2)</em><a class="headerlink" href="#coapy.message.ServerErrorResponse.BadGateway" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.9.3.3">CoAP Section 5.9.3.3</a></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.ServerErrorResponse.CodeClass">
+<tt class="descname">CodeClass</tt><em class="property"> = 5</em><a class="headerlink" href="#coapy.message.ServerErrorResponse.CodeClass" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference internal" href="#coapy.message.Message.code" title="coapy.message.Message.code"><tt class="xref py py-attr docutils literal"><span class="pre">Message.code</span></tt></a> <em>class</em> component for
+<a class="reference internal" href="#coapy.message.ServerErrorResponse" title="coapy.message.ServerErrorResponse"><tt class="xref py py-class docutils literal"><span class="pre">ServerErrorResponse</span></tt></a> messages.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.ServerErrorResponse.GatewayTimeout">
+<tt class="descname">GatewayTimeout</tt><em class="property"> = (5, 4)</em><a class="headerlink" href="#coapy.message.ServerErrorResponse.GatewayTimeout" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.9.3.5">CoAP Section 5.9.3.5</a></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.ServerErrorResponse.InternalServerError">
+<tt class="descname">InternalServerError</tt><em class="property"> = (5, 0)</em><a class="headerlink" href="#coapy.message.ServerErrorResponse.InternalServerError" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.9.3.1">CoAP Section 5.9.3.1</a></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.ServerErrorResponse.NotImplemented">
+<tt class="descname">NotImplemented</tt><em class="property"> = (5, 1)</em><a class="headerlink" href="#coapy.message.ServerErrorResponse.NotImplemented" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.9.3.2">CoAP Section 5.9.3.2</a></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.ServerErrorResponse.ProxyingNotSupported">
+<tt class="descname">ProxyingNotSupported</tt><em class="property"> = (5, 5)</em><a class="headerlink" href="#coapy.message.ServerErrorResponse.ProxyingNotSupported" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.9.3.6">CoAP Section 5.9.3.6</a></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.ServerErrorResponse.ServiceUnavailable">
+<tt class="descname">ServiceUnavailable</tt><em class="property"> = (5, 3)</em><a class="headerlink" href="#coapy.message.ServerErrorResponse.ServiceUnavailable" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-5.9.3.4">CoAP Section 5.9.3.4</a></p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="utility-classes">
+<h2>Utility Classes<a class="headerlink" href="#utility-classes" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="coapy.message.TransmissionParameters">
+<em class="property">class </em><tt class="descclassname">coapy.message.</tt><tt class="descname">TransmissionParameters</tt><a class="reference internal" href="_modules/coapy/message.html#TransmissionParameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.message.TransmissionParameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-4.8">transmission parameters</a> that support
+message transmission behavior including <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-4.7">congestion
+control</a> in CoAP.</p>
+<p>Some of these parameters are primitive, and some are derived.
+Consult <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-4.8.1">CoAP Section 4.8.1</a> for information related to changing
+these parameters.  After changing the primitive parameters in an
+instance, invoke <a class="reference internal" href="#coapy.message.TransmissionParameters.recalculate_derived" title="coapy.message.TransmissionParameters.recalculate_derived"><tt class="xref py py-func docutils literal"><span class="pre">recalculate_derived()</span></tt></a> to update the derived
+parameters.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="38%" />
+<col width="21%" />
+<col width="26%" />
+<col width="15%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Parameter</th>
+<th class="head">Units</th>
+<th class="head">Documentation</th>
+<th class="head">Class</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><a class="reference internal" href="#coapy.message.TransmissionParameters.ACK_TIMEOUT" title="coapy.message.TransmissionParameters.ACK_TIMEOUT"><tt class="xref py py-attr docutils literal"><span class="pre">ACK_TIMEOUT</span></tt></a></td>
+<td>seconds</td>
+<td><a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-4.8">CoAP Section 4.8</a></td>
+<td>Primitive</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#coapy.message.TransmissionParameters.ACK_RANDOM_FACTOR" title="coapy.message.TransmissionParameters.ACK_RANDOM_FACTOR"><tt class="xref py py-attr docutils literal"><span class="pre">ACK_RANDOM_FACTOR</span></tt></a></td>
+<td>seconds</td>
+<td><a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-4.8">CoAP Section 4.8</a></td>
+<td>Primitive</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#coapy.message.TransmissionParameters.MAX_RETRANSMIT" title="coapy.message.TransmissionParameters.MAX_RETRANSMIT"><tt class="xref py py-attr docutils literal"><span class="pre">MAX_RETRANSMIT</span></tt></a></td>
+<td>transmissions</td>
+<td><a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-4.8">CoAP Section 4.8</a></td>
+<td>Primitive</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#coapy.message.TransmissionParameters.NSTART" title="coapy.message.TransmissionParameters.NSTART"><tt class="xref py py-attr docutils literal"><span class="pre">NSTART</span></tt></a></td>
+<td>messages</td>
+<td><a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-4.7">CoAP Section 4.7</a></td>
+<td>Primitive</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#coapy.message.TransmissionParameters.DEFAULT_LEISURE" title="coapy.message.TransmissionParameters.DEFAULT_LEISURE"><tt class="xref py py-attr docutils literal"><span class="pre">DEFAULT_LEISURE</span></tt></a></td>
+<td>seconds</td>
+<td><a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-8.2">CoAP Section 8.2</a></td>
+<td>Primitive</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#coapy.message.TransmissionParameters.PROBING_RATE" title="coapy.message.TransmissionParameters.PROBING_RATE"><tt class="xref py py-attr docutils literal"><span class="pre">PROBING_RATE</span></tt></a></td>
+<td>bytes/second</td>
+<td><a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-4.7">CoAP Section 4.7</a></td>
+<td>Primitive</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#coapy.message.TransmissionParameters.MAX_LATENCY" title="coapy.message.TransmissionParameters.MAX_LATENCY"><tt class="xref py py-attr docutils literal"><span class="pre">MAX_LATENCY</span></tt></a></td>
+<td>seconds</td>
+<td><a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-4.8.2">CoAP Section 4.8.2</a></td>
+<td>Primitive</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#coapy.message.TransmissionParameters.PROCESSING_DELAY" title="coapy.message.TransmissionParameters.PROCESSING_DELAY"><tt class="xref py py-attr docutils literal"><span class="pre">PROCESSING_DELAY</span></tt></a></td>
+<td>seconds</td>
+<td><a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-4.8.2">CoAP Section 4.8.2</a></td>
+<td>Primitive</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#coapy.message.TransmissionParameters.MAX_TRANSMIT_SPAN" title="coapy.message.TransmissionParameters.MAX_TRANSMIT_SPAN"><tt class="xref py py-attr docutils literal"><span class="pre">MAX_TRANSMIT_SPAN</span></tt></a></td>
+<td>seconds</td>
+<td><a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-4.8.2">CoAP Section 4.8.2</a></td>
+<td>Derived</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#coapy.message.TransmissionParameters.MAX_TRANSMIT_WAIT" title="coapy.message.TransmissionParameters.MAX_TRANSMIT_WAIT"><tt class="xref py py-attr docutils literal"><span class="pre">MAX_TRANSMIT_WAIT</span></tt></a></td>
+<td>seconds</td>
+<td><a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-4.8.2">CoAP Section 4.8.2</a></td>
+<td>Derived</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#coapy.message.TransmissionParameters.MAX_RTT" title="coapy.message.TransmissionParameters.MAX_RTT"><tt class="xref py py-attr docutils literal"><span class="pre">MAX_RTT</span></tt></a></td>
+<td>seconds</td>
+<td><a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-4.8.2">CoAP Section 4.8.2</a></td>
+<td>Derived</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#coapy.message.TransmissionParameters.EXCHANGE_LIFETIME" title="coapy.message.TransmissionParameters.EXCHANGE_LIFETIME"><tt class="xref py py-attr docutils literal"><span class="pre">EXCHANGE_LIFETIME</span></tt></a></td>
+<td>seconds</td>
+<td><a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-4.8.2">CoAP Section 4.8.2</a></td>
+<td>Derived</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#coapy.message.TransmissionParameters.NON_LIFETIME" title="coapy.message.TransmissionParameters.NON_LIFETIME"><tt class="xref py py-attr docutils literal"><span class="pre">NON_LIFETIME</span></tt></a></td>
+<td>seconds</td>
+<td><a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-4.8.2">CoAP Section 4.8.2</a></td>
+<td>Derived</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="coapy.message.TransmissionParameters.ACK_RANDOM_FACTOR">
+<tt class="descname">ACK_RANDOM_FACTOR</tt><em class="property"> = 1.5</em><a class="headerlink" href="#coapy.message.TransmissionParameters.ACK_RANDOM_FACTOR" title="Permalink to this definition">¶</a></dt>
+<dd><p>A randomization factor to avoid synchronization, in seconds.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.TransmissionParameters.ACK_TIMEOUT">
+<tt class="descname">ACK_TIMEOUT</tt><em class="property"> = 2</em><a class="headerlink" href="#coapy.message.TransmissionParameters.ACK_TIMEOUT" title="Permalink to this definition">¶</a></dt>
+<dd><p>The initial timeout waiting for an acknowledgement, in seconds.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.TransmissionParameters.DEFAULT_LEISURE">
+<tt class="descname">DEFAULT_LEISURE</tt><em class="property"> = 5</em><a class="headerlink" href="#coapy.message.TransmissionParameters.DEFAULT_LEISURE" title="Permalink to this definition">¶</a></dt>
+<dd><p>A duration, in seconds, that a server may delay before
+responding to a multicast message.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.TransmissionParameters.EXCHANGE_LIFETIME">
+<tt class="descname">EXCHANGE_LIFETIME</tt><em class="property"> = 247</em><a class="headerlink" href="#coapy.message.TransmissionParameters.EXCHANGE_LIFETIME" title="Permalink to this definition">¶</a></dt>
+<dd><p>Time, in seconds, from first transmission of a confirmable
+message to when an acknowledgement is no longer expected.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.TransmissionParameters.MAX_LATENCY">
+<tt class="descname">MAX_LATENCY</tt><em class="property"> = 100</em><a class="headerlink" href="#coapy.message.TransmissionParameters.MAX_LATENCY" title="Permalink to this definition">¶</a></dt>
+<dd><p>The maximum time, in seconds, expected from the start of
+datagram transmission to completion of its reception.  This
+includes endpoint transport-, link-, and physical-layer
+processing, propagation delay through the communications medium,
+and intermediate routing overhead.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.TransmissionParameters.MAX_RETRANSMIT">
+<tt class="descname">MAX_RETRANSMIT</tt><em class="property"> = 4</em><a class="headerlink" href="#coapy.message.TransmissionParameters.MAX_RETRANSMIT" title="Permalink to this definition">¶</a></dt>
+<dd><p>The maximum number of retransmissions of a confirmable message.
+A value of 4 produces a maximum of 5 transmissions when the first
+transmission is included.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.TransmissionParameters.MAX_RTT">
+<tt class="descname">MAX_RTT</tt><em class="property"> = 202</em><a class="headerlink" href="#coapy.message.TransmissionParameters.MAX_RTT" title="Permalink to this definition">¶</a></dt>
+<dd><p>Maximum round-trip-time, in seconds, considering
+<a class="reference internal" href="#coapy.message.TransmissionParameters.MAX_LATENCY" title="coapy.message.TransmissionParameters.MAX_LATENCY"><tt class="xref py py-attr docutils literal"><span class="pre">MAX_LATENCY</span></tt></a> and <a class="reference internal" href="#coapy.message.TransmissionParameters.PROCESSING_DELAY" title="coapy.message.TransmissionParameters.PROCESSING_DELAY"><tt class="xref py py-attr docutils literal"><span class="pre">PROCESSING_DELAY</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.TransmissionParameters.MAX_TRANSMIT_SPAN">
+<tt class="descname">MAX_TRANSMIT_SPAN</tt><em class="property"> = 45</em><a class="headerlink" href="#coapy.message.TransmissionParameters.MAX_TRANSMIT_SPAN" title="Permalink to this definition">¶</a></dt>
+<dd><p>Maximum time, in seconds, from first transmission of a
+confirmable message to its last retransmission..</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.TransmissionParameters.MAX_TRANSMIT_WAIT">
+<tt class="descname">MAX_TRANSMIT_WAIT</tt><em class="property"> = 93</em><a class="headerlink" href="#coapy.message.TransmissionParameters.MAX_TRANSMIT_WAIT" title="Permalink to this definition">¶</a></dt>
+<dd><p>Maximum time, in seconds, from first transmission of a
+confirmable message to when the sender may give up on receiving
+acknowledgement or reset.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.TransmissionParameters.NON_LIFETIME">
+<tt class="descname">NON_LIFETIME</tt><em class="property"> = 145</em><a class="headerlink" href="#coapy.message.TransmissionParameters.NON_LIFETIME" title="Permalink to this definition">¶</a></dt>
+<dd><p>Time, in seconds, from transmission of a non-confirmable
+message to when its Message-ID may be safely re-used.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.TransmissionParameters.NSTART">
+<tt class="descname">NSTART</tt><em class="property"> = 1</em><a class="headerlink" href="#coapy.message.TransmissionParameters.NSTART" title="Permalink to this definition">¶</a></dt>
+<dd><p>The maximum number of messages permitted to be outstanding for
+an endpoint.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.TransmissionParameters.PROBING_RATE">
+<tt class="descname">PROBING_RATE</tt><em class="property"> = 1</em><a class="headerlink" href="#coapy.message.TransmissionParameters.PROBING_RATE" title="Permalink to this definition">¶</a></dt>
+<dd><p>The target maximum average data rate, in bytes per second, for
+transmissions to an endpoint that does not respond.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.TransmissionParameters.PROCESSING_DELAY">
+<tt class="descname">PROCESSING_DELAY</tt><em class="property"> = 2</em><a class="headerlink" href="#coapy.message.TransmissionParameters.PROCESSING_DELAY" title="Permalink to this definition">¶</a></dt>
+<dd><p>The maximum time, in seconds, that node requires to generate an
+acknowledgement to a confirmable message.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.message.TransmissionParameters.make_bebo">
+<tt class="descname">make_bebo</tt><big>(</big><em>initial_timeout=None</em>, <em>max_retransmissions=None</em><big>)</big><a class="reference internal" href="_modules/coapy/message.html#TransmissionParameters.make_bebo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.message.TransmissionParameters.make_bebo" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a <a class="reference internal" href="#coapy.message.RetransmissionState" title="coapy.message.RetransmissionState"><tt class="xref py py-class docutils literal"><span class="pre">RetransmissionState</span></tt></a> for binary
+exponential back off (BEBO) transmission.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coapy.message.TransmissionParameters.recalculate_derived">
+<tt class="descname">recalculate_derived</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/coapy/message.html#TransmissionParameters.recalculate_derived"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.message.TransmissionParameters.recalculate_derived" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate values for parameters that may be derived.</p>
+<p>This uses the calculations in <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-4.8.2">CoAP Section 4.8.2</a> to calculate
+<a class="reference internal" href="#coapy.message.TransmissionParameters.MAX_TRANSMIT_SPAN" title="coapy.message.TransmissionParameters.MAX_TRANSMIT_SPAN"><tt class="xref py py-attr docutils literal"><span class="pre">MAX_TRANSMIT_SPAN</span></tt></a>, <a class="reference internal" href="#coapy.message.TransmissionParameters.MAX_TRANSMIT_WAIT" title="coapy.message.TransmissionParameters.MAX_TRANSMIT_WAIT"><tt class="xref py py-attr docutils literal"><span class="pre">MAX_TRANSMIT_WAIT</span></tt></a>,
+<a class="reference internal" href="#coapy.message.TransmissionParameters.MAX_RTT" title="coapy.message.TransmissionParameters.MAX_RTT"><tt class="xref py py-attr docutils literal"><span class="pre">MAX_RTT</span></tt></a>, <a class="reference internal" href="#coapy.message.TransmissionParameters.EXCHANGE_LIFETIME" title="coapy.message.TransmissionParameters.EXCHANGE_LIFETIME"><tt class="xref py py-attr docutils literal"><span class="pre">EXCHANGE_LIFETIME</span></tt></a>, and
+<a class="reference internal" href="#coapy.message.TransmissionParameters.NON_LIFETIME" title="coapy.message.TransmissionParameters.NON_LIFETIME"><tt class="xref py py-attr docutils literal"><span class="pre">NON_LIFETIME</span></tt></a> from other parameters in the instance.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="coapy.message.RetransmissionState">
+<em class="property">class </em><tt class="descclassname">coapy.message.</tt><tt class="descname">RetransmissionState</tt><big>(</big><em>initial_timeout=None</em>, <em>max_retransmissions=None</em>, <em>transmission_parameters=None</em><big>)</big><a class="reference internal" href="_modules/coapy/message.html#RetransmissionState"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.message.RetransmissionState" title="Permalink to this definition">¶</a></dt>
+<dd><p>An iterable that provides the time to the next retransmission.</p>
+<p><em>initial_timeout</em> is the time, in seconds, to the first
+retransmission; a default is calculated from
+<em>transmission_parameters</em> if provided.</p>
+<p><em>max_retransmissions</em> is the maximum number of re-transmissions; a
+default is obtained from <em>transmission_parameters</em> if provided.</p>
+<p>Thus:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="nb">list</span><span class="p">(</span><span class="n">RetransmissionState</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>will produce:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">24</span><span class="p">]</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="coapy.message.RetransmissionState._get_remaining">
+<tt class="descname">_get_remaining</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/coapy/message.html#RetransmissionState._get_remaining"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.message.RetransmissionState._get_remaining" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of retransmissions remaining in the iterator.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.RetransmissionState.retransmissions_remaining">
+<tt class="descname">retransmissions_remaining</tt><a class="headerlink" href="#coapy.message.RetransmissionState.retransmissions_remaining" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of retransmissions remaining in the iterator.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="message-related-exceptions">
+<h2>Message-Related Exceptions<a class="headerlink" href="#message-related-exceptions" title="Permalink to this headline">¶</a></h2>
+<dl class="exception">
+<dt id="coapy.message.MessageError">
+<em class="property">exception </em><tt class="descclassname">coapy.message.</tt><tt class="descname">MessageError</tt><a class="reference internal" href="_modules/coapy/message.html#MessageError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.message.MessageError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">coapy.CoAPyException</span></tt></p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="coapy.message.MessageFormatError">
+<em class="property">exception </em><tt class="descclassname">coapy.message.</tt><tt class="descname">MessageFormatError</tt><a class="reference internal" href="_modules/coapy/message.html#MessageFormatError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.message.MessageFormatError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#coapy.message.MessageError" title="coapy.message.MessageError"><tt class="xref py py-class docutils literal"><span class="pre">coapy.message.MessageError</span></tt></a></p>
+<p>Exception raised by <a class="reference internal" href="#coapy.message.Message.from_packed" title="coapy.message.Message.from_packed"><tt class="xref py py-meth docutils literal"><span class="pre">Message.from_packed()</span></tt></a> when the
+message cannot be decoded.  <tt class="xref py py-attr docutils literal"><span class="pre">args</span></tt> will be <tt class="docutils literal"><span class="pre">(diagnostic,</span>
+<span class="pre">dkw)</span></tt> where <em>diagnostic</em> is a human-readable description of the
+failure cause matching one of the codes in this class, and <em>dkw</em>
+is a dictionary with entries for
+<a class="reference internal" href="#coapy.message.Message.messageType" title="coapy.message.Message.messageType"><tt class="xref py py-attr docutils literal"><span class="pre">type</span></tt></a>, <a class="reference internal" href="#coapy.message.Message.code" title="coapy.message.Message.code"><tt class="xref py py-attr docutils literal"><span class="pre">code</span></tt></a> and
+<a class="reference internal" href="#coapy.message.Message.messageID" title="coapy.message.Message.messageID"><tt class="xref py py-attr docutils literal"><span class="pre">messageID</span></tt></a>.</p>
+<p>Justification for the diagnosis can be found in <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-3">CoAP Section 3</a>.</p>
+<dl class="attribute">
+<dt id="coapy.message.MessageFormatError.EMPTY_MESSAGE_NOT_EMPTY">
+<tt class="descname">EMPTY_MESSAGE_NOT_EMPTY</tt><em class="property"> = u'excess content in Empty message'</em><a class="headerlink" href="#coapy.message.MessageFormatError.EMPTY_MESSAGE_NOT_EMPTY" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>diagnostic</em> value when a message with code
+<a class="reference internal" href="#coapy.message.Message.Empty" title="coapy.message.Message.Empty"><tt class="xref py py-attr docutils literal"><span class="pre">Empty</span></tt></a> has bytes after the Message ID
+field.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.MessageFormatError.INVALID_OPTION">
+<tt class="descname">INVALID_OPTION</tt><em class="property"> = u'option decode error'</em><a class="headerlink" href="#coapy.message.MessageFormatError.INVALID_OPTION" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>diagnostic</em> value when an Option Delta is 15 in a value that
+is not a Payload Marker, or an Option Delta is 15 in a value that
+is not a Payload Marker.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.MessageFormatError.TOKEN_TOO_LONG">
+<tt class="descname">TOKEN_TOO_LONG</tt><em class="property"> = u'token too long'</em><a class="headerlink" href="#coapy.message.MessageFormatError.TOKEN_TOO_LONG" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>diagnostic</em> value when the TKL field of the message is greater
+than 8.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.MessageFormatError.UNRECOGNIZED_CODE_CLASS">
+<tt class="descname">UNRECOGNIZED_CODE_CLASS</tt><em class="property"> = u'unrecognized code class'</em><a class="headerlink" href="#coapy.message.MessageFormatError.UNRECOGNIZED_CODE_CLASS" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>diagnostic</em> when the <a class="reference internal" href="#coapy.message.Message.code" title="coapy.message.Message.code"><tt class="xref py py-attr docutils literal"><span class="pre">code</span></tt></a> has no generic
+handler (e.g. the message code class is 1, 6, and 7 which are
+currently reserved).</p>
+<p>Technically this is not a message format error, but CoAP requires
+that it be treated the same way wherever the possibility is
+explicitly recognized (<a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-4.2">CoAP Section 4.2</a> and <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-4.3">CoAP Section 4.3</a>).</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.MessageFormatError.ZERO_LENGTH_PAYLOAD">
+<tt class="descname">ZERO_LENGTH_PAYLOAD</tt><em class="property"> = u'zero-length payload'</em><a class="headerlink" href="#coapy.message.MessageFormatError.ZERO_LENGTH_PAYLOAD" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>diagnostic</em> value when a Payload Marker is present but not
+followed by data.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="exception">
+<dt id="coapy.message.MessageValidationError">
+<em class="property">exception </em><tt class="descclassname">coapy.message.</tt><tt class="descname">MessageValidationError</tt><a class="reference internal" href="_modules/coapy/message.html#MessageValidationError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.message.MessageValidationError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#coapy.message.MessageError" title="coapy.message.MessageError"><tt class="xref py py-class docutils literal"><span class="pre">coapy.message.MessageError</span></tt></a></p>
+<p>Exception raised by <a class="reference internal" href="#coapy.message.Message.validate" title="coapy.message.Message.validate"><tt class="xref py py-meth docutils literal"><span class="pre">Message.validate()</span></tt></a>.  <tt class="xref py py-attr docutils literal"><span class="pre">args</span></tt>
+will be <tt class="docutils literal"><span class="pre">(diagnostic,</span> <span class="pre">message)</span></tt> where <em>diagnostic</em> is a
+human-readable description of the failure cause matching one of
+the codes in this class, and <em>message</em> is the invalid message.</p>
+<dl class="attribute">
+<dt id="coapy.message.MessageValidationError.CODE_INSTANCE_CONFLICT">
+<tt class="descname">CODE_INSTANCE_CONFLICT</tt><em class="property"> = u'code inconsistent with message class'</em><a class="headerlink" href="#coapy.message.MessageValidationError.CODE_INSTANCE_CONFLICT" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>diagnostic</em> value when the <em>class</em> in <a class="reference internal" href="#coapy.message.Message.code" title="coapy.message.Message.code"><tt class="xref py py-attr docutils literal"><span class="pre">Message.code</span></tt></a> is
+not compatible with the Python class of the message instance.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.MessageValidationError.CODE_TYPE_CONFLICT">
+<tt class="descname">CODE_TYPE_CONFLICT</tt><em class="property"> = u'code and messageType conflict'</em><a class="headerlink" href="#coapy.message.MessageValidationError.CODE_TYPE_CONFLICT" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>diagnostic</em> value when <a class="reference internal" href="#coapy.message.Message.code" title="coapy.message.Message.code"><tt class="xref py py-attr docutils literal"><span class="pre">Message.code</span></tt></a> and
+<a class="reference internal" href="#coapy.message.Message.messageType" title="coapy.message.Message.messageType"><tt class="xref py py-attr docutils literal"><span class="pre">Message.messageType</span></tt></a> are not consistent:</p>
+<ul class="simple">
+<li><a class="reference internal" href="#coapy.message.Message.Type_CON" title="coapy.message.Message.Type_CON"><tt class="xref py py-attr docutils literal"><span class="pre">CON</span></tt></a> and <a class="reference internal" href="#coapy.message.Message.Type_NON" title="coapy.message.Message.Type_NON"><tt class="xref py py-attr docutils literal"><span class="pre">NON</span></tt></a>
+allowed only in <a class="reference internal" href="#coapy.message.Request" title="coapy.message.Request"><tt class="xref py py-class docutils literal"><span class="pre">Request</span></tt></a> and <a class="reference internal" href="#coapy.message.Response" title="coapy.message.Response"><tt class="xref py py-class docutils literal"><span class="pre">Response</span></tt></a> messages.</li>
+<li><a class="reference internal" href="#coapy.message.Message.Type_ACK" title="coapy.message.Message.Type_ACK"><tt class="xref py py-attr docutils literal"><span class="pre">ACK</span></tt></a> allowed only for
+<a class="reference internal" href="#coapy.message.Message.Empty" title="coapy.message.Message.Empty"><tt class="xref py py-attr docutils literal"><span class="pre">Empty</span></tt></a> and <a class="reference internal" href="#coapy.message.Response" title="coapy.message.Response"><tt class="xref py py-class docutils literal"><span class="pre">Response</span></tt></a> messages.</li>
+<li><a class="reference internal" href="#coapy.message.Message.Type_RST" title="coapy.message.Message.Type_RST"><tt class="xref py py-attr docutils literal"><span class="pre">RST</span></tt></a> allowed only for
+<a class="reference internal" href="#coapy.message.Message.Empty" title="coapy.message.Message.Empty"><tt class="xref py py-attr docutils literal"><span class="pre">Empty</span></tt></a> messages.</li>
+</ul>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.MessageValidationError.CODE_UNDEFINED">
+<tt class="descname">CODE_UNDEFINED</tt><em class="property"> = u'missing code'</em><a class="headerlink" href="#coapy.message.MessageValidationError.CODE_UNDEFINED" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>diagnostic</em> value when caller failed to assign a value to
+<a class="reference internal" href="#coapy.message.Message.code" title="coapy.message.Message.code"><tt class="xref py py-attr docutils literal"><span class="pre">Message.code</span></tt></a></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.MessageValidationError.EMPTY_MESSAGE_NOT_EMPTY">
+<tt class="descname">EMPTY_MESSAGE_NOT_EMPTY</tt><em class="property"> = u'excess content in Empty message'</em><a class="headerlink" href="#coapy.message.MessageValidationError.EMPTY_MESSAGE_NOT_EMPTY" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>diagnostic</em> value when a message with code
+<a class="reference internal" href="#coapy.message.Message.Empty" title="coapy.message.Message.Empty"><tt class="xref py py-attr docutils literal"><span class="pre">Empty</span></tt></a> has a non-empty
+<a class="reference internal" href="#coapy.message.Message.token" title="coapy.message.Message.token"><tt class="xref py py-attr docutils literal"><span class="pre">Message.token</span></tt></a>, <a class="reference internal" href="#coapy.message.Message.options" title="coapy.message.Message.options"><tt class="xref py py-attr docutils literal"><span class="pre">Message.options</span></tt></a>, or
+<a class="reference internal" href="#coapy.message.Message.payload" title="coapy.message.Message.payload"><tt class="xref py py-attr docutils literal"><span class="pre">Message.payload</span></tt></a> attribute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.MessageValidationError.PROXY_URI_CONFLICT">
+<tt class="descname">PROXY_URI_CONFLICT</tt><em class="property"> = u'Proxy-Uri mixed with Uri-*'</em><a class="headerlink" href="#coapy.message.MessageValidationError.PROXY_URI_CONFLICT" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>diagnostic</em> value when <em>message</em> has both
+<a class="reference internal" href="coapy_option.html#coapy.option.ProxyUri" title="coapy.option.ProxyUri"><tt class="xref py py-class docutils literal"><span class="pre">coapy.option.ProxyUri</span></tt></a> and at least one of
+<a class="reference internal" href="coapy_option.html#coapy.option.UriHost" title="coapy.option.UriHost"><tt class="xref py py-class docutils literal"><span class="pre">coapy.option.UriHost</span></tt></a>, <a class="reference internal" href="coapy_option.html#coapy.option.UriPort" title="coapy.option.UriPort"><tt class="xref py py-class docutils literal"><span class="pre">coapy.option.UriPort</span></tt></a>,
+<a class="reference internal" href="coapy_option.html#coapy.option.UriPath" title="coapy.option.UriPath"><tt class="xref py py-class docutils literal"><span class="pre">coapy.option.UriPath</span></tt></a>, or <a class="reference internal" href="coapy_option.html#coapy.option.UriQuery" title="coapy.option.UriQuery"><tt class="xref py py-class docutils literal"><span class="pre">coapy.option.UriQuery</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.MessageValidationError.UNRECOGNIZED_CRITICAL_OPTION">
+<tt class="descname">UNRECOGNIZED_CRITICAL_OPTION</tt><em class="property"> = u'Unrecognized critical option'</em><a class="headerlink" href="#coapy.message.MessageValidationError.UNRECOGNIZED_CRITICAL_OPTION" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>diagnostic</em> value when <em>message</em> has an option that is
+critical but was not recognized.  For this exception the
+<tt class="xref py py-attr docutils literal"><span class="pre">Exception.args</span></tt> are <tt class="docutils literal"><span class="pre">(diagnostic,</span> <span class="pre">message,</span>
+<span class="pre">option)</span></tt> where <em>option</em> is the unrecognized critical option.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="exception">
+<dt id="coapy.message.MessageReplyError">
+<em class="property">exception </em><tt class="descclassname">coapy.message.</tt><tt class="descname">MessageReplyError</tt><a class="reference internal" href="_modules/coapy/message.html#MessageReplyError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#coapy.message.MessageReplyError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#coapy.message.MessageError" title="coapy.message.MessageError"><tt class="xref py py-class docutils literal"><span class="pre">coapy.message.MessageError</span></tt></a></p>
+<p>Exception raised when <a class="reference internal" href="#coapy.message.Message.create_reply" title="coapy.message.Message.create_reply"><tt class="xref py py-meth docutils literal"><span class="pre">Message.create_reply()</span></tt></a> is invoked improperly.</p>
+<p>The <em>args</em> are <tt class="docutils literal"><span class="pre">(diagnostic,</span> <span class="pre">msg)</span></tt> where <em>diagnostic</em> is one of
+the string values in this class, and <em>msg</em> is the message for
+which a reply could not be created.</p>
+<dl class="attribute">
+<dt id="coapy.message.MessageReplyError.ACK_FOR_NON">
+<tt class="descname">ACK_FOR_NON</tt><em class="property"> = u'ACK of NON-confirmable message'</em><a class="headerlink" href="#coapy.message.MessageReplyError.ACK_FOR_NON" title="Permalink to this definition">¶</a></dt>
+<dd><p>Per <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-4.3">CoAP Section 4.3</a>, a non-confirmable message MUST NOT be
+acknowledged.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="coapy.message.MessageReplyError.INVALID_TYPE">
+<tt class="descname">INVALID_TYPE</tt><em class="property"> = u'Reply to unrepliable message'</em><a class="headerlink" href="#coapy.message.MessageReplyError.INVALID_TYPE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Attempt to create a reply to an <a class="reference internal" href="#coapy.message.Message.Type_ACK" title="coapy.message.Message.Type_ACK"><tt class="xref py py-attr docutils literal"><span class="pre">ACK</span></tt></a>
+or <a class="reference internal" href="#coapy.message.Message.Type_RST" title="coapy.message.Message.Type_RST"><tt class="xref py py-attr docutils literal"><span class="pre">RST</span></tt></a> message.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">coapy.message</a><ul>
+<li><a class="reference internal" href="#messages">Messages</a></li>
+<li><a class="reference internal" href="#utility-classes">Utility Classes</a></li>
+<li><a class="reference internal" href="#message-related-exceptions">Message-Related Exceptions</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="api.html"
+                        title="previous chapter">API</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="coapy_option.html"
+                        title="next chapter">coapy.option</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/coapy_message.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="coapy_option.html" title="coapy.option"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="api.html" title="API"
+             >previous</a> |</li>
+        <li><a href="index.html">CoAPy 0.0.0 documentation</a> &raquo;</li>
+          <li><a href="api.html" >API</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Peter A. Bigot.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

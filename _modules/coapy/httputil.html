@@ -1,0 +1,360 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>coapy.httputil &mdash; CoAPy 0.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="CoAPy 0.0.0 documentation" href="../../index.html" />
+    <link rel="up" title="coapy" href="../coapy.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">CoAPy 0.0.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../coapy.html" accesskey="U">coapy</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for coapy.httputil</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="c"># Copyright 2013, Peter A. Bigot</span>
+<span class="c"># Parts Copyright © 2001-2013 Python Software Foundation; All Rights Reserved</span>
+<span class="c">#</span>
+<span class="c"># Excepting the small part of RequestHandler.handle_one_request that</span>
+<span class="c"># is copied from Python 2.7.3 BaseHTTPServer.py and is subject to the</span>
+<span class="c"># PSF License:</span>
+<span class="c">#</span>
+<span class="c"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;); you may</span>
+<span class="c"># not use this file except in compliance with the License. You may obtain a</span>
+<span class="c"># copy of the License at:</span>
+<span class="c">#</span>
+<span class="c">#            http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c">#</span>
+<span class="c"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS, WITHOUT</span>
+<span class="c"># WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the</span>
+<span class="c"># License for the specific language governing permissions and limitations</span>
+<span class="c"># under the License.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Utility classes and functions used within CoAPy.</span>
+
+<span class="sd">:copyright: Copyright 2013, Peter A. Bigot</span>
+<span class="sd">:license: Apache-2.0</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">division</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="n">_log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">urllib</span>
+<span class="kn">import</span> <span class="nn">BaseHTTPServer</span>
+<span class="kn">import</span> <span class="nn">socket</span>
+<span class="kn">import</span> <span class="nn">urlparse</span>
+
+
+<div class="viewcode-block" id="HTTPServer"><a class="viewcode-back" href="../../coapy_httputil.html#coapy.httputil.HTTPServer">[docs]</a><span class="k">class</span> <span class="nc">HTTPServer</span><span class="p">(</span><span class="n">BaseHTTPServer</span><span class="o">.</span><span class="n">HTTPServer</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Modifications required to provide the server development</span>
+<span class="sd">    interface we want.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="HTTPServer.make_uri"><a class="viewcode-back" href="../../coapy_httputil.html#coapy.httputil.HTTPServer.make_uri">[docs]</a>    <span class="k">def</span> <span class="nf">make_uri</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">query</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">fragment</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create an absolute URI for something hosted on this server.</span>
+
+<span class="sd">        Needed for things like a `Location</span>
+<span class="sd">        &lt;http://tools.ietf.org/html/rfc2616#section-14.30&gt;`_ header.</span>
+
+<span class="sd">        .. note::</span>
+
+<span class="sd">           This function will not return a usable URI if</span>
+<span class="sd">           :attr:`python:BaseHTTPServer.HTTPServer.socket` is bound to</span>
+<span class="sd">           a wildcard address.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="p">(</span><span class="n">sa</span><span class="p">,</span> <span class="n">port</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">socket</span><span class="o">.</span><span class="n">getsockname</span><span class="p">()[:</span><span class="mi">2</span><span class="p">]</span>
+        <span class="k">if</span> <span class="mi">80</span> <span class="o">!=</span> <span class="n">port</span><span class="p">:</span>
+            <span class="n">netloc</span> <span class="o">=</span> <span class="s">&#39;{0}:{1}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">sa</span><span class="p">,</span> <span class="n">port</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">netloc</span> <span class="o">=</span> <span class="n">sa</span>
+        <span class="k">return</span> <span class="n">urlparse</span><span class="o">.</span><span class="n">urlunsplit</span><span class="p">((</span><span class="s">&#39;http&#39;</span><span class="p">,</span> <span class="n">netloc</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">query</span><span class="p">,</span> <span class="n">fragment</span><span class="p">))</span>
+</div></div>
+<div class="viewcode-block" id="HTTPRequestHandler"><a class="viewcode-back" href="../../coapy_httputil.html#coapy.httputil.HTTPRequestHandler">[docs]</a><span class="k">class</span> <span class="nc">HTTPRequestHandler</span><span class="p">(</span><span class="n">BaseHTTPServer</span><span class="o">.</span><span class="n">BaseHTTPRequestHandler</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Modifications required to provide the server development</span>
+<span class="sd">    interface we want.</span>
+
+<span class="sd">    This version inverts control relative to the Python standard web</span>
+<span class="sd">    server hierarchy: Rather than have the supported methods defined</span>
+<span class="sd">    by the generic handler, we follow REST principles and delegate the</span>
+<span class="sd">    selection of supported methods to the resources.  A</span>
+<span class="sd">    :class:`HTTPRequestHandler` class retains in :attr:`_Resources` a</span>
+<span class="sd">    map from path prefixes to instances of :class:`HTTPResource` which</span>
+<span class="sd">    in turn provide the methods that are appropriate to that resource.</span>
+<span class="sd">    Processing is delegated to the registered resource whose</span>
+<span class="sd">    :attr:`HTTPResource.path` is the longest segment prefix of the</span>
+<span class="sd">    request URI ``path``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">split_uri</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="sd">&quot;&quot;&quot;The results of invoking :func:`python:urlparse.urlsplit` on</span>
+<span class="sd">    :attr:`path&lt;python:BaseHTTPServer.BaseHTTPRequestHandler.path&gt;`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">_Resources</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="sd">&quot;&quot;&quot;A map from absolute path segment prefixes to instances of</span>
+<span class="sd">    :class:`HTTPResource`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="HTTPRequestHandler.add_resource"><a class="viewcode-back" href="../../coapy_httputil.html#coapy.httputil.HTTPRequestHandler.add_resource">[docs]</a>    <span class="k">def</span> <span class="nf">add_resource</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">resource</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Add *resource* to the registry for this class at</span>
+<span class="sd">        :attr:`resource.path&lt;HTTPResource.path&gt;`.  This function is</span>
+<span class="sd">        automatically invoked in the constructor for</span>
+<span class="sd">        :class:`HTTPResource`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">cls</span><span class="o">.</span><span class="n">_Resources</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">cls</span><span class="o">.</span><span class="n">_Resources</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">resource</span><span class="p">,</span> <span class="n">HTTPResource</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">resource</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">resource</span><span class="o">.</span><span class="n">path</span> <span class="ow">in</span> <span class="n">cls</span><span class="o">.</span><span class="n">_Resources</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">resource</span><span class="p">)</span>
+        <span class="n">cls</span><span class="o">.</span><span class="n">_Resources</span><span class="p">[</span><span class="n">resource</span><span class="o">.</span><span class="n">path</span><span class="p">]</span> <span class="o">=</span> <span class="n">resource</span>
+
+</div>
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="HTTPRequestHandler.remove_resource"><a class="viewcode-back" href="../../coapy_httputil.html#coapy.httputil.HTTPRequestHandler.remove_resource">[docs]</a>    <span class="k">def</span> <span class="nf">remove_resource</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">resource</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Remove *resource* from the registry.&quot;&quot;&quot;</span>
+        <span class="k">del</span> <span class="n">cls</span><span class="o">.</span><span class="n">_Resources</span><span class="p">[</span><span class="n">resource</span><span class="o">.</span><span class="n">path</span><span class="p">]</span>
+
+</div>
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="HTTPRequestHandler.lookup_resource"><a class="viewcode-back" href="../../coapy_httputil.html#coapy.httputil.HTTPRequestHandler.lookup_resource">[docs]</a>    <span class="k">def</span> <span class="nf">lookup_resource</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Find the best registered resource at *path*.</span>
+
+<span class="sd">        *path* is a slash-separated hierarchy of path segments.  The</span>
+<span class="sd">        registered resource for which :attr:`HTTPResource.path`</span>
+<span class="sd">        matches a segmented prefix of *path* is returned.  If no</span>
+<span class="sd">        prefix matches, ``None`` is returned.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">segments</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">)</span>
+        <span class="k">while</span> <span class="n">segments</span><span class="p">:</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">segments</span><span class="p">)</span>
+            <span class="n">resource</span> <span class="o">=</span> <span class="n">cls</span><span class="o">.</span><span class="n">_Resources</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">resource</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">resource</span>
+            <span class="n">segments</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">None</span>
+
+
+    <span class="c"># NOTE: The implementation of this method is from Python 2.7</span>
+    <span class="c"># BaseHTTPServer.py, modified as marked in the code.</span></div>
+<div class="viewcode-block" id="HTTPRequestHandler.handle_one_request"><a class="viewcode-back" href="../../coapy_httputil.html#coapy.httputil.HTTPRequestHandler.handle_one_request">[docs]</a>    <span class="k">def</span> <span class="nf">handle_one_request</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Handle a single HTTP request.</span>
+
+<span class="sd">        Replace parts of</span>
+<span class="sd">        :meth:`python:BaseHTTPServer.BaseHTTPRequestHandler.handle_one_request`</span>
+<span class="sd">        to identify a :class:`HTTPResource` instance using the ``path``</span>
+<span class="sd">        part of the URI, and delegate all processing (including</span>
+<span class="sd">        checking for supported methods) to that resource.  If no</span>
+<span class="sd">        segment prefix of ``path`` is associated with a registered</span>
+<span class="sd">        resource a 404 error is returned to the client.</span>
+
+<span class="sd">        This function assigns :attr:`split_uri`.</span>
+
+<span class="sd">        .. note::</span>
+
+<span class="sd">           Resource lookup uses the the `path part of the URI</span>
+<span class="sd">           &lt;http://tools.ietf.org/html/rfc3986.html#section-3.3&gt;`_,</span>
+<span class="sd">           exclusive of any query or fragment components that may also</span>
+<span class="sd">           be present in</span>
+<span class="sd">           :attr:`path&lt;python:BaseHTTPServer.BaseHTTPRequestHandler.path&gt;`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">raw_requestline</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rfile</span><span class="o">.</span><span class="n">readline</span><span class="p">(</span><span class="mi">65537</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">raw_requestline</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">65536</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">requestline</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">request_version</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">command</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">send_error</span><span class="p">(</span><span class="mi">414</span><span class="p">)</span>
+                <span class="k">return</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_requestline</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">close_connection</span> <span class="o">=</span> <span class="mi">1</span>
+                <span class="k">return</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_request</span><span class="p">():</span>
+                <span class="c"># An error code has been sent, just exit</span>
+                <span class="k">return</span>
+            <span class="c"># &gt;&gt;&gt; Modifications begin here:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">split_uri</span> <span class="o">=</span> <span class="n">urlparse</span><span class="o">.</span><span class="n">urlsplit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+            <span class="n">resource</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lookup_resource</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">split_uri</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">resource</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">send_error</span><span class="p">(</span><span class="mi">404</span><span class="p">)</span>
+                <span class="k">return</span>
+            <span class="n">resource</span><span class="o">.</span><span class="n">handle_request</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="c"># &lt;&lt;&lt; Modifications end here</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">wfile</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span> <span class="c">#actually send the response if not already done.</span>
+        <span class="k">except</span> <span class="n">socket</span><span class="o">.</span><span class="n">timeout</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+            <span class="c">#a read or a write timed out.  Discard this connection</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log_error</span><span class="p">(</span><span class="s">&quot;Request timed out: </span><span class="si">%r</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">close_connection</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="k">return</span>
+
+</div></div>
+<div class="viewcode-block" id="HTTPResource"><a class="viewcode-back" href="../../coapy_httputil.html#coapy.httputil.HTTPResource">[docs]</a><span class="k">class</span> <span class="nc">HTTPResource</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class supporting a resource with specific methods.</span>
+
+<span class="sd">    Instances of this class are delegates from</span>
+<span class="sd">    :class:`HTTPRequestHandler` (or a subclass).  The appropriate</span>
+<span class="sd">    resource is identified by a segment prefix of the</span>
+<span class="sd">    :attr:`path&lt;HTTPRequestHandler.path&gt;`.  ``do_FOO`` methods are</span>
+<span class="sd">    implemented in the resource rather than in the request handler.</span>
+
+<span class="sd">    *path* is the absolute path to the resource.  *handler_class* is</span>
+<span class="sd">    (the subclass of) :class:`HTTPRequestHandler` into which the</span>
+<span class="sd">    created resource will be registered at *path*.</span>
+
+<span class="sd">    Note that the architectural model supports multiple instances of a</span>
+<span class="sd">    resource class at different paths.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="HTTPResource.path"><a class="viewcode-back" href="../../coapy_httputil.html#coapy.httputil.HTTPResource.path">[docs]</a>    <span class="k">def</span> <span class="nf">path</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;A read-only property specifying the prefix under which</span>
+<span class="sd">        this resource is registered within :attr:`handler_class`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__path</span>
+</div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="HTTPResource.handler_class"><a class="viewcode-back" href="../../coapy_httputil.html#coapy.httputil.HTTPResource.handler_class">[docs]</a>    <span class="k">def</span> <span class="nf">handler_class</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;A read-only property providing the subclass of</span>
+<span class="sd">        :class:`HTTPRequestHandler` within which this resource is</span>
+<span class="sd">        registered.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__handler_class</span>
+</div>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">handler_class</span><span class="o">=</span><span class="n">HTTPRequestHandler</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">handler_class</span><span class="p">,</span> <span class="n">HTTPRequestHandler</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">handler_class</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__path</span> <span class="o">=</span> <span class="n">path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__handler_class</span> <span class="o">=</span> <span class="n">handler_class</span>
+        <span class="n">handler_class</span><span class="o">.</span><span class="n">add_resource</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+<div class="viewcode-block" id="HTTPResource.handle_request"><a class="viewcode-back" href="../../coapy_httputil.html#coapy.httputil.HTTPResource.handle_request">[docs]</a>    <span class="k">def</span> <span class="nf">handle_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Process a single request.</span>
+
+<span class="sd">        The :attr:`command&lt;python:BaseHTTPRequestHandler.command&gt;`</span>
+<span class="sd">        from the request is append to ``do_`` and the resulting method</span>
+<span class="sd">        is invoked to execute the operation.  If the command is not</span>
+<span class="sd">        implemented, a 501 Unsupported Method error is returned to the</span>
+<span class="sd">        client.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">request</span> <span class="o">=</span> <span class="n">request</span>
+        <span class="n">mname</span> <span class="o">=</span> <span class="s">&#39;do_&#39;</span> <span class="o">+</span> <span class="n">request</span><span class="o">.</span><span class="n">command</span>
+        <span class="n">meth</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mname</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">meth</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">request</span><span class="o">.</span><span class="n">send_error</span><span class="p">(</span><span class="mi">501</span><span class="p">,</span> <span class="s">&quot;Unsupported method (</span><span class="si">%r</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="n">request</span><span class="o">.</span><span class="n">command</span><span class="p">)</span>
+            <span class="k">return</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">meth</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">NotImplementedError</span><span class="p">:</span>
+            <span class="n">request</span><span class="o">.</span><span class="n">send_error</span><span class="p">(</span><span class="mi">501</span><span class="p">,</span> <span class="s">&quot;Unsupported method (</span><span class="si">%r</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="n">request</span><span class="o">.</span><span class="n">command</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="HTTPResource.do_HEAD"><a class="viewcode-back" href="../../coapy_httputil.html#coapy.httputil.HTTPResource.do_HEAD">[docs]</a>    <span class="k">def</span> <span class="nf">do_HEAD</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Default implementation delegates to :meth:`do_GET` with</span>
+<span class="sd">        ``head_only=True``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">do_GET</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">head_only</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="HTTPResource.do_GET"><a class="viewcode-back" href="../../coapy_httputil.html#coapy.httputil.HTTPResource.do_GET">[docs]</a>    <span class="k">def</span> <span class="nf">do_GET</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">head_only</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Stub for a `GET</span>
+<span class="sd">        &lt;http://tools.ietf.org/html/rfc2616#section-9.3&gt;`_ method.</span>
+
+<span class="sd">        *request* is the instance of :class:`HTTPRequestHandler` that</span>
+<span class="sd">        has the request-specific data and ability to communicate</span>
+<span class="sd">        results to the client.  *head_only* is ``False`` normally, but</span>
+<span class="sd">        may be set to ``True`` to allow this function to also</span>
+<span class="sd">        implement the `HEAD</span>
+<span class="sd">        &lt;http://tools.ietf.org/html/rfc2616#section-9.4&gt;`_ method: the</span>
+<span class="sd">        implementation is responsible for eliding the body of the</span>
+<span class="sd">        response in that case.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+</pre></div></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">CoAPy 0.0.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../coapy.html" >coapy</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Peter A. Bigot.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,269 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>tests.support &mdash; CoAPy 0.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="CoAPy 0.0.0 documentation" href="index.html" />
+    <link rel="up" title="API" href="api.html" />
+    <link rel="prev" title="coapy.httputil" href="coapy_httputil.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="coapy_httputil.html" title="coapy.httputil"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">CoAPy 0.0.0 documentation</a> &raquo;</li>
+          <li><a href="api.html" accesskey="U">API</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-tests.support">
+<span id="tests-support"></span><h1>tests.support<a class="headerlink" href="#module-tests.support" title="Permalink to this headline">¶</a></h1>
+<p>Support for CoAPy unit testing.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">copyright:</th><td class="field-body">Copyright 2013, Peter A. Bigot</td>
+</tr>
+<tr class="field-even field"><th class="field-name">license:</th><td class="field-body">Apache-2.0</td>
+</tr>
+</tbody>
+</table>
+<dl class="class">
+<dt id="tests.support.FIFOEndpoint">
+<em class="property">class </em><tt class="descclassname">tests.support.</tt><tt class="descname">FIFOEndpoint</tt><big>(</big><em>sockaddr=None</em>, <em>family=0</em>, <em>security_mode=None</em>, <em>host=None</em>, <em>port=5683</em><big>)</big><a class="reference internal" href="_modules/tests/support.html#FIFOEndpoint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tests.support.FIFOEndpoint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="coapy_endpoint.html#coapy.endpoint.LocalEndpoint" title="coapy.endpoint.LocalEndpoint"><tt class="xref py py-class docutils literal"><span class="pre">coapy.endpoint.LocalEndpoint</span></tt></a></p>
+<p>A specialized endpoint for unit testing.</p>
+<p>Each instance of this class is assigned a unique name.  The
+underlying <a class="reference internal" href="coapy_endpoint.html#coapy.endpoint.LocalEndpoint._rawsendto" title="coapy.endpoint.LocalEndpoint._rawsendto"><tt class="xref py py-meth docutils literal"><span class="pre">coapy.endpoint.LocalEndpoint._rawsendto()</span></tt></a> and
+<a class="reference internal" href="coapy_endpoint.html#coapy.endpoint.LocalEndpoint._rawrecvfrom" title="coapy.endpoint.LocalEndpoint._rawrecvfrom"><tt class="xref py py-meth docutils literal"><span class="pre">coapy.endpoint.LocalEndpoint._rawrecvfrom()</span></tt></a> operations are
+replaced to directly deliver to another instance of this class.</p>
+<dl class="method">
+<dt id="tests.support.FIFOEndpoint._rawrecvfrom">
+<tt class="descname">_rawrecvfrom</tt><big>(</big><em>bufsize</em><big>)</big><a class="reference internal" href="_modules/tests/support.html#FIFOEndpoint._rawrecvfrom"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tests.support.FIFOEndpoint._rawrecvfrom" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the tuple <tt class="docutils literal"><span class="pre">(data,</span> <span class="pre">destination_endpoint)</span></tt> at the
+head of <a class="reference internal" href="#tests.support.FIFOEndpoint.fifo" title="tests.support.FIFOEndpoint.fifo"><tt class="xref py py-attr docutils literal"><span class="pre">fifo</span></tt></a>.  If the fifo is empty, raises
+<a class="reference external" href="http://docs.python.org/2.7/library/socket.html#socket.error" title="(in Python v2.7)"><tt class="docutils literal"><span class="pre">socket.error</span></tt></a>.</p>
+<p>Overrides <a class="reference internal" href="coapy_endpoint.html#coapy.endpoint.LocalEndpoint.rawrecvfrom" title="coapy.endpoint.LocalEndpoint.rawrecvfrom"><tt class="xref py py-meth docutils literal"><span class="pre">coapy.endpoint.LocalEndpoint.rawrecvfrom()</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tests.support.FIFOEndpoint._rawsendto">
+<tt class="descname">_rawsendto</tt><big>(</big><em>data</em>, <em>destination_endpoint</em><big>)</big><a class="reference internal" href="_modules/tests/support.html#FIFOEndpoint._rawsendto"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tests.support.FIFOEndpoint._rawsendto" title="Permalink to this definition">¶</a></dt>
+<dd><p>Place the tuple <tt class="docutils literal"><span class="pre">(data,</span> <span class="pre">self)</span></tt> on the <a class="reference internal" href="#tests.support.FIFOEndpoint.fifo" title="tests.support.FIFOEndpoint.fifo"><tt class="xref py py-attr docutils literal"><span class="pre">fifo</span></tt></a> of
+<em>destination_endpoint</em>, which must also be a
+<a class="reference internal" href="#tests.support.FIFOEndpoint" title="tests.support.FIFOEndpoint"><tt class="xref py py-class docutils literal"><span class="pre">FIFOEndpoint</span></tt></a>.</p>
+<p>Overrides <a class="reference internal" href="coapy_endpoint.html#coapy.endpoint.LocalEndpoint.rawsendto" title="coapy.endpoint.LocalEndpoint.rawsendto"><tt class="xref py py-meth docutils literal"><span class="pre">coapy.endpoint.LocalEndpoint.rawsendto()</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tests.support.FIFOEndpoint.fifo">
+<tt class="descname">fifo</tt><a class="reference internal" href="_modules/tests/support.html#FIFOEndpoint.fifo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tests.support.FIFOEndpoint.fifo" title="Permalink to this definition">¶</a></dt>
+<dd><p>Access to the FIFO holding undelivered messages to this
+endpoint.  Elements on the FIFO are tuples <tt class="docutils literal"><span class="pre">(data,</span>
+<span class="pre">source_endpoint)</span></tt> where <em>data</em> is a byte string and
+<em>source_endpoint</em> is the endpoint from which <em>data</em> was
+received.</p>
+<p>The contents of the fifo may be inspected and manipulated to
+test endpoint network delivery without involving real sockets.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="tests.support.DeterministicBEBO_mixin">
+<em class="property">class </em><tt class="descclassname">tests.support.</tt><tt class="descname">DeterministicBEBO_mixin</tt><a class="reference internal" href="_modules/tests/support.html#DeterministicBEBO_mixin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tests.support.DeterministicBEBO_mixin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
+<p>Extension that replaces <a class="reference internal" href="api.html#coapy.transmissionParameters" title="coapy.transmissionParameters"><tt class="xref py py-data docutils literal"><span class="pre">coapy.transmissionParameters</span></tt></a>
+with an instance of <a class="reference internal" href="coapy_message.html#coapy.message.TransmissionParameters" title="coapy.message.TransmissionParameters"><tt class="xref py py-class docutils literal"><span class="pre">coapy.message.TransmissionParameters</span></tt></a>
+that sets
+<a class="reference internal" href="coapy_message.html#coapy.message.TransmissionParameters.ACK_RANDOM_FACTOR" title="coapy.message.TransmissionParameters.ACK_RANDOM_FACTOR"><tt class="xref py py-attr docutils literal"><span class="pre">ACK_RANDOM_FACTOR</span></tt></a>
+to 1.0 to eliminate non-determinism in delays.</p>
+<p>This class should be mixed-in as a base class along with
+<a class="reference external" href="http://docs.python.org/2.7/library/unittest.html#unittest.TestCase" title="(in Python v2.7)"><tt class="docutils literal"><span class="pre">unittest.TestCase</span></tt></a> for tests that need
+deterministic retransmission behavior.</p>
+<dl class="method">
+<dt id="tests.support.DeterministicBEBO_mixin.setUp">
+<tt class="descname">setUp</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/tests/support.html#DeterministicBEBO_mixin.setUp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tests.support.DeterministicBEBO_mixin.setUp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cooperative super-calling support to install deterministic
+transmission parameters.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tests.support.DeterministicBEBO_mixin.tearDown">
+<tt class="descname">tearDown</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/tests/support.html#DeterministicBEBO_mixin.tearDown"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tests.support.DeterministicBEBO_mixin.tearDown" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cooperative super-calling support to return to default
+transmission parameters.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="tests.support.LogHandler_mixin">
+<em class="property">class </em><tt class="descclassname">tests.support.</tt><tt class="descname">LogHandler_mixin</tt><a class="reference internal" href="_modules/tests/support.html#LogHandler_mixin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tests.support.LogHandler_mixin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
+<p>Extension that registers a
+<a class="reference external" href="http://docs.python.org/2.7/library/logging.handlers.html#logging.handlers.BufferingHandler" title="(in Python v2.7)"><tt class="docutils literal"><span class="pre">logging.handlers.BufferingHandler</span></tt></a> for loggers used
+in CoAPy modules to capture the log messages for diagnostic
+verification.</p>
+<p>This implementation currently assumes that only the root logger
+has set the log message level.  For the duration of the test, this
+level is reset to 1 (enabling capture of records at all levels).</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Unit tests that make use of this feature should be sure to
+invoke <tt class="docutils literal"><span class="pre">self.log_handler.flush()</span></tt> prior to exiting.  Any
+unflushed messages left in the buffering handler will be
+emitted to the console when the test cleanup is performed, so
+that unexpected log messages do not slip by unnoticed.</p>
+</div>
+<dl class="attribute">
+<dt id="tests.support.LogHandler_mixin.LOG_CAPACITY">
+<tt class="descname">LOG_CAPACITY</tt><em class="property"> = 128</em><a class="headerlink" href="#tests.support.LogHandler_mixin.LOG_CAPACITY" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of records that the associated <a class="reference internal" href="#tests.support.LogHandler_mixin.log_handler" title="tests.support.LogHandler_mixin.log_handler"><tt class="xref py py-attr docutils literal"><span class="pre">log_handler</span></tt></a>
+should be able to retain.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="tests.support.LogHandler_mixin.log_handler">
+<tt class="descname">log_handler</tt><a class="reference internal" href="_modules/tests/support.html#LogHandler_mixin.log_handler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tests.support.LogHandler_mixin.log_handler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read-only reference to the
+<a class="reference external" href="http://docs.python.org/2.7/library/logging.handlers.html#logging.handlers.BufferingHandler" title="(in Python v2.7)"><tt class="docutils literal"><span class="pre">logging.handlers.BufferingHandler</span></tt></a> that is
+hooked into the logging infrastructure while the unit test is
+running.  The test case may access the log handler&#8217;s
+<tt class="xref py py-attr docutils literal"><span class="pre">buffer</span></tt>
+attribute to access the generated <a class="reference external" href="http://docs.python.org/2.7/library/logging.html#logging.LogRecord" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">log</span>
+<span class="pre">records</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tests.support.LogHandler_mixin.setUp">
+<tt class="descname">setUp</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/tests/support.html#LogHandler_mixin.setUp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tests.support.LogHandler_mixin.setUp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cooperative super-calling support to install managed clock.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tests.support.LogHandler_mixin.tearDown">
+<tt class="descname">tearDown</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/tests/support.html#LogHandler_mixin.tearDown"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tests.support.LogHandler_mixin.tearDown" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cooperative super-calling support to remove
+<a class="reference internal" href="#tests.support.LogHandler_mixin.log_handler" title="tests.support.LogHandler_mixin.log_handler"><tt class="xref py py-attr docutils literal"><span class="pre">log_handler</span></tt></a>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="tests.support.ManagedClock_mixin">
+<em class="property">class </em><tt class="descclassname">tests.support.</tt><tt class="descname">ManagedClock_mixin</tt><a class="reference internal" href="_modules/tests/support.html#ManagedClock_mixin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tests.support.ManagedClock_mixin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
+<p>Extension that replaces <a class="reference internal" href="api.html#coapy.clock" title="coapy.clock"><tt class="xref py py-data docutils literal"><span class="pre">coapy.clock</span></tt></a> with an instance of
+<a class="reference internal" href="api.html#coapy.ManagedClock" title="coapy.ManagedClock"><tt class="xref py py-class docutils literal"><span class="pre">coapy.ManagedClock</span></tt></a> to eliminate non-determinism in clock
+queries.</p>
+<p>This class should be mixed-in as a base class along with
+<a class="reference external" href="http://docs.python.org/2.7/library/unittest.html#unittest.TestCase" title="(in Python v2.7)"><tt class="docutils literal"><span class="pre">unittest.TestCase</span></tt></a> for tests that need to control
+the CoAPy clock.</p>
+<dl class="method">
+<dt id="tests.support.ManagedClock_mixin.setUp">
+<tt class="descname">setUp</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/tests/support.html#ManagedClock_mixin.setUp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tests.support.ManagedClock_mixin.setUp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cooperative super-calling support to install managed clock.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tests.support.ManagedClock_mixin.tearDown">
+<tt class="descname">tearDown</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/tests/support.html#ManagedClock_mixin.tearDown"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tests.support.ManagedClock_mixin.tearDown" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cooperative super-calling support to return to default
+clock.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="coapy_httputil.html"
+                        title="previous chapter">coapy.httputil</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/tests_support.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="coapy_httputil.html" title="coapy.httputil"
+             >previous</a> |</li>
+        <li><a href="index.html">CoAPy 0.0.0 documentation</a> &raquo;</li>
+          <li><a href="api.html" >API</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Peter A. Bigot.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

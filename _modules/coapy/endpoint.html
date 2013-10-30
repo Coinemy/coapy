@@ -1,0 +1,1440 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>coapy.endpoint &mdash; CoAPy 0.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="CoAPy 0.0.0 documentation" href="../../index.html" />
+    <link rel="up" title="coapy" href="../coapy.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">CoAPy 0.0.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../coapy.html" accesskey="U">coapy</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for coapy.endpoint</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="c"># Copyright 2013, Peter A. Bigot</span>
+<span class="c">#</span>
+<span class="c"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;); you may</span>
+<span class="c"># not use this file except in compliance with the License. You may obtain a</span>
+<span class="c"># copy of the License at:</span>
+<span class="c">#</span>
+<span class="c">#            http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c">#</span>
+<span class="c"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS, WITHOUT</span>
+<span class="c"># WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the</span>
+<span class="c"># License for the specific language governing permissions and limitations</span>
+<span class="c"># under the License.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">:copyright: Copyright 2013, Peter A. Bigot</span>
+<span class="sd">:license: Apache-2.0</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">division</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="n">_log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+
+<span class="kn">import</span> <span class="nn">socket</span>
+<span class="kn">import</span> <span class="nn">urlparse</span>
+<span class="kn">import</span> <span class="nn">urllib</span>
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
+<span class="kn">import</span> <span class="nn">coapy</span>
+<span class="kn">import</span> <span class="nn">coapy.message</span>
+
+<span class="c"># Gross Hack: Update urlparse so it knows about the coap and coaps</span>
+<span class="c"># schemes, specifically that it should support joining relative URIs</span>
+<span class="c"># and process netloc and query.</span>
+<span class="n">urlparse</span><span class="o">.</span><span class="n">uses_relative</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s">&#39;coap&#39;</span><span class="p">,</span> <span class="s">&#39;coaps&#39;</span><span class="p">])</span>
+<span class="n">urlparse</span><span class="o">.</span><span class="n">uses_netloc</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s">&#39;coap&#39;</span><span class="p">,</span> <span class="s">&#39;coaps&#39;</span><span class="p">])</span>
+<span class="n">urlparse</span><span class="o">.</span><span class="n">uses_query</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s">&#39;coap&#39;</span><span class="p">,</span> <span class="s">&#39;coaps&#39;</span><span class="p">])</span>
+
+
+<span class="k">class</span> <span class="nc">URIError</span> <span class="p">(</span><span class="n">coapy</span><span class="o">.</span><span class="n">CoAPyException</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+
+<div class="viewcode-block" id="ReplyMessageError"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.ReplyMessageError">[docs]</a><span class="k">class</span> <span class="nc">ReplyMessageError</span> <span class="p">(</span><span class="n">coapy</span><span class="o">.</span><span class="n">CoAPyException</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Exception raised when :meth:`RcvdMessageCacheEntry.reply` is</span>
+<span class="sd">    invoked improperly.</span>
+
+<span class="sd">    The *args* are ``(diagnostic, cache_entry, message)`` where</span>
+<span class="sd">    *diagnostic* is one of the string values in this class,</span>
+<span class="sd">    *cache_entry* is the :class:`RcvdMessageCacheEntry`, and *message* is</span>
+<span class="sd">    the proposed reply message that was rejected.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">ID_MISMATCH</span> <span class="o">=</span> <span class="s">&#39;Message IDs do not match&#39;</span>
+    <span class="sd">&quot;&quot;&quot;A reply message must match using the</span>
+<span class="sd">    :attr:`messageID&lt;coapy.message.Message.messageID&gt;` attributes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">TOKEN_MISMATCH</span> <span class="o">=</span> <span class="s">&#39;Tokens do not match&#39;</span>
+    <span class="sd">&quot;&quot;&quot;A piggy-backed response must match the</span>
+<span class="sd">    :attr:`Token&lt;coapy.message.Message.token&gt;` of the request.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">NOT_RESPONSE</span> <span class="o">=</span> <span class="s">&#39;Non-empty reply is not a response&#39;</span>
+    <span class="sd">&quot;&quot;&quot;A piggy-backed response must be a :class:`response</span>
+<span class="sd">    message&lt;coapy.message.Response&gt;`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">RESPONSE_NOT_ACK</span> <span class="o">=</span> <span class="s">&#39;Piggy-backed response is not ACK&#39;</span>
+    <span class="sd">&quot;&quot;&quot;A piggy-backed response must have type</span>
+<span class="sd">    :attr:`ACK&lt;coapy.message.Message.Type_ACK&gt;`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">ALREADY_GIVEN</span> <span class="o">=</span> <span class="s">&#39;Message already has reply&#39;</span>
+    <span class="sd">&quot;&quot;&quot;A :attr:`reply_message&lt;RcvdMessageCacheEntry.reply_message&gt;`</span>
+<span class="sd">    has already been assigned.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+</div>
+<div class="viewcode-block" id="MessageCacheEntry"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.MessageCacheEntry">[docs]</a><span class="k">class</span> <span class="nc">MessageCacheEntry</span> <span class="p">(</span><span class="n">coapy</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">TimeDueOrdinal</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A class holding data stored in a :class:`MessageCache`.</span>
+
+<span class="sd">    Instances sort based on</span>
+<span class="sd">    :attr:`coapy.util.TimeDueOrdinal.time_due`, and may be looked up</span>
+<span class="sd">    based on :attr:`message_id`.</span>
+
+<span class="sd">    Keyword parameters recognized:</span>
+
+<span class="sd">    * *cache* identifies the</span>
+<span class="sd">      :class:`MessageCache` instance to which this entry will</span>
+<span class="sd">      belong.</span>
+<span class="sd">    * *message* is a :class:`Message` instance from which :attr:`Message.messageID`</span>
+<span class="sd">      is used to initialize :attr:`message_id`</span>
+<span class="sd">    * *message_id* is used to initialize :attr:`message_id` if</span>
+<span class="sd">      *message* is absent</span>
+<span class="sd">    * *time_due* is used to initialize :attr:`coapy.util.TimeDueOrdinal.time_due`</span>
+
+<span class="sd">    *cache* is a required keyword parameter.  One of *message* and</span>
+<span class="sd">     *message_id* must also be provided.  The created cache entry is</span>
+<span class="sd">     automatically inserted into the cache upon creation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">__cache</span> <span class="o">=</span> <span class="bp">None</span>
+
+<div class="viewcode-block" id="MessageCacheEntry._dissociate"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.MessageCacheEntry._dissociate">[docs]</a>    <span class="k">def</span> <span class="nf">_dissociate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Remove the connection between the instance and the cache.</span>
+
+<span class="sd">        This is invoked by :class:`MessageCache` operations that</span>
+<span class="sd">        remove the entry from its cache.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__cache</span> <span class="o">=</span> <span class="bp">None</span>
+</div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="MessageCacheEntry.cache"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.MessageCacheEntry.cache">[docs]</a>    <span class="k">def</span> <span class="nf">cache</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The :class:`MessageCache` to which this entry belongs.</span>
+<span class="sd">        This is a read-only property, set when the entry is created</span>
+<span class="sd">        and cleared when it has been removed from its cache.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__cache</span>
+</div>
+<div class="viewcode-block" id="MessageCacheEntry._get_time_due"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.MessageCacheEntry._get_time_due">[docs]</a>    <span class="k">def</span> <span class="nf">_get_time_due</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;See :attr:`coapy.util.TimeDueOrdinal.time_due`.  In this</span>
+<span class="sd">        class, modification of the value has the side-effect of moving</span>
+<span class="sd">        the entry within the :attr:`cache` queue.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__time_due</span>
+</div>
+    <span class="k">def</span> <span class="nf">_set_time_due</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__time_due</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="c"># If we&#39;re in the superclass constructor the cache has not</span>
+        <span class="c"># yet been assigned (nor has the message_id that must be</span>
+        <span class="c"># assigned prior to insertion).  So don&#39;t do anything yet.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__cache</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__cache</span><span class="o">.</span><span class="n">_reposition</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+    <span class="n">time_due</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_get_time_due</span><span class="p">,</span> <span class="n">_set_time_due</span><span class="p">)</span>
+
+    <span class="n">message_id</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="sd">&quot;&quot;&quot;The :attr:`Message.messageID` value associated with the cache</span>
+<span class="sd">    entry.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+        <span class="n">cache</span> <span class="o">=</span> <span class="n">kw</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s">&#39;cache&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+        <span class="n">message</span> <span class="o">=</span> <span class="n">kw</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s">&#39;message&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+        <span class="n">message_id</span> <span class="o">=</span> <span class="n">kw</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s">&#39;message_id&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">MessageCacheEntry</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kw</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">coapy</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">Message</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">message_id</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">messageID</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">message_id</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">message_id</span> <span class="o">=</span> <span class="n">message_id</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">message_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cache</span><span class="p">,</span> <span class="n">MessageCache</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">cache</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__cache</span> <span class="o">=</span> <span class="n">cache</span>
+        <span class="n">cache</span><span class="o">.</span><span class="n">_add</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="MessageCache"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.MessageCache">[docs]</a><span class="k">class</span> <span class="nc">MessageCache</span> <span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Dual-view collection used for caches based on :attr:`Message.messageID`.</span>
+
+<span class="sd">    This class implements a cache.  It simulates a dictionary allowing</span>
+<span class="sd">    lookup of items using :attr:`Message.messageID` values as keys.  It also</span>
+<span class="sd">    simulates a priority queue, allowing items to be removed from the</span>
+<span class="sd">    cache based on age.</span>
+
+<span class="sd">    Elements in the cache are expected to be instances of</span>
+<span class="sd">    :class:`MessageCacheEntry`.  Most lookup :class:`python:dict`</span>
+<span class="sd">    operations are supported.</span>
+
+<span class="sd">    Cache entries are placed in the cache when they are created.  It</span>
+<span class="sd">    is an error to create a new cache entry when one with the same</span>
+<span class="sd">    :attr:`MessageCacheEntry.message_id` is already present.</span>
+
+<span class="sd">    Entries are removed from the cache by using :meth:`pop_oldest`.</span>
+
+<span class="sd">    Entry content may be updated while in the cache, but once removed</span>
+<span class="sd">    from the cache an entry cannot be re-inserted.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">__queue</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">__dict</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="MessageCache.endpoint"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.MessageCache.endpoint">[docs]</a>    <span class="k">def</span> <span class="nf">endpoint</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The :class:`Endpoint` to which the cache belongs.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__endpoint</span>
+</div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="MessageCache.is_sent_cache"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.MessageCache.is_sent_cache">[docs]</a>    <span class="k">def</span> <span class="nf">is_sent_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;``True`` if this cache is the sent-message cache for its</span>
+<span class="sd">        :attr:`endpoint`.  ``False`` if this is the received-message</span>
+<span class="sd">        cache.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__is_sent_cache</span>
+</div>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">endpoint</span><span class="p">,</span> <span class="n">is_sent_cache</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">endpoint</span><span class="p">,</span> <span class="n">Endpoint</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">endpoint</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__endpoint</span> <span class="o">=</span> <span class="n">endpoint</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__is_sent_cache</span> <span class="o">=</span> <span class="n">is_sent_cache</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__queue</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">keys</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict</span><span class="o">.</span><span class="n">keys</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict</span><span class="o">.</span><span class="n">values</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">items</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict</span><span class="o">.</span><span class="n">items</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">get</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict</span><span class="o">.</span><span class="n">get</span>
+        <span class="c"># clear</span>
+        <span class="c"># setdefault</span>
+        <span class="kn">import</span> <span class="nn">sys</span>
+        <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span> <span class="o">&lt;</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">has_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict</span><span class="o">.</span><span class="n">has_key</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">iterkeys</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict</span><span class="o">.</span><span class="n">iterkeys</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">itervalues</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict</span><span class="o">.</span><span class="n">itervalues</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">iteritems</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict</span><span class="o">.</span><span class="n">iteritems</span>
+        <span class="c"># pop</span>
+        <span class="c"># popitem</span>
+        <span class="c"># copy</span>
+        <span class="c"># update</span>
+
+<div class="viewcode-block" id="MessageCache.queue"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.MessageCache.queue">[docs]</a>    <span class="k">def</span> <span class="nf">queue</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The queue of cache entries sorted by :attr:`MessageCacheEntry.time_due`.</span>
+
+<span class="sd">        .. warning::</span>
+<span class="sd">           This method returns a reference to the underlying sorted</span>
+<span class="sd">           list.  Callers are expected to refrain from changing the</span>
+<span class="sd">           list in any way other than through methods exposed on the</span>
+<span class="sd">           cache itself.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__queue</span>
+</div>
+<div class="viewcode-block" id="MessageCache.peek_oldest"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.MessageCache.peek_oldest">[docs]</a>    <span class="k">def</span> <span class="nf">peek_oldest</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the oldest item in the cache without removing it.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__queue</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="MessageCache.pop_oldest"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.MessageCache.pop_oldest">[docs]</a>    <span class="k">def</span> <span class="nf">pop_oldest</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the oldest item in the cache after removing it.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_remove</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__queue</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+</div>
+<div class="viewcode-block" id="MessageCache.clear"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.MessageCache.clear">[docs]</a>    <span class="k">def</span> <span class="nf">clear</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Remove all entries in the cache.&quot;&quot;&quot;</span>
+        <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">__queue</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pop_oldest</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="MessageCache._add"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.MessageCache._add">[docs]</a>    <span class="k">def</span> <span class="nf">_add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Add *value* to the cache.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">MessageCacheEntry</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">value</span><span class="o">.</span><span class="n">message_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">value</span><span class="o">.</span><span class="n">cache</span> <span class="o">!=</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="n">value</span><span class="o">.</span><span class="n">queue_insert</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__queue</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__dict</span><span class="p">[</span><span class="n">value</span><span class="o">.</span><span class="n">message_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+</div>
+<div class="viewcode-block" id="MessageCache._remove"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.MessageCache._remove">[docs]</a>    <span class="k">def</span> <span class="nf">_remove</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Remove *value* from the cache.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">MessageCacheEntry</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="n">value</span><span class="o">.</span><span class="n">queue_remove</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__queue</span><span class="p">)</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict</span><span class="p">[</span><span class="n">value</span><span class="o">.</span><span class="n">message_id</span><span class="p">]</span>
+        <span class="n">value</span><span class="o">.</span><span class="n">_dissociate</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">value</span>
+</div>
+<div class="viewcode-block" id="MessageCache._reposition"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.MessageCache._reposition">[docs]</a>    <span class="k">def</span> <span class="nf">_reposition</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Re-place *value* at its correct location in the queue.</span>
+
+<span class="sd">        This must be invoked whenever the underlying</span>
+<span class="sd">        :attr:`coapy.util.TimeDueOrdinal.time_due` attribute value is</span>
+<span class="sd">        changed.&quot;&quot;&quot;</span>
+        <span class="n">value</span><span class="o">.</span><span class="n">queue_reposition</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__queue</span><span class="p">)</span>
+</div>
+    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__queue</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">coapy</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">Message</span><span class="p">):</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">messageID</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict</span>
+
+</div>
+<div class="viewcode-block" id="SentMessageCacheEntry"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.SentMessageCacheEntry">[docs]</a><span class="k">class</span> <span class="nc">SentMessageCacheEntry</span> <span class="p">(</span><span class="n">MessageCacheEntry</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Data related to a message sent from a specific endpoint.</span>
+
+<span class="sd">    This cache holds a message that originated from a local</span>
+<span class="sd">    :attr:`coapy.message.Message.source_endpoint`, along with the</span>
+<span class="sd">    necessary state to retransmit it if it is</span>
+<span class="sd">    :meth:`confirmable&lt;coapy.message.Message.is_confirmable&gt;`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">ST_untransmitted</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">ST_unacknowledged</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">ST_final_ack_wait</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">ST_completed</span> <span class="o">=</span> <span class="mi">3</span>
+    <span class="n">ST_removed</span> <span class="o">=</span> <span class="mi">4</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__state</span>
+    <span class="n">__state</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="SentMessageCacheEntry.transmissions"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.SentMessageCacheEntry.transmissions">[docs]</a>    <span class="k">def</span> <span class="nf">transmissions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Number of times this message has been transmitted.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__transmissions</span></div>
+    <span class="n">__transmissions</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="SentMessageCacheEntry.created_clk"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.SentMessageCacheEntry.created_clk">[docs]</a>    <span class="k">def</span> <span class="nf">created_clk</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The :func:`coapy.clock` value at the time the cache entry</span>
+<span class="sd">        was created.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__created_clk</span></div>
+    <span class="n">__created_clk</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="n">__bebo</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="SentMessageCacheEntry.message"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.SentMessageCacheEntry.message">[docs]</a>    <span class="k">def</span> <span class="nf">message</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The :class:`coapy.message.Message` being cached.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__message</span></div>
+    <span class="n">__message</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="SentMessageCacheEntry.reply_message"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.SentMessageCacheEntry.reply_message">[docs]</a>    <span class="k">def</span> <span class="nf">reply_message</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The :class:`coapy.message.Message` that was received in response to :attr:`message`.</span>
+
+<span class="sd">        The value is ``None`` unless either an</span>
+<span class="sd">        :attr:`acknowledgement&lt;coapy.message.Message.Type_ACK&gt;` (empty</span>
+<span class="sd">        or with a piggy-backed response) or a</span>
+<span class="sd">        :attr:`reset&lt;coapy.message.Message.Type_RST&gt;` has been</span>
+<span class="sd">        received.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__reply</span></div>
+    <span class="n">__reply</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="SentMessageCacheEntry.destination_endpoint"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.SentMessageCacheEntry.destination_endpoint">[docs]</a>    <span class="k">def</span> <span class="nf">destination_endpoint</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The endpoint to which the message is being sent.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__destination_endpoint</span></div>
+    <span class="n">__destination_endpoint</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="SentMessageCacheEntry.stale_at"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.SentMessageCacheEntry.stale_at">[docs]</a>    <span class="k">def</span> <span class="nf">stale_at</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the time at which the content of a response message is outdated.</span>
+
+<span class="sd">        This is calculated from the :class:`coapy.option.MaxAge`</span>
+<span class="sd">        option in conjunction with :attr:`created_clk`.  Callers may</span>
+<span class="sd">        wish to update the :attr:`message` options to reflect the</span>
+<span class="sd">        change in age on subsequent retransmissions.</span>
+
+<span class="sd">        The value is ``None`` if the message is not a response.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__stale_at</span></div>
+    <span class="n">__stale_at</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cache</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">destination_endpoint</span><span class="p">,</span> <span class="n">transmission_parameters</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">coapy</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">Message</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">transmission_parameters</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">transmission_parameters</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">transmissionParameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__created_clk</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">clock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__destination_endpoint</span> <span class="o">=</span> <span class="n">destination_endpoint</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__expiry_due</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__created_clk</span>
+        <span class="k">if</span> <span class="n">message</span><span class="o">.</span><span class="n">is_confirmable</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__expiry_due</span> <span class="o">+=</span> <span class="n">transmission_parameters</span><span class="o">.</span><span class="n">EXCHANGE_LIFETIME</span>
+        <span class="k">elif</span> <span class="n">message</span><span class="o">.</span><span class="n">is_non_confirmable</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__expiry_due</span> <span class="o">+=</span> <span class="n">transmission_parameters</span><span class="o">.</span><span class="n">NON_LIFETIME</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># ACK and RST messages should not be cached</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">coapy</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">Response</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__stale_at</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__created_clk</span> <span class="o">+</span> <span class="n">message</span><span class="o">.</span><span class="n">maxAge</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ST_untransmitted</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__transmissions</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__message</span> <span class="o">=</span> <span class="n">message</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__timeout</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">time_due</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__created_clk</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">SentMessageCacheEntry</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="n">cache</span><span class="p">,</span>
+                                                    <span class="n">message_id</span><span class="o">=</span><span class="n">message</span><span class="o">.</span><span class="n">messageID</span><span class="p">,</span>
+                                                    <span class="n">time_due</span><span class="o">=</span><span class="n">time_due</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">message</span><span class="o">.</span><span class="n">is_confirmable</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__bebo</span> <span class="o">=</span> <span class="n">transmission_parameters</span><span class="o">.</span><span class="n">make_bebo</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__complete</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ST_completed</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">time_due</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__expiry_due</span>
+
+    <span class="k">def</span> <span class="nf">process_timeout</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">now</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">clock</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">now</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_due</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__state</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">ST_removed</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__state</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">ST_completed</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">_remove</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ST_removed</span>
+            <span class="k">return</span> <span class="bp">None</span>
+        <span class="n">ep</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">endpoint</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">to_packed</span><span class="p">()</span>
+        <span class="n">ep</span><span class="o">.</span><span class="n">rawsendto</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">destination_endpoint</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__transmissions</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ST_untransmitted</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">__state</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__bebo</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__complete</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ST_unacknowledged</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ST_unacknowledged</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">__state</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__timeout</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__bebo</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__bebo</span> <span class="o">=</span> <span class="bp">None</span>
+                <span class="c"># Double last timeout (4.2) to wait for</span>
+                <span class="c"># acknowledgement to final transmission</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__timeout</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__timeout</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ST_final_ack_wait</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">time_due</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__timeout</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">ST_final_ack_wait</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">__state</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__complete</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">process_reply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__reply</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">_log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&#39;Multiple replies&#39;</span><span class="p">)</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="n">msg</span><span class="o">.</span><span class="n">is_reset</span><span class="p">()</span> <span class="ow">or</span> <span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">ST_unacknowledged</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">__state</span><span class="p">)</span> <span class="ow">and</span> <span class="n">msg</span><span class="o">.</span><span class="n">is_acknowledgement</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__reply</span> <span class="o">=</span> <span class="n">msg</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__complete</span><span class="p">()</span>
+            <span class="k">return</span> <span class="bp">self</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="RcvdMessageCacheEntry"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.RcvdMessageCacheEntry">[docs]</a><span class="k">class</span> <span class="nc">RcvdMessageCacheEntry</span> <span class="p">(</span><span class="n">MessageCacheEntry</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Data related to a message received by a specific endpoint.</span>
+
+<span class="sd">    This cache holds a message that originated from a remote</span>
+<span class="sd">    :attr:`coapy.message.Message.source_endpoint`, along with the</span>
+<span class="sd">    necessary state to cache the reply to that message.</span>
+
+<span class="sd">    *cache* must be the source endpoint cache for received messages.</span>
+
+<span class="sd">    *message* must be a message that originated on that host, and is</span>
+<span class="sd">    either a :meth:`confirmable&lt;coapy.message.Message.is_confirmable&gt;`</span>
+<span class="sd">    or</span>
+<span class="sd">    :meth:`non-confirmable&lt;coapy.message.Message.is_non_confirmable&gt;`</span>
+<span class="sd">    message.  Acknowledgements and Resets are not recorded in the</span>
+<span class="sd">    cache.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="RcvdMessageCacheEntry.created_clk"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.RcvdMessageCacheEntry.created_clk">[docs]</a>    <span class="k">def</span> <span class="nf">created_clk</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The :func:`coapy.clock` value at the time the cache entry</span>
+<span class="sd">        was created.  This should correspond to the time at which</span>
+<span class="sd">        :attr:`message` was first received.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__created_clk</span></div>
+    <span class="n">__created_clk</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="RcvdMessageCacheEntry.message"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.RcvdMessageCacheEntry.message">[docs]</a>    <span class="k">def</span> <span class="nf">message</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The :class:`coapy.message.Message` being cached.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__message</span></div>
+    <span class="n">__message</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="RcvdMessageCacheEntry.reception_count"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.RcvdMessageCacheEntry.reception_count">[docs]</a>    <span class="k">def</span> <span class="nf">reception_count</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The number of times :attr:`message` was received.  More</span>
+<span class="sd">        strictly, this is the number of times a message with the same</span>
+<span class="sd">        :attr:`messageID&lt;coapy.message.Message.messageID&gt;` was received</span>
+<span class="sd">        while this cache entry is live.  Diagnostics may be emitted in a</span>
+<span class="sd">        situation where it appears a message ID has been re-used</span>
+<span class="sd">        prematurely.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__reception_count</span></div>
+    <span class="n">__reception_count</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="RcvdMessageCacheEntry.reply_message"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.RcvdMessageCacheEntry.reply_message">[docs]</a>    <span class="k">def</span> <span class="nf">reply_message</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The :class:`coapy.message.Message` that was sent in</span>
+<span class="sd">        response to this message.  ``None`` until a response is sent,</span>
+<span class="sd">        then either an</span>
+<span class="sd">        :meth:`acknowledgement&lt;coapy.message.Message.is_acknowledgement&gt;`</span>
+<span class="sd">        (which may or may not have a :coapsect:`piggy-backed</span>
+<span class="sd">        response&lt;&gt;`) or a</span>
+<span class="sd">        :meth:`reset&lt;coapy.message.Message.is_reset&gt;` message.  A</span>
+<span class="sd">        non-confirmable message may have no response at all.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__reply_message</span></div>
+    <span class="n">__reply_message</span> <span class="o">=</span> <span class="bp">None</span>
+
+<div class="viewcode-block" id="RcvdMessageCacheEntry.reply"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.RcvdMessageCacheEntry.reply">[docs]</a>    <span class="k">def</span> <span class="nf">reply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reset</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">message</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create the :attr:`reply_message` for the reception in this entry.</span>
+
+<span class="sd">        If *message* is provided, it should be an</span>
+<span class="sd">        :class:`coapy.message.Response` message with type</span>
+<span class="sd">        :attr:`ACK&lt;coapy.message.Message.Type_ACK&gt;` that is to be sent</span>
+<span class="sd">        as a :coapsect:`piggy-backed response&lt;5.2.1&gt;`.</span>
+
+<span class="sd">        If *message* is ``None``, this method will create an empty</span>
+<span class="sd">        :attr:`ACK&lt;coapy.message.Message.Type_ACK&gt;` (*reset* is</span>
+<span class="sd">        ``False``) or</span>
+<span class="sd">        :attr:`RST&lt;coapy.message.Message.Type_RST&gt;` (*reset* is</span>
+<span class="sd">        ``True``) message.</span>
+
+<span class="sd">        The reply message will be transmitted to the source endpoint</span>
+<span class="sd">        of the received message.</span>
+
+<span class="sd">        Erroneous use will raise :exc:`ReplyMessageError`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__reply_message</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ReplyMessageError</span><span class="p">(</span><span class="n">ReplyMessageError</span><span class="o">.</span><span class="n">ALREADY_GIVEN</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">message</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">create_reply</span><span class="p">(</span><span class="n">reset</span><span class="o">=</span><span class="n">reset</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">message</span><span class="o">.</span><span class="n">messageID</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">message</span><span class="o">.</span><span class="n">messageID</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">messageID</span>
+        <span class="k">if</span> <span class="n">message</span><span class="o">.</span><span class="n">messageID</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">messageID</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ReplyMessageError</span><span class="p">(</span><span class="n">ReplyMessageError</span><span class="o">.</span><span class="n">ID_MISMATCH</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">coapy</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">Message</span><span class="o">.</span><span class="n">Empty</span> <span class="o">!=</span> <span class="n">message</span><span class="o">.</span><span class="n">code</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">coapy</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">Response</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">ReplyMessageError</span><span class="p">(</span><span class="n">ReplyMessageError</span><span class="o">.</span><span class="n">NOT_RESPONSE</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">message</span><span class="o">.</span><span class="n">is_acknowledgement</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="n">ReplyMessageError</span><span class="p">(</span><span class="n">ReplyMessageError</span><span class="o">.</span><span class="n">RESPONSE_NOT_ACK</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">message</span><span class="o">.</span><span class="n">token</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">token</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ReplyMessageError</span><span class="p">(</span><span class="n">ReplyMessageError</span><span class="o">.</span><span class="n">TOKEN_MISMATCH</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">message</span><span class="o">.</span><span class="n">source_endpoint</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">message</span><span class="o">.</span><span class="n">source_endpoint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">destination_endpoint</span>
+        <span class="k">if</span> <span class="n">message</span><span class="o">.</span><span class="n">destination_endpoint</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">message</span><span class="o">.</span><span class="n">destination_endpoint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">source_endpoint</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__reply_message</span> <span class="o">=</span> <span class="n">message</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resend_reply</span><span class="p">()</span>
+</div>
+    <span class="k">def</span> <span class="nf">resend_reply</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">rm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__reply_message</span>
+        <span class="n">rm</span><span class="o">.</span><span class="n">source_endpoint</span><span class="o">.</span><span class="n">rawsendto</span><span class="p">(</span><span class="n">rm</span><span class="o">.</span><span class="n">to_packed</span><span class="p">(),</span> <span class="n">rm</span><span class="o">.</span><span class="n">destination_endpoint</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cache</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">transmission_parameters</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">coapy</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">Message</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">transmission_parameters</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">transmission_parameters</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">transmissionParameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__created_clk</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">clock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__message</span> <span class="o">=</span> <span class="n">message</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__reception_count</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">time_due</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">created_clk</span>
+        <span class="k">if</span> <span class="n">message</span><span class="o">.</span><span class="n">is_confirmable</span><span class="p">():</span>
+            <span class="n">time_due</span> <span class="o">+=</span> <span class="n">transmission_parameters</span><span class="o">.</span><span class="n">EXCHANGE_LIFETIME</span>
+        <span class="k">elif</span> <span class="n">message</span><span class="o">.</span><span class="n">is_non_confirmable</span><span class="p">():</span>
+            <span class="n">time_due</span> <span class="o">+=</span> <span class="n">transmission_parameters</span><span class="o">.</span><span class="n">NON_LIFETIME</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># ACK and RST messages should not be cached</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">RcvdMessageCacheEntry</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="n">cache</span><span class="p">,</span>
+                                                    <span class="n">message_id</span><span class="o">=</span><span class="n">message</span><span class="o">.</span><span class="n">messageID</span><span class="p">,</span>
+                                                    <span class="n">time_due</span><span class="o">=</span><span class="n">time_due</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="Endpoint"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.Endpoint">[docs]</a><span class="k">class</span> <span class="nc">Endpoint</span> <span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A CoAP endpoint.</span>
+
+<span class="sd">    Per :coapsect:`1.2` this is an entity participating in the CoAP</span>
+<span class="sd">    protocol.  In CoAPy it is used to aggregate all material related</span>
+<span class="sd">    to such an endpoint, which is uniquely identified by an IP</span>
+<span class="sd">    address, port, and security information.  Various constraints in</span>
+<span class="sd">    CoAP such as :coapsect:`congestion control&lt;4.7&gt;`,</span>
+<span class="sd">    :coapsect:`default values for options&lt;5.10.1&gt;`, and re-usability</span>
+<span class="sd">    of message IDs, are associated with specific endpoints.</span>
+
+<span class="sd">    *sockaddr*, if not ``None``, must be a tuple the first two</span>
+<span class="sd">    elements of which are ``host, port`` which override the</span>
+<span class="sd">    user-provided *host* and *port*.</span>
+
+<span class="sd">    *host* specifies the host of the endpoint as a Unicode string,</span>
+<span class="sd">    representing a host name, an IP address literal, or other unique</span>
+<span class="sd">    key.</span>
+
+<span class="sd">    *family* is by default :data:`python:socket.AF_UNSPEC` supporting</span>
+<span class="sd">    resolution of *host* to any address family.  A non-``None`` value</span>
+<span class="sd">    is passed to :func:`python:socket.getaddrinfo` when attempting to</span>
+<span class="sd">    resolve *host* as an address; the actual *family* value will be</span>
+<span class="sd">    the one selected by the resolution process (normally</span>
+<span class="sd">    :data:`python:socket.AF_INET` or :data:`python:socket.AF_INET6`)</span>
+<span class="sd">    Failure to successfully resolve *host* will raise</span>
+<span class="sd">    :exc:`python:socket.gaierror`.  If you want a dummy endpoint</span>
+<span class="sd">    associated with *host* but that does not have an IP host</span>
+<span class="sd">    associated with it, make sure that *family* is ``None`` so that</span>
+<span class="sd">    *host* is left unresolved and instead serves as an *name* as</span>
+<span class="sd">    described in :attr:`sockaddr`.</span>
+
+<span class="sd">    *port* is the integer transport-layer port of the endpoint.  This</span>
+<span class="sd">    would normally be either :const:`coapy.COAP_PORT` or</span>
+<span class="sd">    :const:`coapy.COAPS_PORT`.</span>
+
+<span class="sd">    *security_mode* is used to determine the DTLS protocol used for</span>
+<span class="sd">    secure CoAP, and at this time had probably better be left as</span>
+<span class="sd">    ``None``.</span>
+
+<span class="sd">    To ensure consistency, :class:`Endpoint` instances are unique for</span>
+<span class="sd">    a given key comprising :attr:`family`, :attr:`ip_addr`,</span>
+<span class="sd">    :attr:`port`, and :attr:`security_mode`.  Attempts to instantiate</span>
+<span class="sd">    a new endpoint with parameters that match a previously-created one</span>
+<span class="sd">    will return a reference to the original instance.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Endpoint.sockaddr"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.Endpoint.sockaddr">[docs]</a>    <span class="k">def</span> <span class="nf">sockaddr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The Python :mod:`python:socket` address of the endpoint.</span>
+
+<span class="sd">        When :attr:`family` is :data:`python:socket.AF_INET` this is</span>
+<span class="sd">        the tuple ``(host, port)``.</span>
+
+<span class="sd">        When :attr:`family` is :data:`python:socket.AF_INET6` this is</span>
+<span class="sd">        the tuple ``(host, port, flowinfo, scopeid)``.</span>
+
+<span class="sd">        When :attr:`family` is ``None`` this is the tuple ``(name,</span>
+<span class="sd">        port)``.  *name* functions like *host* but is not a resolvable</span>
+<span class="sd">        host name.</span>
+
+<span class="sd">        *host* will be the text representation of :attr:`in_addr`; it</span>
+<span class="sd">        will not be a host name.  *port* will be a numeric port</span>
+<span class="sd">        *number*.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__sockaddr</span>
+</div>
+    <span class="n">__bound_socket</span> <span class="o">=</span> <span class="bp">None</span>
+
+<div class="viewcode-block" id="Endpoint.set_bound_socket"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.Endpoint.set_bound_socket">[docs]</a>    <span class="k">def</span> <span class="nf">set_bound_socket</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">socket</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the :attr:`bound_socket`.</span>
+
+<span class="sd">        *socket* may be ``None``, in which case the endpoint is</span>
+<span class="sd">        disassociated from any socket.</span>
+
+<span class="sd">        If *socket* is not ``None`` it must be an object suitable for</span>
+<span class="sd">        assignment to :attr:`bound_socket`.  The endpoint adopts the</span>
+<span class="sd">        socket, in that if/when the endpoint is destroyed the socket</span>
+<span class="sd">        will be closed if it remains bound to the endpoint.  (Since</span>
+<span class="sd">        :class:`Endpoint` instances are almost impossible to destroy,</span>
+<span class="sd">        this has little relevance at this time.)</span>
+
+<span class="sd">        In either case if the assignment succeed the previous value of</span>
+<span class="sd">        :attr:`bound_socket` is returned, with the caller taking</span>
+<span class="sd">        responsibility to close it when finished.</span>
+
+<span class="sd">        .. note::</span>
+<span class="sd">           For simulation and testing purposes *socket* might not be</span>
+<span class="sd">           a :func:`socket object&lt;python:socket.socket&gt;`, but it must</span>
+<span class="sd">           act like one with respect to the methods CoAPy expects it</span>
+<span class="sd">           to provide, including but not limited to:</span>
+
+<span class="sd">           * :meth:`getsockname()&lt;python:socket.socket.getsockname&gt;`</span>
+<span class="sd">           * :meth:`sendto()&lt;python:socket.socket.sendto&gt;`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">obs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__bound_socket</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">socket</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sockaddr</span> <span class="o">!=</span> <span class="n">socket</span><span class="o">.</span><span class="n">getsockname</span><span class="p">()):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">socket</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__bound_socket</span> <span class="o">=</span> <span class="n">socket</span>
+        <span class="k">return</span> <span class="n">obs</span>
+</div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Endpoint.bound_socket"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.Endpoint.bound_socket">[docs]</a>    <span class="k">def</span> <span class="nf">bound_socket</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return a :func:`socket object&lt;python:socket.socket&gt;`</span>
+<span class="sd">        instance that is bound to :attr:`sockaddr`.</span>
+
+<span class="sd">        This may only be set for endpoints that are local to the host.</span>
+<span class="sd">        It may set to ``None`` to disassociate the endpoint from a</span>
+<span class="sd">        socket, and may be changed from ``None`` to an object that</span>
+<span class="sd">        returns :attr:`sockaddr` when</span>
+<span class="sd">        :meth:`socket.getsockname&lt;python:socket.socket.getsockname&gt;`</span>
+<span class="sd">        is invoked on it.</span>
+
+<span class="sd">        See :meth:`create_bound_endpoint` and</span>
+<span class="sd">        :meth:`set_bound_socket`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__bound_socket</span>
+</div>
+<div class="viewcode-block" id="Endpoint._rawsendto"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.Endpoint._rawsendto">[docs]</a>    <span class="k">def</span> <span class="nf">_rawsendto</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">destination_endpoint</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Send *data* from this endpoint to *destination_endpoint*.</span>
+
+<span class="sd">        This invokes :meth:`sendto&lt;python:socket.socket.sendto&gt;` on</span>
+<span class="sd">        :attr:`bound_socket` to transmit *data* to the</span>
+<span class="sd">        *destination_endpoint* via its :attr:`sockaddr`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">bound_socket</span><span class="o">.</span><span class="n">sendto</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">destination_endpoint</span><span class="o">.</span><span class="n">sockaddr</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Endpoint.rawsendto"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.Endpoint.rawsendto">[docs]</a>    <span class="k">def</span> <span class="nf">rawsendto</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">destination_endpoint</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Send *data* from this endpoint to *destination_endpoint*.</span>
+
+<span class="sd">        Normally this is shorthand for invoking</span>
+<span class="sd">        :meth:`sendto&lt;python:socket.socket.sendto&gt;` on</span>
+<span class="sd">        :attr:`bound_socket` to transmit *data* to the</span>
+<span class="sd">        *destination_endpoint* via its :attr:`sockaddr`.  Subclasses</span>
+<span class="sd">        may override the implementation for the purposes of testing or</span>
+<span class="sd">        simulation.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rawsendto</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">destination_endpoint</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Endpoint._rawrecvfrom"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.Endpoint._rawrecvfrom">[docs]</a>    <span class="k">def</span> <span class="nf">_rawrecvfrom</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bufsize</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Receive *data* from a *source_endpoint*.</span>
+
+<span class="sd">        Invokes :meth:`recvfrom&lt;python:socket.socket.recvfrom&gt;` on</span>
+<span class="sd">        :attr:`bound_socket` and replacing the returned source socket</span>
+<span class="sd">        address with the corresponding :class:`Endpoint` instance as</span>
+<span class="sd">        *source_endpoint*.  Returns ``(data, source_endpoint)``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">addr</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bound_socket</span><span class="o">.</span><span class="n">recvfrom</span><span class="p">(</span><span class="n">bufsize</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">Endpoint</span><span class="p">(</span><span class="n">sockaddr</span><span class="o">=</span><span class="n">addr</span><span class="p">,</span> <span class="n">family</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">family</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="Endpoint.rawrecvfrom"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.Endpoint.rawrecvfrom">[docs]</a>    <span class="k">def</span> <span class="nf">rawrecvfrom</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bufsize</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Receive *data* from a *source_endpoint*.</span>
+
+<span class="sd">        Returns ``(data, source_endpoint)``.  Normally this is simply</span>
+<span class="sd">        shorthand for invoking</span>
+<span class="sd">        :meth:`recvfrom&lt;python:socket.socket.recvfrom&gt;` on</span>
+<span class="sd">        :attr:`bound_socket` and replacing the returned source socket</span>
+<span class="sd">        address with the corresponding :class:`Endpoint` instance as</span>
+<span class="sd">        *source_endpoint*.  Subclasses may override the implementation</span>
+<span class="sd">        for the purposes of testing or simulation.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rawrecvfrom</span><span class="p">(</span><span class="n">bufsize</span><span class="p">)</span>
+</div>
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="Endpoint.create_bound_endpoint"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.Endpoint.create_bound_endpoint">[docs]</a>    <span class="k">def</span> <span class="nf">create_bound_endpoint</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">sockaddr</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">family</span><span class="o">=</span><span class="n">socket</span><span class="o">.</span><span class="n">AF_UNSPEC</span><span class="p">,</span>
+                              <span class="n">security_mode</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                              <span class="n">host</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="n">coapy</span><span class="o">.</span><span class="n">COAP_PORT</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create an endpoint with a local socket bound to it.</span>
+
+<span class="sd">        *sockaddr*, *family*, *security_mode*, *host*, and *port* are</span>
+<span class="sd">        all as used with :class:`Endpoint`.</span>
+
+<span class="sd">        For use with a CoAP service on the local host (*host* as</span>
+<span class="sd">        ``127.0.0.1`` or ``::1``), *port* may be 0 in this call.  This</span>
+<span class="sd">        allows the bind operation to select an unused local port.</span>
+
+<span class="sd">        Returns the created endpoint with :attr:`bound_socket`</span>
+<span class="sd">        initialized and ready to send and receive messages.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># First, figure out the resolved family and host/port part of</span>
+        <span class="c"># the socket address.</span>
+        <span class="p">(</span><span class="n">family</span><span class="p">,</span> <span class="n">sockaddr</span><span class="p">)</span> <span class="o">=</span> <span class="n">cls</span><span class="o">.</span><span class="n">_canonical_sockinfo</span><span class="p">(</span><span class="n">sockaddr</span><span class="o">=</span><span class="n">sockaddr</span><span class="p">,</span>
+                                                     <span class="n">family</span><span class="o">=</span><span class="n">family</span><span class="p">,</span>
+                                                     <span class="n">security_mode</span><span class="o">=</span><span class="n">security_mode</span><span class="p">,</span>
+                                                     <span class="n">host</span><span class="o">=</span><span class="n">host</span><span class="p">,</span>
+                                                     <span class="n">port</span><span class="o">=</span><span class="n">port</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">family</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">family</span> <span class="ow">is</span> <span class="n">socket</span><span class="o">.</span><span class="n">AF_UNSPEC</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span>
+        <span class="c"># Create a socket, bind it to the proposed socket address, then use</span>
+        <span class="c"># the result as the endpoint socket address: this is necessary because</span>
+        <span class="c"># if port was passed as 0 the act of binding assigned a local port.</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">family</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SOCK_DGRAM</span><span class="p">)</span>
+        <span class="n">s</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="n">sockaddr</span><span class="p">)</span>
+        <span class="n">sockaddr</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">getsockname</span><span class="p">()</span>
+        <span class="c"># Now we can create the instance and associate the socket with it.</span>
+        <span class="n">ep</span> <span class="o">=</span> <span class="n">cls</span><span class="p">(</span><span class="n">sockaddr</span><span class="o">=</span><span class="n">sockaddr</span><span class="p">,</span> <span class="n">family</span><span class="o">=</span><span class="n">family</span><span class="p">,</span> <span class="n">security_mode</span><span class="o">=</span><span class="n">security_mode</span><span class="p">)</span>
+        <span class="n">ep</span><span class="o">.</span><span class="n">set_bound_socket</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ep</span>
+</div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Endpoint.family"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.Endpoint.family">[docs]</a>    <span class="k">def</span> <span class="nf">family</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The address family used for :attr:`sockaddr`.</span>
+
+<span class="sd">        This is normally :data:`python:socket.AF_INET` or</span>
+<span class="sd">        :data:`python:socket.AF_INET6`.  It may be ``None`` for</span>
+<span class="sd">        testing situations where the actual endpoint does not</span>
+<span class="sd">        correspond to an network node.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__family</span>
+</div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Endpoint.in_addr"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.Endpoint.in_addr">[docs]</a>    <span class="k">def</span> <span class="nf">in_addr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The address of the endpoint.</span>
+
+<span class="sd">        The representation is binary data encoding part of</span>
+<span class="sd">        :attr:`sockaddr`.  Decoding it depends on :attr:`family`:</span>
+
+<span class="sd">        When :attr:`family` is :data:`python:socket.AF_INET` this is</span>
+<span class="sd">        the IPv4 address in network byte order.</span>
+
+<span class="sd">        When :attr:`family` is :data:`python:socket.AF_INET6` this is</span>
+<span class="sd">        the IPv6 address in network byte order.</span>
+
+<span class="sd">        When :attr:`family` is ``None`` this is the *name* in</span>
+<span class="sd">        Net-Unicode format.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__in_addr</span>
+</div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Endpoint.port"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.Endpoint.port">[docs]</a>    <span class="k">def</span> <span class="nf">port</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The transport-level port of the endpoint.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__port</span>
+</div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Endpoint.security_mode"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.Endpoint.security_mode">[docs]</a>    <span class="k">def</span> <span class="nf">security_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The security mode of the endpoint.  Generally ``None``</span>
+<span class="sd">        though if :coapsect:`DTLS&lt;9&gt;` CoAP is used it would be some</span>
+<span class="sd">        other value.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__security_mode</span>
+</div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Endpoint.uri_host"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.Endpoint.uri_host">[docs]</a>    <span class="k">def</span> <span class="nf">uri_host</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The text value for the ``host`` subcomponent of the</span>
+<span class="sd">        authority part of a URI involving this endpoint.</span>
+
+<span class="sd">        This is almost always either an ``IPv4address`` or</span>
+<span class="sd">        ``IP-literal`` as defined by `section 3.2.2 of RFC3986`_.  If</span>
+<span class="sd">        an :class:`Endpoint` is created by an application using a host</span>
+<span class="sd">        name, the resolved address of the host is used for</span>
+<span class="sd">        :attr:`sockaddr` and for this property.</span>
+
+<span class="sd">        .. _section 3.2.2 of RFC3986: http://tools.ietf.org/html/rfc3986#section-3.2.2</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__uri_host</span>
+</div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Endpoint.base_uri"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.Endpoint.base_uri">[docs]</a>    <span class="k">def</span> <span class="nf">base_uri</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The base CoAP URI for resources on this endpoint.</span>
+
+<span class="sd">        This is used by :meth:`uri_to_options` to avoid the need to</span>
+<span class="sd">        specify the protocol and netloc when creating option lists.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__base_uri</span></div>
+    <span class="n">__base_uri</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="n">__EndpointRegistry</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">__nonInetIndex</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="Endpoint._key_for_sockaddr"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.Endpoint._key_for_sockaddr">[docs]</a>    <span class="k">def</span> <span class="nf">_key_for_sockaddr</span><span class="p">(</span><span class="n">sockaddr</span><span class="p">,</span> <span class="n">family</span><span class="p">,</span> <span class="n">security_mode</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create the key used to look up endpoints.</span>
+
+<span class="sd">        *sockaddr* must be a tuple the first two elements of which are</span>
+<span class="sd">        ``(host, port)``.  Unless *family* is ``None``, *host* must be</span>
+<span class="sd">        a text representation of an IP address that can be converted</span>
+<span class="sd">        with :func:`python:socket.inet_pton` using *family*, not a</span>
+<span class="sd">        hostname.  *port* must be a numeric port number.</span>
+
+<span class="sd">        If *family* is :data:`python:socket.AF_UNSPEC` a</span>
+<span class="sd">        :exc:`python:exception.ValueError` exception will be raised as</span>
+<span class="sd">        the system does not know how to decode the *host*.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sockaddr</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">sockaddr</span><span class="p">)</span>
+        <span class="n">ip_literal</span> <span class="o">=</span> <span class="n">sockaddr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">family</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">in_addr</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">to_net_unicode</span><span class="p">(</span><span class="n">ip_literal</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">family</span> <span class="ow">is</span> <span class="n">socket</span><span class="o">.</span><span class="n">AF_UNSPEC</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># Use the network-byte-order binary representation of the</span>
+            <span class="c"># IP address, to having to deal with non-canonical IPv6</span>
+            <span class="c"># text representations.  See RFC5952 for why this is</span>
+            <span class="c"># necessary.</span>
+            <span class="n">in_addr</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">inet_pton</span><span class="p">(</span><span class="n">family</span><span class="p">,</span> <span class="n">ip_literal</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">family</span><span class="p">,</span> <span class="n">in_addr</span><span class="p">,</span> <span class="n">sockaddr</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">security_mode</span><span class="p">)</span>
+</div>
+    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="Endpoint._canonical_sockinfo"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.Endpoint._canonical_sockinfo">[docs]</a>    <span class="k">def</span> <span class="nf">_canonical_sockinfo</span><span class="p">(</span><span class="n">sockaddr</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">family</span><span class="o">=</span><span class="n">socket</span><span class="o">.</span><span class="n">AF_UNSPEC</span><span class="p">,</span>
+                            <span class="n">security_mode</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                            <span class="n">host</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="n">coapy</span><span class="o">.</span><span class="n">COAP_PORT</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get canonical socket information for an endpoint.</span>
+
+<span class="sd">        Returns a tuple ``(family, sockaddr)`` where *sockaddr* is a</span>
+<span class="sd">        an :attr:`address&lt;sockaddr&gt;` as constrained by *family*.</span>
+
+<span class="sd">        Failure to resolve the socket *host* to a numeric IP literal</span>
+<span class="sd">        within *family* (if required) will raise</span>
+<span class="sd">        :exc:`python:socket.gaierror`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">sockaddr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">key</span> <span class="o">=</span> <span class="n">Endpoint</span><span class="o">.</span><span class="n">_key_for_sockaddr</span><span class="p">(</span><span class="n">sockaddr</span><span class="p">,</span> <span class="n">family</span><span class="p">,</span> <span class="n">security_mode</span><span class="p">)</span>
+                <span class="n">ep</span> <span class="o">=</span> <span class="n">Endpoint</span><span class="o">.</span><span class="n">__EndpointRegistry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">ep</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="p">(</span><span class="n">ep</span><span class="o">.</span><span class="n">family</span><span class="p">,</span> <span class="n">ep</span><span class="o">.</span><span class="n">sockaddr</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sockaddr</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">sockaddr</span><span class="p">)</span>
+            <span class="k">if</span> <span class="mi">2</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">sockaddr</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">sockaddr</span><span class="p">)</span>
+            <span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">)</span> <span class="o">=</span> <span class="n">sockaddr</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">host</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">host</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">port</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">port</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">family</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">gai</span> <span class="o">=</span> <span class="p">(</span><span class="n">family</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="n">host</span><span class="p">,</span> <span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">gais</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">getaddrinfo</span><span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="n">family</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SOCK_DGRAM</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span>
+                                      <span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">AI_ADDRCONFIG</span> <span class="o">|</span> <span class="n">socket</span><span class="o">.</span><span class="n">AI_V4MAPPED</span>
+                                       <span class="o">|</span> <span class="n">socket</span><span class="o">.</span><span class="n">AI_NUMERICSERV</span><span class="p">))</span>
+            <span class="n">gai</span> <span class="o">=</span> <span class="n">gais</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">gai</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">gai</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span>
+</div>
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="Endpoint.lookup_endpoint"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.Endpoint.lookup_endpoint">[docs]</a>    <span class="k">def</span> <span class="nf">lookup_endpoint</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">sockaddr</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">family</span><span class="o">=</span><span class="n">socket</span><span class="o">.</span><span class="n">AF_UNSPEC</span><span class="p">,</span>
+                        <span class="n">security_mode</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                        <span class="n">host</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="n">coapy</span><span class="o">.</span><span class="n">COAP_PORT</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Look up an endpoint using the same algorithm as endpoint</span>
+<span class="sd">        creation.</span>
+
+<span class="sd">        Returns ``None`` if passing these parameters to</span>
+<span class="sd">        class:`Endpoint` would result in creation of a new endpoint.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">instance</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">if</span> <span class="n">sockaddr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">key</span> <span class="o">=</span> <span class="n">Endpoint</span><span class="o">.</span><span class="n">_key_for_sockaddr</span><span class="p">(</span><span class="n">sockaddr</span><span class="p">,</span> <span class="n">family</span><span class="p">,</span> <span class="n">security_mode</span><span class="p">)</span>
+                <span class="n">instance</span> <span class="o">=</span> <span class="n">Endpoint</span><span class="o">.</span><span class="n">__EndpointRegistry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">pass</span>
+        <span class="k">if</span> <span class="n">instance</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="p">(</span><span class="n">family</span><span class="p">,</span> <span class="n">sockaddr</span><span class="p">)</span> <span class="o">=</span> <span class="n">Endpoint</span><span class="o">.</span><span class="n">_canonical_sockinfo</span><span class="p">(</span><span class="n">sockaddr</span><span class="p">,</span> <span class="n">family</span><span class="p">,</span>
+                                                              <span class="n">security_mode</span><span class="p">,</span> <span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">)</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="n">Endpoint</span><span class="o">.</span><span class="n">_key_for_sockaddr</span><span class="p">(</span><span class="n">sockaddr</span><span class="p">,</span> <span class="n">family</span><span class="p">,</span> <span class="n">security_mode</span><span class="p">)</span>
+            <span class="n">instance</span> <span class="o">=</span> <span class="n">Endpoint</span><span class="o">.</span><span class="n">__EndpointRegistry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">instance</span>
+</div>
+    <span class="k">def</span> <span class="nf">__new__</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">sockaddr</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">family</span><span class="o">=</span><span class="n">socket</span><span class="o">.</span><span class="n">AF_UNSPEC</span><span class="p">,</span>
+                <span class="n">security_mode</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                <span class="n">host</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="n">coapy</span><span class="o">.</span><span class="n">COAP_PORT</span><span class="p">):</span>
+        <span class="n">instance</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">if</span> <span class="n">sockaddr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">key</span> <span class="o">=</span> <span class="n">Endpoint</span><span class="o">.</span><span class="n">_key_for_sockaddr</span><span class="p">(</span><span class="n">sockaddr</span><span class="p">,</span> <span class="n">family</span><span class="p">,</span> <span class="n">security_mode</span><span class="p">)</span>
+                <span class="n">instance</span> <span class="o">=</span> <span class="n">Endpoint</span><span class="o">.</span><span class="n">__EndpointRegistry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">pass</span>
+        <span class="k">if</span> <span class="n">instance</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="p">(</span><span class="n">family</span><span class="p">,</span> <span class="n">sockaddr</span><span class="p">)</span> <span class="o">=</span> <span class="n">Endpoint</span><span class="o">.</span><span class="n">_canonical_sockinfo</span><span class="p">(</span><span class="n">sockaddr</span><span class="p">,</span> <span class="n">family</span><span class="p">,</span>
+                                                              <span class="n">security_mode</span><span class="p">,</span> <span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">)</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="n">Endpoint</span><span class="o">.</span><span class="n">_key_for_sockaddr</span><span class="p">(</span><span class="n">sockaddr</span><span class="p">,</span> <span class="n">family</span><span class="p">,</span> <span class="n">security_mode</span><span class="p">)</span>
+            <span class="n">instance</span> <span class="o">=</span> <span class="n">Endpoint</span><span class="o">.</span><span class="n">__EndpointRegistry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">instance</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">instance</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">Endpoint</span><span class="p">,</span> <span class="n">cls</span><span class="p">)</span><span class="o">.</span><span class="n">__new__</span><span class="p">(</span><span class="n">cls</span><span class="p">)</span>
+            <span class="n">host</span> <span class="o">=</span> <span class="n">sockaddr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">port</span> <span class="o">=</span> <span class="n">sockaddr</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">cls</span><span class="o">.</span><span class="n">__EndpointRegistry</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">instance</span>
+            <span class="n">instance</span><span class="o">.</span><span class="n">__family</span> <span class="o">=</span> <span class="n">family</span>
+            <span class="n">instance</span><span class="o">.</span><span class="n">__in_addr</span> <span class="o">=</span> <span class="n">key</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">instance</span><span class="o">.</span><span class="n">__port</span> <span class="o">=</span> <span class="n">port</span>
+            <span class="n">instance</span><span class="o">.</span><span class="n">__security_mode</span> <span class="o">=</span> <span class="n">security_mode</span>
+            <span class="n">instance</span><span class="o">.</span><span class="n">__sockaddr</span> <span class="o">=</span> <span class="n">sockaddr</span>
+            <span class="k">if</span> <span class="n">socket</span><span class="o">.</span><span class="n">AF_INET</span> <span class="o">==</span> <span class="n">family</span><span class="p">:</span>
+                <span class="n">instance</span><span class="o">.</span><span class="n">__uri_host</span> <span class="o">=</span> <span class="s">&#39;{0}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">inet_ntop</span><span class="p">(</span><span class="n">instance</span><span class="o">.</span><span class="n">family</span><span class="p">,</span>
+                                                                    <span class="n">instance</span><span class="o">.</span><span class="n">in_addr</span><span class="p">))</span>
+            <span class="k">elif</span> <span class="n">socket</span><span class="o">.</span><span class="n">AF_INET6</span> <span class="o">==</span> <span class="n">family</span><span class="p">:</span>
+                <span class="n">instance</span><span class="o">.</span><span class="n">__uri_host</span> <span class="o">=</span> <span class="s">&#39;[{0}]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">inet_ntop</span><span class="p">(</span><span class="n">instance</span><span class="o">.</span><span class="n">family</span><span class="p">,</span>
+                                                                      <span class="n">instance</span><span class="o">.</span><span class="n">in_addr</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">instance</span><span class="o">.</span><span class="n">__uri_host</span> <span class="o">=</span> <span class="n">host</span>
+        <span class="k">return</span> <span class="n">instance</span>
+
+    <span class="k">def</span> <span class="nf">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_reset</span><span class="p">()</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Endpoint</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Endpoint._reset"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.Endpoint._reset">[docs]</a>    <span class="k">def</span> <span class="nf">_reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return all data to its initial state.</span>
+
+<span class="sd">        This is a back-door for unit-testing from a known state.  It&#39;s</span>
+<span class="sd">        also used when a new Endpoint is constructed for the first</span>
+<span class="sd">        time.  Only mutable state is reset; immutable values like</span>
+<span class="sd">        :attr:`family` and :attr:`sockaddr` are not affected.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_reset_next_messageID</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">65535</span><span class="p">))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__bound_socket</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__bound_socket</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__bound_socket</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sent_cache</span> <span class="o">=</span> <span class="n">MessageCache</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_rcvd_cache</span> <span class="o">=</span> <span class="n">MessageCache</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
+</div>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sockaddr</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">family</span><span class="o">=</span><span class="n">socket</span><span class="o">.</span><span class="n">AF_UNSPEC</span><span class="p">,</span>
+                 <span class="n">security_mode</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">host</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="n">coapy</span><span class="o">.</span><span class="n">COAP_PORT</span><span class="p">):</span>
+        <span class="c"># None of these arguments are used here; they apply in</span>
+        <span class="c"># __new__.</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Endpoint</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="c"># Note: Only re-initialize if the instance was newly created.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__base_uri</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__base_uri</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">uri_from_options</span><span class="p">([])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_reset</span><span class="p">()</span>
+
+<div class="viewcode-block" id="Endpoint.next_messageID"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.Endpoint.next_messageID">[docs]</a>    <span class="k">def</span> <span class="nf">next_messageID</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return a new messageID suitable for a message to this endpoint.</span>
+
+<span class="sd">        This is sequentially generated starting from an initial value</span>
+<span class="sd">        that was randomly generated when the endpoint was created.  It</span>
+<span class="sd">        is filtered so message IDs still present in the sent message</span>
+<span class="sd">        cache are not re-used.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="n">mid</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__messageID_iter</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">mid</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sent_cache</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">mid</span>
+</div>
+    <span class="k">def</span> <span class="nf">_reset_next_messageID</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="p">):</span>
+        <span class="c"># Back-door for unit testing from known starting point</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__messageID_iter</span> <span class="o">=</span> <span class="n">itertools</span><span class="o">.</span><span class="n">imap</span><span class="p">(</span><span class="k">lambda</span> <span class="n">_v</span><span class="p">:</span> <span class="n">_v</span> <span class="o">%</span> <span class="mi">65536</span><span class="p">,</span> <span class="n">itertools</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">start</span><span class="p">))</span>
+
+<div class="viewcode-block" id="Endpoint.get_peer_endpoint"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.Endpoint.get_peer_endpoint">[docs]</a>    <span class="k">def</span> <span class="nf">get_peer_endpoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sockaddr</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">host</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="n">coapy</span><span class="o">.</span><span class="n">COAP_PORT</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Find the endpoint at *sockaddr* that this endpoint can talk to.</span>
+
+<span class="sd">        This invokes :class:`Endpoint` with *family* and</span>
+<span class="sd">        *security_mode* set to the parameters used by this endpoint.</span>
+<span class="sd">        It is used to identify the source endpoint of a message</span>
+<span class="sd">        received by :meth:`python:socket.socket.recvfrom`.  *sockaddr*</span>
+<span class="sd">        will be constructed from *host* and *port* if not provided</span>
+<span class="sd">        explicitly; at least one of *sockaddr* and *host* must be</span>
+<span class="sd">        given.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">sockaddr</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">host</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">port</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span>
+            <span class="n">sockaddr</span> <span class="o">=</span> <span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)(</span><span class="n">sockaddr</span><span class="o">=</span><span class="n">sockaddr</span><span class="p">,</span> <span class="n">family</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">family</span><span class="p">,</span> <span class="n">security_mode</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">security_mode</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Endpoint.is_same_host"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.Endpoint.is_same_host">[docs]</a>    <span class="k">def</span> <span class="nf">is_same_host</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">host</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Determine whether *host* resolves to the same address as</span>
+<span class="sd">        this endpoint.</span>
+
+<span class="sd">        This is used for the algorithm in :coapsect:`6.4` to determine</span>
+<span class="sd">        that a :class:`UriHost&lt;coapy.option.UriHost&gt;` option may be</span>
+<span class="sd">        elided in favor of the default derived from an endpoint.  This</span>
+<span class="sd">        can only be done if *host* is an ``IP-literal`` or</span>
+<span class="sd">        ``IPv4address`` equivalent to :attr:`in_addr` in</span>
+<span class="sd">        :attr:`family`.  DNS resolution is not used.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">family</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">uri_host</span> <span class="o">==</span> <span class="n">host</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">in_addr</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">inet_pton</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">family</span><span class="p">,</span> <span class="n">host</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">in_addr</span> <span class="o">==</span> <span class="n">in_addr</span>
+        <span class="k">except</span> <span class="n">socket</span><span class="o">.</span><span class="n">error</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">return</span> <span class="bp">False</span>
+</div>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_port_for_scheme</span><span class="p">(</span><span class="n">scheme</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s">&#39;coap&#39;</span><span class="p">:</span> <span class="n">coapy</span><span class="o">.</span><span class="n">COAP_PORT</span><span class="p">,</span>
+                <span class="s">&#39;coaps&#39;</span><span class="p">:</span> <span class="n">coapy</span><span class="o">.</span><span class="n">COAPS_PORT</span><span class="p">}[</span><span class="n">scheme</span><span class="p">]</span>
+
+<div class="viewcode-block" id="Endpoint.uri_to_options"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.Endpoint.uri_to_options">[docs]</a>    <span class="k">def</span> <span class="nf">uri_to_options</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uri</span><span class="p">,</span> <span class="n">base_uri</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Convert a URI to a list of CoAP options relative to this endpoint.</span>
+
+<span class="sd">        *uri* should be an :rfc:`3986` conformant absolute URI.  For</span>
+<span class="sd">        convenience, if *base_uri* is not None the value of *uri* will</span>
+<span class="sd">        be recalculated assuming it is relative to *base_uri*.</span>
+<span class="sd">        *base_uri* itself will default to :attr:`base_uri` if no</span>
+<span class="sd">        non-``None`` value is provided.</span>
+
+<span class="sd">        The scheme part of *uri* must be either &quot;coap&quot; or &quot;coaps&quot;.</span>
+
+<span class="sd">        Options will be returned in a list in the following order.</span>
+
+<span class="sd">        * :class:`coapy.option.UriHost`, absent if the URI host</span>
+<span class="sd">          matches the endpoint :attr:`family` and :attr:`in_addr`;</span>
+<span class="sd">        * :class:`coapy.option.UriPort`, absent if the URI port</span>
+<span class="sd">          matches the endpoint :attr:`port`;</span>
+<span class="sd">        * :class:`coapy.option.UriPath`, absent if the path is empty,</span>
+<span class="sd">          otherwise occurs once per path segment;</span>
+<span class="sd">        * :class:`coapy.option.UriQuery`, absent if there is no query</span>
+<span class="sd">          part, otherwise occurs once per ``&amp;``-separated query</span>
+<span class="sd">          element.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">base_uri</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">base_uri</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_uri</span>
+        <span class="k">if</span> <span class="n">base_uri</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">uri</span> <span class="o">=</span> <span class="n">urlparse</span><span class="o">.</span><span class="n">urljoin</span><span class="p">(</span><span class="n">base_uri</span><span class="p">,</span> <span class="n">uri</span><span class="p">)</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">urlparse</span><span class="o">.</span><span class="n">urlsplit</span><span class="p">(</span><span class="n">uri</span><span class="p">)</span>
+        <span class="n">opts</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c"># 6.4.1. absolute-URI = scheme &quot;:&quot; hier-part [ &quot;?&quot; query ]</span>
+        <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">res</span><span class="o">.</span><span class="n">scheme</span><span class="p">)</span> \
+           <span class="ow">or</span> <span class="p">((</span><span class="n">res</span><span class="o">.</span><span class="n">netloc</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">path</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">))</span> \
+           <span class="ow">or</span> <span class="n">res</span><span class="o">.</span><span class="n">fragment</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">URIError</span><span class="p">(</span><span class="s">&#39;not absolute&#39;</span><span class="p">,</span> <span class="n">uri</span><span class="p">)</span>
+        <span class="c"># 6.4.2. Make this user&#39;s job or done by urljoin</span>
+        <span class="c"># 6.4.3. Check scheme</span>
+        <span class="n">scheme</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">scheme</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">scheme</span> <span class="ow">in</span> <span class="p">(</span><span class="s">&#39;coap&#39;</span><span class="p">,</span> <span class="s">&#39;coaps&#39;</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="n">URIError</span><span class="p">(</span><span class="s">&#39;invalid scheme&#39;</span><span class="p">,</span> <span class="n">res</span><span class="o">.</span><span class="n">scheme</span><span class="p">)</span>
+        <span class="c"># 6.4.4. Unnecessary: fragments aren&#39;t allowed in absolute-URIs,</span>
+        <span class="c"># or in the restrictions for coap-URI and coaps-URI.</span>
+
+        <span class="c"># 6.4.5. authority = [ userinfo &quot;@&quot; ] host [ &quot;:&quot; port] CoAP</span>
+        <span class="c"># doesn&#39;t provide a way to pass userinfo, so defer to the</span>
+        <span class="c"># ParseResult hostname and port values rather than try to re-parse</span>
+        <span class="c"># netloc locally.</span>
+        <span class="k">if</span> <span class="n">res</span><span class="o">.</span><span class="n">hostname</span><span class="p">:</span>
+            <span class="n">host</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">url_unquote</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">hostname</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_same_host</span><span class="p">(</span><span class="n">host</span><span class="p">):</span>
+                <span class="n">opts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">coapy</span><span class="o">.</span><span class="n">option</span><span class="o">.</span><span class="n">UriHost</span><span class="p">(</span><span class="n">host</span><span class="p">))</span>
+
+        <span class="c"># 6.4.6.  Set port from URI or default from scheme</span>
+        <span class="n">port</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">port</span>
+        <span class="k">if</span> <span class="n">port</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">port</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_port_for_scheme</span><span class="p">(</span><span class="n">scheme</span><span class="p">)</span>
+
+        <span class="c"># 6.4.7.</span>
+        <span class="k">if</span> <span class="n">port</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">port</span><span class="p">:</span>
+            <span class="n">opts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">coapy</span><span class="o">.</span><span class="n">option</span><span class="o">.</span><span class="n">UriPort</span><span class="p">(</span><span class="n">port</span><span class="p">))</span>
+
+        <span class="c"># 6.4.8</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">path</span>
+        <span class="k">if</span> <span class="n">path</span> <span class="ow">and</span> <span class="ow">not</span> <span class="p">(</span><span class="s">&#39;/&#39;</span> <span class="o">==</span> <span class="n">path</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">path</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">):</span>
+                <span class="n">path</span> <span class="o">=</span> <span class="n">path</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+            <span class="k">for</span> <span class="n">segment</span> <span class="ow">in</span> <span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">):</span>
+                <span class="n">segment</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">url_unquote</span><span class="p">(</span><span class="n">segment</span><span class="p">)</span>
+                <span class="n">opts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">coapy</span><span class="o">.</span><span class="n">option</span><span class="o">.</span><span class="n">UriPath</span><span class="p">(</span><span class="n">segment</span><span class="p">))</span>
+
+        <span class="c"># 6.4.9</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">query</span>
+        <span class="k">if</span> <span class="n">query</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">qseg</span> <span class="ow">in</span> <span class="n">query</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;&amp;&#39;</span><span class="p">):</span>
+                <span class="n">qseg</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">url_unquote</span><span class="p">(</span><span class="n">qseg</span><span class="p">)</span>
+                <span class="n">opts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">coapy</span><span class="o">.</span><span class="n">option</span><span class="o">.</span><span class="n">UriQuery</span><span class="p">(</span><span class="n">qseg</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">opts</span>
+</div>
+<div class="viewcode-block" id="Endpoint.uri_from_options"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.Endpoint.uri_from_options">[docs]</a>    <span class="k">def</span> <span class="nf">uri_from_options</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">opts</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create a URI from endpoint data and the options.</span>
+
+<span class="sd">        The resulting URI scheme is &quot;coap&quot; unless</span>
+<span class="sd">        :attr:`security_mode` is set (in which case it is &quot;coaps&quot;).</span>
+
+<span class="sd">        The authority is derived from</span>
+<span class="sd">        :class:`UriHost&lt;coapy.option.UriHost&gt;` and</span>
+<span class="sd">        :class:`UriPort&lt;coapy.option.UriPort&gt;` options in *opts*,</span>
+<span class="sd">        defaulting to :attr:`uri_host` and :attr:`port` if the</span>
+<span class="sd">        respective options are not provided.</span>
+
+<span class="sd">        The remainder of the URI is built up from</span>
+<span class="sd">        :class:`UriPath&lt;coapy.option.UriPath&gt;` and</span>
+<span class="sd">        :class:`UriQuery&lt;coapy.option.UriQuery&gt;` options in *opts*.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">scheme</span> <span class="o">=</span> <span class="s">&#39;coap&#39;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">security_mode</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">scheme</span> <span class="o">=</span> <span class="s">&#39;coaps&#39;</span>
+        <span class="n">host</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">opt</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">option</span><span class="o">.</span><span class="n">UriHost</span><span class="o">.</span><span class="n">first_match</span><span class="p">(</span><span class="n">opts</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">opt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">host</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">value</span>
+            <span class="k">if</span> <span class="n">host</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">URIError</span><span class="p">(</span><span class="s">&#39;empty Uri-Host&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">host</span> <span class="ow">and</span> <span class="p">(</span><span class="s">&#39;[&#39;</span> <span class="o">!=</span> <span class="n">host</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+                <span class="n">host</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">url_quote</span><span class="p">(</span><span class="n">host</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">host</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">host</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">uri_host</span>
+        <span class="n">port</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">port</span>
+        <span class="n">opt</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">option</span><span class="o">.</span><span class="n">UriPort</span><span class="o">.</span><span class="n">first_match</span><span class="p">(</span><span class="n">opts</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">opt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">port</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">value</span>
+            <span class="k">if</span> <span class="n">port</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">URIError</span><span class="p">(</span><span class="s">&#39;empty Uri-Port&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">port</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_port_for_scheme</span><span class="p">(</span><span class="n">scheme</span><span class="p">):</span>
+            <span class="n">netloc</span> <span class="o">=</span> <span class="n">host</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">netloc</span> <span class="o">=</span> <span class="s">&#39;{0}:{1}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">)</span>
+        <span class="c"># Paths are always absolute, so start with an empty segment so the</span>
+        <span class="c"># encoded version begins with a slash.</span>
+        <span class="n">elts</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">segment_opt</span> <span class="ow">in</span> <span class="n">coapy</span><span class="o">.</span><span class="n">option</span><span class="o">.</span><span class="n">UriPath</span><span class="o">.</span><span class="n">all_match</span><span class="p">(</span><span class="n">opts</span><span class="p">):</span>
+            <span class="n">segment</span> <span class="o">=</span> <span class="n">segment_opt</span><span class="o">.</span><span class="n">value</span>
+            <span class="n">segment</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">url_quote</span><span class="p">(</span><span class="n">segment</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
+            <span class="n">elts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">segment</span><span class="p">)</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">elts</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">path</span><span class="p">:</span>
+            <span class="c"># Make sure we still have the leading slash</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/&#39;</span>
+        <span class="n">elts</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">qseg_opt</span> <span class="ow">in</span> <span class="n">coapy</span><span class="o">.</span><span class="n">option</span><span class="o">.</span><span class="n">UriQuery</span><span class="o">.</span><span class="n">all_match</span><span class="p">(</span><span class="n">opts</span><span class="p">):</span>
+            <span class="n">qseg</span> <span class="o">=</span> <span class="n">qseg_opt</span><span class="o">.</span><span class="n">value</span>
+            <span class="n">qseg</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">url_quote</span><span class="p">(</span><span class="n">qseg</span><span class="p">,</span> <span class="s">&#39;?&#39;</span><span class="p">)</span>
+            <span class="n">elts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">qseg</span><span class="p">)</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="s">&#39;&amp;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">elts</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">urlparse</span><span class="o">.</span><span class="n">urlunsplit</span><span class="p">((</span><span class="n">scheme</span><span class="p">,</span> <span class="n">netloc</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">query</span><span class="p">,</span> <span class="bp">None</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="Endpoint.finalize_message"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.Endpoint.finalize_message">[docs]</a>    <span class="k">def</span> <span class="nf">finalize_message</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Final checks and refinements for *message* relative to this</span>
+<span class="sd">        endpoint.</span>
+
+<span class="sd">        The *message* is</span>
+<span class="sd">        :meth:`validated&lt;coapy.message.Message.validate&gt;`, then the</span>
+<span class="sd">        following final cleanup in its</span>
+<span class="sd">        :attr:`options&lt;coapy.message.Message.options&gt;` is done:</span>
+
+<span class="sd">        * A :class:`coapy.option.UriHost` that is the :meth:`same</span>
+<span class="sd">          host&lt;is_same_host&gt;` as the endpoint will be removed.</span>
+<span class="sd">        * A :class:`coapy.option.UriPort` that is the same port as the</span>
+<span class="sd">          endpoint is removed.</span>
+
+<span class="sd">        The finalized message is returned.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">message</span><span class="o">.</span><span class="n">validate</span><span class="p">()</span>
+        <span class="n">nopt</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">oi</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">options</span><span class="p">)):</span>
+            <span class="n">opt</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">options</span><span class="p">[</span><span class="n">oi</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">coapy</span><span class="o">.</span><span class="n">option</span><span class="o">.</span><span class="n">UriHost</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_same_host</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">value</span><span class="p">):</span>
+                <span class="k">continue</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">coapy</span><span class="o">.</span><span class="n">option</span><span class="o">.</span><span class="n">UriPort</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">port</span><span class="p">):</span>
+                <span class="k">continue</span>
+            <span class="n">nopt</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">nopt</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">options</span><span class="p">):</span>
+            <span class="n">message</span><span class="o">.</span><span class="n">options</span> <span class="o">=</span> <span class="n">nopt</span>
+        <span class="k">return</span> <span class="n">message</span>
+</div>
+    <span class="k">def</span> <span class="nf">_flush_rcvd_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">now</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">clock</span><span class="p">()</span>
+        <span class="n">cache</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rcvd_cache</span>
+        <span class="k">while</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">cache</span><span class="p">):</span>
+            <span class="n">e</span> <span class="o">=</span> <span class="n">cache</span><span class="o">.</span><span class="n">peek_oldest</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">time_due</span> <span class="o">&gt;</span> <span class="n">now</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="n">cache</span><span class="o">.</span><span class="n">pop_oldest</span><span class="p">()</span>
+
+<div class="viewcode-block" id="Endpoint.receive"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.Endpoint.receive">[docs]</a>    <span class="k">def</span> <span class="nf">receive</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Receive and decode a message from another endpoint.</span>
+
+<span class="sd">        Returns ``None`` if the message is so corrupt it should be</span>
+<span class="sd">        ignored, or if the received message is a duplicate.  Raises</span>
+<span class="sd">        :exc:`coapy.message.MessageFormatError` if the message cannot</span>
+<span class="sd">        be fully decoded.  Otherwise returns the message, in which</span>
+<span class="sd">        :attr:`destination_endpoint&lt;coapy.message.Message.destination_endpoint&gt;`</span>
+<span class="sd">        will be set to *self* and</span>
+<span class="sd">        :attr:`source_endpoint&lt;coapy.message.Message.source_endpoint&gt;`</span>
+<span class="sd">        will be set to *source_endpoint*.</span>
+
+<span class="sd">        Any message-layer processing (e.g. re-sending duplicate ACK or</span>
+<span class="sd">        RST, or sending a RST due to a message format error) will have</span>
+<span class="sd">        been done before this call returns.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">dkw</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">source_endpoint</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rawrecvfrom</span><span class="p">(</span><span class="mi">8192</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">m</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">Message</span><span class="o">.</span><span class="n">from_packed</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+            <span class="n">m</span><span class="o">.</span><span class="n">destination_endpoint</span> <span class="o">=</span> <span class="bp">self</span>
+            <span class="n">m</span><span class="o">.</span><span class="n">source_endpoint</span> <span class="o">=</span> <span class="n">source_endpoint</span>
+        <span class="k">except</span> <span class="n">coapy</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">MessageFormatError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">_log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s">&#39;receive&#39;</span><span class="p">)</span>
+            <span class="n">dkw</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">m</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">mid</span> <span class="o">=</span> <span class="n">dkw</span><span class="p">[</span><span class="s">&#39;messageID&#39;</span><span class="p">]</span>
+            <span class="n">mtype</span> <span class="o">=</span> <span class="n">dkw</span><span class="p">[</span><span class="s">&#39;type&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mid</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">messageID</span>
+            <span class="n">mtype</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">messageType</span>
+        <span class="n">local_origin</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">coapy</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">Message</span><span class="o">.</span><span class="n">source_originates_type</span><span class="p">(</span><span class="n">mtype</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">local_origin</span><span class="p">:</span>
+            <span class="c"># local_origin means ACK or RST; look in send cache.</span>
+            <span class="n">ce</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sent_cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">mid</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">ce</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">_log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&#39;Reply to unrecognized message&#39;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="bp">None</span>
+            <span class="k">if</span> <span class="n">m</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">_log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&#39;Invalid reply to message&#39;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="bp">None</span>
+            <span class="n">ce</span><span class="o">.</span><span class="n">process_reply</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">None</span>
+        <span class="c"># not local origin means CON or NON; look in receive cache</span>
+        <span class="n">ce</span> <span class="o">=</span> <span class="n">source_endpoint</span><span class="o">.</span><span class="n">_rcvd_cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">mid</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">ce</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">_log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&#39;Received duplicate&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">None</span>
+        <span class="k">if</span> <span class="n">m</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">_log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&#39;Need send RST&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">RcvdMessageCacheEntry</span><span class="p">(</span><span class="n">source_endpoint</span><span class="o">.</span><span class="n">_rcvd_cache</span><span class="p">,</span> <span class="n">m</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Endpoint.send"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.Endpoint.send">[docs]</a>    <span class="k">def</span> <span class="nf">send</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">destination_endpoint</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Send *msg* to *destination_endpoint*.</span>
+
+<span class="sd">        *msg* must be an instance of :class:`coapy.message.Message`.</span>
+
+<span class="sd">        *destination_endpoint* specifies where the packed message will</span>
+<span class="sd">        be sent and defaults to *msg*&#39;s</span>
+<span class="sd">        :attr:`destination_endpoint&lt;coapy.message.Message.destination_endpoint&gt;`.</span>
+
+<span class="sd">        The return value is the :class:`SentMessageCacheEntry` that</span>
+<span class="sd">        has message-level transmission state.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">coapy</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">Message</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">destination_endpoint</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">destination_endpoint</span> <span class="o">=</span> <span class="n">msg</span><span class="o">.</span><span class="n">destination_endpoint</span>
+        <span class="k">return</span> <span class="n">SentMessageCacheEntry</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sent_cache</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">destination_endpoint</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Endpoint.create_request"><a class="viewcode-back" href="../../coapy_endpoint.html#coapy.endpoint.Endpoint.create_request">[docs]</a>    <span class="k">def</span> <span class="nf">create_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uri</span><span class="p">,</span>
+                       <span class="n">confirmable</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+                       <span class="n">code</span><span class="o">=</span><span class="n">coapy</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">Request</span><span class="o">.</span><span class="n">GET</span><span class="p">,</span>
+                       <span class="n">messageID</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                       <span class="n">token</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                       <span class="n">options</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                       <span class="n">payload</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create and return a :class:`Request&lt;coapy.message.Request&gt;`</span>
+<span class="sd">        instance to retrieve *uri* from this endpoint.</span>
+
+<span class="sd">        *uri* should generally be a relative URI hosted on the</span>
+<span class="sd">        endpoint.</span>
+
+<span class="sd">        By default this creates a non-confirmable</span>
+<span class="sd">        :attr:`GET&lt;coapy.message.Request.GET&gt;` message.  These</span>
+<span class="sd">        features can be overridden with *confirmable* and *code*.</span>
+<span class="sd">        *messageID* will default to :meth:`next_messageID`.  The</span>
+<span class="sd">        caller may specify a token; if none is provided, an empty</span>
+<span class="sd">        token will be used.  Any *options* are appended to the options</span>
+<span class="sd">        derived from *uri*, and *payload* is as in the</span>
+<span class="sd">        :class:`coapy.message.Message` constructor.  The message</span>
+<span class="sd">        :attr:`destination_endpoint&lt;coapy.message.Message.destination_endpoint&gt;`</span>
+<span class="sd">        is set to *self*, and finally the message is returned to the</span>
+<span class="sd">        caller.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">uri_options</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">uri</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">uri_options</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">uri_to_options</span><span class="p">(</span><span class="n">uri</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">messageID</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">messageID</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">next_messageID</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">token</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">token</span> <span class="o">=</span> <span class="n">b</span><span class="s">&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">options</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">uri_options</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">Request</span><span class="p">(</span><span class="n">confirmable</span><span class="o">=</span><span class="n">confirmable</span><span class="p">,</span>
+                                  <span class="n">code</span><span class="o">=</span><span class="n">code</span><span class="p">,</span> <span class="n">messageID</span><span class="o">=</span><span class="n">messageID</span><span class="p">,</span>
+                                  <span class="n">token</span><span class="o">=</span><span class="n">token</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="n">uri_options</span><span class="p">,</span>
+                                  <span class="n">payload</span><span class="o">=</span><span class="n">payload</span><span class="p">)</span>
+        <span class="n">m</span><span class="o">.</span><span class="n">destination_endpoint</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="k">return</span> <span class="n">m</span>
+</div>
+    <span class="k">def</span> <span class="nf">__unicode__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&#39;{s.uri_host}:{s.port:d}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">s</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+    <span class="n">__str__</span> <span class="o">=</span> <span class="n">__unicode__</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">CoAPy 0.0.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../coapy.html" >coapy</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Peter A. Bigot.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,626 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Domain Concepts &mdash; CoAPy 0.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="CoAPy 0.0.0 documentation" href="index.html" />
+    <link rel="next" title="API" href="api.html" />
+    <link rel="prev" title="Release History" href="releases.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="api.html" title="API"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="releases.html" title="Release History"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">CoAPy 0.0.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="domain-concepts">
+<h1>Domain Concepts<a class="headerlink" href="#domain-concepts" title="Permalink to this headline">¶</a></h1>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">This document is a work in progress and should not be taken as
+complete.</p>
+</div>
+<p>The <a class="reference external" href="https://datatracker.ietf.org/doc/draft-ietf-core-coap/">CoAP specification</a> defines a
+protocol, but does so with some terms that are not always used
+precisely, and others that are left undefined beyond the implications of
+their conventional meaning.  The result is an incomplete and ambiguous
+specification that does not translate directly into a reference
+implementation such as CoAPy.</p>
+<p>This document refines and redefines terminology to support a domain
+model for the communications patterns supported by CoAP.  It is further
+informed by draft specifications for an <a class="reference external" href="https://datatracker.ietf.org/doc/draft-ietf-core-observe/">observation capability</a> (which
+relaxes the notion away from REST to allow a time series of responses to
+a single query) and a <a class="reference external" href="https://datatracker.ietf.org/doc/draft-ietf-core-block/">block transfer capabliity</a> (which
+conveys large messages through a sequence of smaller message
+transmissions).</p>
+<p>For the most part concepts and names introduced derive from those
+implicit in the CoAP specification.  In a few cases CoAP concepts are
+refactored so the description of their behavior depends on more basic
+concepts rather than being defined independently.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>Within this document a reference to a technical term &#8220;concept&#8221;
+appears as <cite>concept</cite>.  Generally use of a term that has a technical
+meaning should be take to be that meaning, even if the specific use
+is not so marked.</p>
+<p>A technical term at its definition is denoted <em class="dfn">concept</em>.
+Whether this is visibly distinct from its use form <cite>concept</cite> depends
+on the style used when formatting this document.</p>
+<p class="last">To avoid duplication, where a description supports multiple cases
+with slight variations, parentheses denote the alternatives.  Thus a
+sentence &#8220;A confirmable (non-confirmable) message lives for
+<tt class="docutils literal"><span class="pre">EXCHANGE_LIFETIME</span></tt> (<tt class="docutils literal"><span class="pre">NON_LIFETIME</span></tt>) seconds&#8221; provides a general
+concept and the details of how its specifics change based on message
+type.</p>
+</div>
+<div class="section" id="overview-of-concepts">
+<h2>Overview of Concepts<a class="headerlink" href="#overview-of-concepts" title="Permalink to this headline">¶</a></h2>
+<p>This section provides a brief introduction to the basic domain concepts.
+They are described more complete in their own sections.</p>
+<div class="section" id="layers">
+<h3>Layers<a class="headerlink" href="#layers" title="Permalink to this headline">¶</a></h3>
+<p>CoAP envisions a two-layer protocol: a message layer and a
+request/response layer.  Extension beyond base CoAP reveals the
+request/response layer is too, resulting in a recursive concept of what
+a request/response exchange would be.  In this domain model there are
+three CoAP layers, placed in context in this sequence (from higher to
+lower layer similar to the OSI model):</p>
+<ul class="simple">
+<li>application layer</li>
+<li>transaction layer (requests paired with responses via Token)</li>
+<li>exchange layer (request message paired with response message via Token)</li>
+<li>message layer (CON/NON message paired with ACK/RST message via MID)</li>
+<li>transport layer (UDP, DTLS, etc.)</li>
+</ul>
+<p>Working from the bottom layer up, a <cite>message transmission</cite> comprises:</p>
+<ul class="simple">
+<li>One <cite>CON/NON message</cite> with a given MID</li>
+<li>Zero or one <cite>reply message</cite> matching that MID</li>
+</ul>
+<p>The primitive component of a request/response exchange (or REST
+transaction) is an <em class="dfn">exchange</em>, comprising:</p>
+<ul class="simple">
+<li>One <cite>request message</cite> with a given Token</li>
+<li>Zero or one <cite>response messages</cite> matching that Token</li>
+</ul>
+<p>In turn, a <em class="dfn">transaction</em> comprises:</p>
+<ul class="simple">
+<li>One <cite>request</cite> (potentially comprised of multiple request messages)
+with a given Token</li>
+<li>One or more <cite>responses</cite> (potentially comprised of multiple response
+messages) matching that Token</li>
+</ul>
+<p>Depending on how the transaction is decomposed, it may consist of a
+single exchange, a sequence of exchanges (as per the block extension),
+an initial exchange with additional response message transmissions, or
+some other abstraction (as per the groupcomm extension).</p>
+<p>CoAP lacks the terminology to describe how exceptional behavior in lower
+layers impacts the behavior of higher layers.  This domain model
+introduces a concept of <cite>resolution</cite> to <cite>success</cite> or <cite>failure</cite> that
+applies to message transmissions, exchanges, and transactions.  Failure
+at a lower layer generally propagates to failure at a higher layer.</p>
+</div>
+<div class="section" id="messages">
+<h3>Messages<a class="headerlink" href="#messages" title="Permalink to this headline">¶</a></h3>
+<p>A message comprises various fields (<a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-3">CoAP Section 3</a>) including:</p>
+<ul class="simple">
+<li>A Type being one of CON, NON, ACK, RST</li>
+<li>A Code comprising a integer <em class="dfn">class</em> and an integer <em class="dfn">detail</em>
+denoted herein by a dot-separated decimals, e.g. <tt class="docutils literal"><span class="pre">2.04</span></tt></li>
+<li>A Message ID (aka <em class="dfn">MID</em>) represented as integer in the range
+0..65535</li>
+<li>A Token representing an opaque sequence of zero to eight octets</li>
+<li>An emptiable set of Options</li>
+<li>An optional Payload</li>
+</ul>
+<p>CoAP defines a byte encoding of a message; the details of that are
+within the specification and are not relevant to the domain model.</p>
+</div>
+<div class="section" id="options">
+<h3>Options<a class="headerlink" href="#options" title="Permalink to this headline">¶</a></h3>
+<p>An Option (<a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-3.1">CoAP Section 3.1</a>) comprises:</p>
+<ul>
+<li><p class="first">An <em class="dfn">option number</em> as an unsigned integer in the range 0..65535</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The ability to express an option number greater than 65535 within
+an encoded message is assumed to be a flaw in the specification.</p>
+</div>
+</li>
+<li><p class="first">An <em class="dfn">option format</em> (<a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-3.1">CoAP Section 3.1</a>) specified externally for a
+given option number</p>
+</li>
+<li><p class="first">An <em class="dfn">option length</em> specified in bytes (octets).  Constraints on
+the length are defined externally for a specific option number</p>
+</li>
+<li><p class="first">An <em class="dfn">option value</em> within the domain of the format as constrained
+by the length</p>
+</li>
+</ul>
+</div>
+<div class="section" id="endpoints">
+<h3>Endpoints<a class="headerlink" href="#endpoints" title="Permalink to this headline">¶</a></h3>
+<p>An Endpoint comprises:</p>
+<ul class="simple">
+<li>A unicast IP host address</li>
+<li>A host port</li>
+<li>A security context</li>
+</ul>
+<p>Related concepts:</p>
+<ul class="simple">
+<li>A <em class="dfn">source endpoint</em> is the endpoint that transmits a CoAP message</li>
+<li>A <em class="dfn">destination endpoint</em> is the endpoint to which a CoAP message
+is transmitted.</li>
+<li>A <em class="dfn">client</em> is an endpoint that initiates a CoAP request.</li>
+<li>A <em class="dfn">server</em> is an endpoint that receives and responds to a CoAP
+request.</li>
+</ul>
+<p>Other concepts related to endpoints may be derived when the groupcomm
+extension is considered.</p>
+</div>
+<div class="section" id="congestion">
+<h3>Congestion<a class="headerlink" href="#congestion" title="Permalink to this headline">¶</a></h3>
+<p>The <em class="dfn">transmission parameters</em> (<a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-4.8">CoAP Section 4.8</a>) describe features
+related to congestion management, including number of outstanding
+interactions permitted, maximum data rate, etc.  References to those
+parameters are denoted thus: <tt class="docutils literal"><span class="pre">EXCHANGE_LIFETIME</span></tt>.</p>
+<p>Unlike transmission parameters, which are simple values, the domain
+model requires understanding of the means by which retransmission of
+confirmable messages is authorized.  A <em class="dfn">Binary Exponential Back-Off
+(BEBO) state</em> comprises:</p>
+<ul class="simple">
+<li>A retransmission counter, initialized to zero</li>
+<li>A timeout, initialized to a value between <tt class="docutils literal"><span class="pre">ACK_TIMEOUT</span></tt> and
+<tt class="docutils literal"><span class="pre">(ACK_TIMEOUT</span> <span class="pre">*</span> <span class="pre">ACK_RANDOM_FACTOR)</span></tt></li>
+</ul>
+<p>The process by which these values are used is described in
+<a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-4.2">CoAP Section 4.2</a>.  This document refines the description to clarify what
+a transmission is at a given layer, and the conditions under which
+retransmission becomes unnecessary or disallowed.</p>
+</div>
+</div>
+<div class="section" id="message-layer-concepts">
+<h2>Message-Layer Concepts<a class="headerlink" href="#message-layer-concepts" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="taxonomy-by-type">
+<h3>Taxonomy by Type<a class="headerlink" href="#taxonomy-by-type" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li>A <em class="dfn">confirmable message</em> is one with Type CON.</li>
+<li>A <em class="dfn">non-confirmable message</em> is one with Type NON.</li>
+<li>An <em class="dfn">acknowledgement message</em> is one with Type ACK.</li>
+<li>A <em class="dfn">reset message</em> is one with Type RST.</li>
+</ul>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<ul class="last simple">
+<li>A confirmable message may be <cite>empty</cite> or may be a <cite>request message</cite>
+or a <cite>response message</cite>.</li>
+<li>A non-confirmable message may be <cite>empty</cite> or may be a <cite>request
+message</cite> or a <cite>response message</cite>.</li>
+<li>An acknowledgement message may be <cite>empty</cite> or may be a <cite>response
+message</cite>.</li>
+<li>A reset message must be <cite>empty</cite>.</li>
+</ul>
+</div>
+</div>
+<div class="section" id="taxonomy-by-code">
+<h3>Taxonomy by Code<a class="headerlink" href="#taxonomy-by-code" title="Permalink to this headline">¶</a></h3>
+<ul>
+<li><p class="first">An <em class="dfn">empty message</em> is a message with Code <tt class="docutils literal"><span class="pre">0.00</span></tt>.  A message
+that is not empty is a <em class="dfn">non-empty message</em>.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<ul class="last simple">
+<li>An empty message is encoded to a four-octet sequence.  It carries
+no Token, Options, nor Payload.</li>
+</ul>
+</div>
+</li>
+<li><p class="first">A <em class="dfn">request message</em> is a message with Code in class 1.</p>
+</li>
+<li><p class="first">A <em class="dfn">response message</em> is a message with Code in class 2, 4, or 5.
+It is a message-layer component of a transaction-layer concept.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Although a <cite>response message</cite> may also be a <cite>reply message</cite>, these
+concepts are orthogonal: there are response messages that are not
+reply messages, and reply messages that are not response messages.</p>
+</div>
+</li>
+</ul>
+<p>There is no generic terminology for messages with Code in class 0, 3, 6,
+or 7.</p>
+</div>
+<div class="section" id="general-use">
+<h3>General Use<a class="headerlink" href="#general-use" title="Permalink to this headline">¶</a></h3>
+<p>In most uses an unqualified <em class="dfn">message</em> is a message with type CON or
+NON.  Where disambiguation is critical, such a message is called a
+<em class="dfn">CON/NON message</em>, and the term &#8220;message&#8221; may include ACK and RST
+messages.  <cite>Sender</cite> and <cite>receiver</cite> are generally used as roles defined
+relative to a CON/NON message.  Take care when speaking of them in the
+context of a <cite>reply message</cite>.</p>
+<p>A <em class="dfn">reply message</em> is a message with type ACK or RST.  It is coupled
+with the message to which it is a reply through a shared MID value.  A
+reply message is transmitted by the receiver of a message to that
+message&#8217;s sender.</p>
+</div>
+<div class="section" id="operations">
+<h3>Operations<a class="headerlink" href="#operations" title="Permalink to this headline">¶</a></h3>
+<ul>
+<li><p class="first">A (CoAP) <em class="dfn">message transmission</em> is the act of sending a <cite>CON/NON
+message</cite>.  The source endpoint is the message <em class="dfn">sender</em>; the
+destination endpoint is the message <em class="dfn">receiver</em>.  The message transmission event occurs
+once for each message.</p>
+</li>
+<li><p class="first">A (CoAP) <em class="dfn">message reply</em> is the act of sending a <cite>reply message</cite>.
+A message of type CON may evoke a reply of type ACK or RST; a CoAP
+message of type NON may evoke a reply of type RST.  Neither ACK nor
+RST may evoke replies.  A CoAP message transmission will evoke at most
+one CoAP message reply.</p>
+</li>
+<li><p class="first">The MID of a <cite>CON/NON message</cite> is determined by the sender.  The
+sender of a message should not re-use a MID for another confirmable
+(non-confirmable) message until at least <tt class="docutils literal"><span class="pre">EXCHANGE_LIFETIME</span></tt>
+(<tt class="docutils literal"><span class="pre">NON_LIFETIME</span></tt>) seconds have passed since the first transport layer
+transmission of the message.</p>
+</li>
+<li><p class="first">A <em class="dfn">transport layer transmission</em> is the act of submitting to the
+transport layer a block of data that is to be conveyed to a
+destination endpoint.  Messages of type NON, ACK, and RST normally
+have exactly one transport layer transmission (an exception occurs for
+reply messages under deduplication rules).  Messages of type CON may
+involve up to <tt class="docutils literal"><span class="pre">1+MAX_RETRANSMIT</span></tt> transport layer transmissions,
+terminating when the timeout of the last transmission completes or
+when the message transmission has been <cite>resolved</cite>.</p>
+</li>
+<li><p class="first">A message transmission may be <em class="dfn">cancelled</em> by the sender.</p>
+<ul class="simple">
+<li>Cancellation may occur at any time prior to the first
+transport-layer transmission.  In that situation the behavior is
+operationally equivalent to having never submitted the message for
+transmission.</li>
+<li>If a confirmable message transmission has not been <cite>resolved</cite> it may
+be cancelled at (instead of) transport-layer retransmission.  In
+this situation the sole effect of cancellation is to inhibit further
+transport-layer retransmissions: it has no effect on whether the
+transmission is considered to have <cite>succeeded</cite> or <cite>failed</cite>, or on
+when the transmission <cite>expires</cite>.</li>
+<li>A message transmission cannot be cancelled after it has been
+resolved or the last permitted retransmission has occurred.</li>
+</ul>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Message cancellation is an action performed by the sender.  The
+receiver may not be able to determine that the transmission was
+cancelled.</p>
+</div>
+</li>
+<li><p class="first">A message transmission <em class="dfn">expires</em> at a specific time to provide a
+deadline by which it is <cite>resolved</cite>:</p>
+<ul class="simple">
+<li>A confirmable request message transmission <cite>expires</cite> at
+<tt class="docutils literal"><span class="pre">EXCHANGE_LIFETIME</span></tt> seconds after the first transport-layer
+transmission.</li>
+<li>A confirmable non-request message transmission <cite>expires</cite> at
+<tt class="docutils literal"><span class="pre">MAX_TRANSMIT_WAIT</span></tt> seconds after the first transport-layer
+transmission.</li>
+<li>A non-confirmable request message transmission <cite>expires</cite> at
+<tt class="docutils literal"><span class="pre">NON_LIFETIME</span></tt> seconds after the first transport-layer
+transmission.</li>
+<li>A non-confirmable non-request message transmission <cite>expires</cite> at
+<tt class="docutils literal"><span class="pre">ACK_TIMEOUT*ACK_RANDOM_FACTOR</span></tt> seconds after the first
+transport-layer transmission.</li>
+</ul>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last"><a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-4.8.2">CoAP Section 4.8.2</a> and <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-4.7">CoAP Section 4.7</a> which together imply the
+concept of an expiration time for message transmission leave the
+expiration for non-confirmable messages undefined.  The text above
+provides values based on the principles underlying the defined
+expiration for confirmable messages.  not</p>
+</div>
+</li>
+<li><p class="first">A message transmission is <em class="dfn">resolved</em> once its disposition is
+determined to be <cite>success</cite> or <cite>failure</cite>.  Prior to that point the
+message transmission is <cite>unresolved</cite>.  Be aware that the sender and
+the receiver of a message transmission may reach conflicting
+dispositions for a given transmission.</p>
+</li>
+<li><p class="first">From the perspective of a message receiver, the disposition of the
+reception is either <cite>accept</cite> or <cite>reject</cite>.  Rejecting a message is used
+as a technical term within the CoAP protocol description for
+situations where a particular disposition is required.</p>
+<ul class="simple">
+<li><em class="dfn">Accept</em>: An accepted message may be made visible above the
+message layer.  An accepted confirmable message must evoke a reply
+with type ACK.  A message that is not rejected is assumed to be
+accepted.</li>
+<li><em class="dfn">Reject</em>: A rejected message is not directly visible above the
+message layer.  When a message is rejected a reset message must
+(CON) or may (NON) be sent as reply.  This message influences but
+does not define the sender&#8217;s disposition of the transmission.</li>
+</ul>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Message rejection is an action performed by the receiver.  The
+sender may not be able to determine whether rejection has occurred.</p>
+</div>
+</li>
+<li><p class="first">From the perspective of a message sender, the disposition of a
+transmission is <em class="dfn">success</em> or <em class="dfn">failure</em>.  Success or failure
+of an message transmission is determined by a sender based on time,
+reply message type, and transport-layer information.</p>
+<ul class="simple">
+<li>If the received <cite>reply message</cite> has type RST, the transmission has
+failed.</li>
+<li>If the received <cite>reply message</cite> has type ACK, the transmission has
+succeeded.</li>
+<li>Success and failure may be communicated through transport-layer
+notifications (e.g., a message may fail if it is rejected by
+transport security checks).</li>
+<li>Success and failure may be communicated through exchange-layer
+notifications (e.g., a request message transmission may succeed if a
+response message is received).</li>
+<li>Success and failure may be communicated through transaction-layer
+notifications (e.g., a response message that conveys the URI of a
+created resource may succeed if a request to retrieve that resource
+is received).</li>
+<li>Success and failure may be communicated through application-layer
+notifications.</li>
+<li>A message transmission that has not been resolved by the time it
+<cite>expires</cite> has failed (succeeded) if it is confirmable
+(non-confirmable).</li>
+</ul>
+</li>
+<li><p class="first">A <em class="dfn">duplicate</em> message is a confirmable (non-confirmable) message
+received from the same source endpoint within <tt class="docutils literal"><span class="pre">EXCHANGE_LIFETIME</span></tt>
+(<tt class="docutils literal"><span class="pre">NON_LIFETIME</span></tt>) seconds after receipt of another CON/NON message
+with the same MID.</p>
+</li>
+<li><p class="first">If a <cite>duplicate</cite> message is received, then:</p>
+<ul class="simple">
+<li>if a reply had been sent for the first message, that reply should be
+re-transmitted unchanged; and</li>
+<li>the duplicate is otherwise ignored</li>
+</ul>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This refactors <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-4.5">CoAP Section 4.5</a> by leveraging more precise
+terminology, and eliminates the unnecessary text related to relaxed
+rules that explicitly authorize an implementation to do things that
+result in behavior that is externally indistinguishable from having
+satisfied the requirement.</p>
+</div>
+</li>
+<li><p class="first">A message transmission is <em class="dfn">outstanding (at the message layer)</em> if
+it is <cite>unresolved</cite>.</p>
+</li>
+<li><p class="first">An endpoint R <em class="dfn">responds to</em> (or <em class="dfn">is responsive to</em>) endpoint
+S with respect to a message transmission to R if</p>
+<ul class="simple">
+<li>S receives a reply to the message transmission; or</li>
+<li>S <cite>resolves</cite> the message transmission as <cite>successful</cite> through a
+notification from a higher layer (exchange, transaction,
+application)</li>
+</ul>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Responsiveness of an endpoint impacts whether congestion rules
+apply to transmissions targeting the endpoint, but is not otherwise
+defined in CoAP.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="exchange-layer">
+<h2>Exchange Layer<a class="headerlink" href="#exchange-layer" title="Permalink to this headline">¶</a></h2>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">This section has not been completed.  Only a few concepts are
+described, and they have not been verified.</p>
+</div>
+<ul class="simple">
+<li>An exchange is <em class="dfn">outstanding (at the exchange layer)</em> if a
+<cite>response message</cite> is still expected.</li>
+<li>A response message is <cite>expected</cite> for an exchange if the exchange has
+not <cite>expired</cite> and its request message has not <cite>resolved</cite> as <cite>failure</cite>.</li>
+<li>An exchange <em class="dfn">expires</em> at some time:<ul>
+<li>An exchange for which the <cite>request message transmission</cite> has not
+been <cite>resolved</cite> <cite>expires</cite> at the same time the request message
+transmission expires.</li>
+<li>CoAP does not define an expiration for exchanges for which the
+request message transmission was successful.</li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="transaction-layer">
+<h2>Transaction Layer<a class="headerlink" href="#transaction-layer" title="Permalink to this headline">¶</a></h2>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">This section has not been completed.</p>
+</div>
+</div>
+<div class="section" id="congestion-management-cross-layer-see-also-individual-layers">
+<h2>Congestion Management (Cross Layer; see also individual layers)<a class="headerlink" href="#congestion-management-cross-layer-see-also-individual-layers" title="Permalink to this headline">¶</a></h2>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>This section is intended to refine the text of <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-4.7">CoAP Section 4.7</a>,
+paraphrased as:</p>
+<ul class="last simple">
+<li>A confirmable message transmission is <cite>outstanding</cite> at the message
+layer if the sender still expects an ACK.  An ACK is not expected if
+a reply message has been received or if MAX_TRANSMIT_WAIT has passed
+since the first transport layer transmission.</li>
+<li>A non-confirmable message transmission is &#8220;outstanding&#8221; under
+undefined circumstances.</li>
+</ul>
+</div>
+<ul>
+<li><p class="first">An <em class="dfn">outstanding interaction</em> is one of:</p>
+<blockquote>
+<div><ul class="simple">
+<li>an <cite>outstanding exchange</cite>; or</li>
+<li>an <cite>outstanding message transmission</cite> that is not the request
+message transmission of an outstanding exchange.</li>
+</ul>
+</div></blockquote>
+</li>
+<li><p class="first">When congestion rules are in force:</p>
+<ul class="simple">
+<li>A client must not allow more than <tt class="docutils literal"><span class="pre">NSTART</span></tt> simultaneous
+outstanding interactions to a given server (endpoint).</li>
+<li>endpoint S must not transmit messages to endpoint R at a rate that
+exceeds <tt class="docutils literal"><span class="pre">PROBING_RATE</span></tt> bytes per second unless R responds to those
+messages.</li>
+</ul>
+</li>
+<li><p class="first">Congestion rules apply to client requests to servers per <a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-4.7">CoAP Section 4.7</a></p>
+</li>
+<li><p class="first">Congestion rules apply to observe responses from servers per
+observe-11.</p>
+</li>
+</ul>
+<p>Commentary:</p>
+<ul>
+<li><p class="first">The <cite>BEBO state</cite> of a confirmable message transmission specifies when
+additional transport layer transmissions may be allowed.  The
+<em class="dfn">BEBO span</em> for an initial timeout of ITO is:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">((</span><span class="mi">2</span> <span class="o">**</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">MAX_RETRANSMIT</span><span class="p">))</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">ITO</span>
+</pre></div>
+</div>
+<p>The BEBO span shall not exceed <tt class="docutils literal"><span class="pre">MAX_TRANSMIT_WAIT</span></tt>.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">At this timne it is unclear whether the <cite>BEBO span</cite> is a necessary
+domain concept.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Domain Concepts</a><ul>
+<li><a class="reference internal" href="#overview-of-concepts">Overview of Concepts</a><ul>
+<li><a class="reference internal" href="#layers">Layers</a></li>
+<li><a class="reference internal" href="#messages">Messages</a></li>
+<li><a class="reference internal" href="#options">Options</a></li>
+<li><a class="reference internal" href="#endpoints">Endpoints</a></li>
+<li><a class="reference internal" href="#congestion">Congestion</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#message-layer-concepts">Message-Layer Concepts</a><ul>
+<li><a class="reference internal" href="#taxonomy-by-type">Taxonomy by Type</a></li>
+<li><a class="reference internal" href="#taxonomy-by-code">Taxonomy by Code</a></li>
+<li><a class="reference internal" href="#general-use">General Use</a></li>
+<li><a class="reference internal" href="#operations">Operations</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#exchange-layer">Exchange Layer</a></li>
+<li><a class="reference internal" href="#transaction-layer">Transaction Layer</a></li>
+<li><a class="reference internal" href="#congestion-management-cross-layer-see-also-individual-layers">Congestion Management (Cross Layer; see also individual layers)</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="releases.html"
+                        title="previous chapter">Release History</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="api.html"
+                        title="next chapter">API</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/domain.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="api.html" title="API"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="releases.html" title="Release History"
+             >previous</a> |</li>
+        <li><a href="index.html">CoAPy 0.0.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Peter A. Bigot.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

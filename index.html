@@ -1,0 +1,218 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>CoAPy: Python Implementation of Constrained Application Protocol &mdash; CoAPy 0.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="CoAPy 0.0.0 documentation" href="#" />
+    <link rel="next" title="Architectural Vision" href="vision.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="vision.html" title="Architectural Vision"
+             accesskey="N">next</a> |</li>
+        <li><a href="#">CoAPy 0.0.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="coapy-python-implementation-of-constrained-application-protocol">
+<h1>CoAPy: Python Implementation of Constrained Application Protocol<a class="headerlink" href="#coapy-python-implementation-of-constrained-application-protocol" title="Permalink to this headline">¶</a></h1>
+<p>CoAP is an effort of the <a class="reference external" href="https://datatracker.ietf.org/wg/core/">Constrained RESTful Environments (core)</a> working group of the Internet
+Engineering Task Force (IETF).  From the charter:</p>
+<blockquote>
+<div>CoRE is providing a framework for resource-oriented applications intended
+to run on constrained IP networks. A constrained IP network has limited
+packet sizes, may exhibit a high degree of packet loss, and may have a
+substantial number of devices that may be powered off at any point in time
+but periodically &#8220;wake up&#8221; for brief periods of time.  These networks and
+the nodes within them are characterized by severe limits on throughput,
+available power, and particularly on the complexity that can be supported
+with limited code size and limited RAM per node.</div></blockquote>
+<p><a class="reference external" href="https://datatracker.ietf.org/doc/draft-ietf-core-coap/">Constrained Application Protocol (CoAP)</a> is a specialized
+web transfer protocol for use with constrained nodes and constrained (e.g.,
+low-power, lossy) networks.</p>
+<p>CoAPy is a Python reference implementation of CoAP.</p>
+<div class="section" id="contents">
+<h2>Contents<a class="headerlink" href="#contents" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="vision.html">Architectural Vision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="releases.html">Release History</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#pre-history">Pre-History</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="domain.html">Domain Concepts</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="domain.html#overview-of-concepts">Overview of Concepts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="domain.html#message-layer-concepts">Message-Layer Concepts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="domain.html#exchange-layer">Exchange Layer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="domain.html#transaction-layer">Transaction Layer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="domain.html#congestion-management-cross-layer-see-also-individual-layers">Congestion Management (Cross Layer; see also individual layers)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api.html#coapy">coapy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="coapy_message.html">coapy.message</a></li>
+<li class="toctree-l2"><a class="reference internal" href="coapy_option.html">coapy.option</a></li>
+<li class="toctree-l2"><a class="reference internal" href="coapy_endpoint.html">coapy.endpoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="coapy_resource.html">coapy.resource</a></li>
+<li class="toctree-l2"><a class="reference internal" href="coapy_util.html">coapy.util</a></li>
+<li class="toctree-l2"><a class="reference internal" href="coapy_httputil.html">coapy.httputil</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tests_support.html">tests.support</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="indices-and-tables">
+<h2>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><a class="reference internal" href="genindex.html"><em>Index</em></a></li>
+<li><a class="reference internal" href="py-modindex.html"><em>Module Index</em></a></li>
+<li><a class="reference internal" href="search.html"><em>Search Page</em></a></li>
+</ul>
+</div>
+<div class="section" id="references">
+<h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="general-resources">
+<h3>General Resources<a class="headerlink" href="#general-resources" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li>The <a class="reference external" href="https://datatracker.ietf.org/wg/core/">Constrained RESTful Environments (core) Working Group</a> at IETF.</li>
+<li><a class="reference external" href="http://www.ics.uci.edu/~fielding/pubs/dissertation/top.htm">Architectural Styles and the Design of Network-based Software</a>, Roy
+Fielding&#8217;s dissertation which defines the concepts underlying
+Representational State Transfer (REST).</li>
+<li><a class="reference external" href="http://roy.gbiv.com/untangled/2008/rest-apis-must-be-hypertext-driven">REST APIs must be hypertext-driven</a>,
+a discussion of what it means to be a REST interface.</li>
+<li><a class="reference external" href="https://addons.mozilla.org/en-us/firefox/addon/copper-270430/">Copper</a>, a
+<a class="reference external" href="https://addons.mozilla.org/en-us/firefox/">FireFox</a> browser plug-in
+supporting CoAP.</li>
+<li><a class="reference external" href="http://svn.tools.ietf.org/svn/wg/core/registry.txt">Draft Registry</a>
+of CoAP-related IANA controlled values.  This includes some proposed
+options, response codes, and content types.</li>
+</ul>
+</div>
+<div class="section" id="core-internet-drafts">
+<h3>CoRE Internet Drafts<a class="headerlink" href="#core-internet-drafts" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><a class="reference external" href="https://datatracker.ietf.org/doc/draft-ietf-core-coap/">Constrained Application Protocol (CoAP)</a></li>
+<li><a class="reference external" href="https://datatracker.ietf.org/doc/draft-ietf-core-block/">Blockwise transfers in CoAP</a></li>
+<li><a class="reference external" href="https://datatracker.ietf.org/doc/draft-ietf-core-observe/">Observing Resources in CoAP</a></li>
+<li><a class="reference external" href="https://datatracker.ietf.org/doc/draft-ietf-core-groupcomm/">Group Communication for CoAP</a></li>
+</ul>
+</div>
+<div class="section" id="rfcs">
+<h3>RFCs<a class="headerlink" href="#rfcs" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><span class="target" id="index-0"></span><a class="rfc reference external" href="http://tools.ietf.org/html/rfc3986.html"><strong>RFC 3986</strong></a> Uniform Resource Identifier (URI): Generic Syntax</li>
+<li><span class="target" id="index-1"></span><a class="rfc reference external" href="http://tools.ietf.org/html/rfc5785.html"><strong>RFC 5785</strong></a> Defining Well-Known Uniform Resource Identifiers (URIs)</li>
+<li><span class="target" id="index-2"></span><a class="rfc reference external" href="http://tools.ietf.org/html/rfc5988.html"><strong>RFC 5988</strong></a> Web Linking</li>
+<li><span class="target" id="index-3"></span><a class="rfc reference external" href="http://tools.ietf.org/html/rfc5952.html"><strong>RFC 5952</strong></a> A Recommendation for IPv6 Address Text Representation</li>
+<li><span class="target" id="index-4"></span><a class="rfc reference external" href="http://tools.ietf.org/html/rfc6690.html"><strong>RFC 6690</strong></a> Constrained RESTful Environment (CoRE) Link Format</li>
+</ul>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="#">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">CoAPy: Python Implementation of Constrained Application Protocol</a><ul>
+<li><a class="reference internal" href="#contents">Contents</a><ul>
+</ul>
+</li>
+<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
+<li><a class="reference internal" href="#references">References</a><ul>
+<li><a class="reference internal" href="#general-resources">General Resources</a></li>
+<li><a class="reference internal" href="#core-internet-drafts">CoRE Internet Drafts</a></li>
+<li><a class="reference internal" href="#rfcs">RFCs</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Next topic</h4>
+  <p class="topless"><a href="vision.html"
+                        title="next chapter">Architectural Vision</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/index.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="vision.html" title="Architectural Vision"
+             >next</a> |</li>
+        <li><a href="#">CoAPy 0.0.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Peter A. Bigot.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,1346 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>coapy.message &mdash; CoAPy 0.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="CoAPy 0.0.0 documentation" href="../../index.html" />
+    <link rel="up" title="coapy" href="../coapy.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">CoAPy 0.0.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../coapy.html" accesskey="U">coapy</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for coapy.message</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="c"># Copyright 2013, Peter A. Bigot</span>
+<span class="c">#</span>
+<span class="c"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;); you may</span>
+<span class="c"># not use this file except in compliance with the License. You may obtain a</span>
+<span class="c"># copy of the License at:</span>
+<span class="c">#</span>
+<span class="c">#            http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c">#</span>
+<span class="c"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS, WITHOUT</span>
+<span class="c"># WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the</span>
+<span class="c"># License for the specific language governing permissions and limitations</span>
+<span class="c"># under the License.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Something</span>
+
+<span class="sd">:copyright: Copyright 2013, Peter A. Bigot</span>
+<span class="sd">:license: Apache-2.0</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">unicode_literals</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">division</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="n">_log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">import</span> <span class="nn">struct</span>
+<span class="kn">import</span> <span class="nn">coapy</span>
+<span class="kn">import</span> <span class="nn">coapy.option</span>
+<span class="kn">import</span> <span class="nn">coapy.util</span>
+
+
+<div class="viewcode-block" id="MessageError"><a class="viewcode-back" href="../../coapy_message.html#coapy.message.MessageError">[docs]</a><span class="k">class</span> <span class="nc">MessageError</span> <span class="p">(</span><span class="n">coapy</span><span class="o">.</span><span class="n">CoAPyException</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+</div>
+<div class="viewcode-block" id="MessageValidationError"><a class="viewcode-back" href="../../coapy_message.html#coapy.message.MessageValidationError">[docs]</a><span class="k">class</span> <span class="nc">MessageValidationError</span> <span class="p">(</span><span class="n">MessageError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Exception raised by :meth:`Message.validate`.  :attr:`args`</span>
+<span class="sd">    will be ``(diagnostic, message)`` where *diagnostic* is a</span>
+<span class="sd">    human-readable description of the failure cause matching one of</span>
+<span class="sd">    the codes in this class, and *message* is the invalid message.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">CODE_UNDEFINED</span> <span class="o">=</span> <span class="s">&#39;missing code&#39;</span>
+    <span class="sd">&quot;&quot;&quot;*diagnostic* value when caller failed to assign a value to</span>
+<span class="sd">    :attr:`Message.code`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">CODE_INSTANCE_CONFLICT</span> <span class="o">=</span> <span class="s">&#39;code inconsistent with message class&#39;</span>
+    <span class="sd">&quot;&quot;&quot;*diagnostic* value when the *class* in :attr:`Message.code` is</span>
+<span class="sd">    not compatible with the Python class of the message instance.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">CODE_TYPE_CONFLICT</span> <span class="o">=</span> <span class="s">&#39;code and messageType conflict&#39;</span>
+    <span class="sd">&quot;&quot;&quot;*diagnostic* value when :attr:`Message.code` and</span>
+<span class="sd">    :attr:`Message.messageType` are not consistent:</span>
+
+<span class="sd">    * :attr:`CON&lt;Message.Type_CON&gt;` and :attr:`NON&lt;Message.Type_NON&gt;`</span>
+<span class="sd">      allowed only in :class:`Request` and :class:`Response` messages.</span>
+
+<span class="sd">    * :attr:`ACK&lt;Message.Type_ACK&gt;` allowed only for</span>
+<span class="sd">      :attr:`Empty&lt;Message.Empty&gt;` and :class:`Response` messages.</span>
+
+<span class="sd">    * :attr:`RST&lt;Message.Type_RST&gt;` allowed only for</span>
+<span class="sd">      :attr:`Empty&lt;Message.Empty&gt;` messages.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">EMPTY_MESSAGE_NOT_EMPTY</span> <span class="o">=</span> <span class="s">&#39;excess content in Empty message&#39;</span>
+    <span class="sd">&quot;&quot;&quot;*diagnostic* value when a message with code</span>
+<span class="sd">    :attr:`Empty&lt;Message.Empty&gt;` has a non-empty</span>
+<span class="sd">    :attr:`Message.token`, :attr:`Message.options`, or</span>
+<span class="sd">    :attr:`Message.payload` attribute.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">PROXY_URI_CONFLICT</span> <span class="o">=</span> <span class="s">&#39;Proxy-Uri mixed with Uri-*&#39;</span>
+    <span class="sd">&quot;&quot;&quot;*diagnostic* value when *message* has both</span>
+<span class="sd">    :class:`coapy.option.ProxyUri` and at least one of</span>
+<span class="sd">    :class:`coapy.option.UriHost`, :class:`coapy.option.UriPort`,</span>
+<span class="sd">    :class:`coapy.option.UriPath`, or :class:`coapy.option.UriQuery`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+</div>
+<div class="viewcode-block" id="MessageFormatError"><a class="viewcode-back" href="../../coapy_message.html#coapy.message.MessageFormatError">[docs]</a><span class="k">class</span> <span class="nc">MessageFormatError</span> <span class="p">(</span><span class="n">MessageError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Exception raised by :meth:`Message.from_packed` when the</span>
+<span class="sd">    message cannot be decoded.  :attr:`args` will be ``(diagnostic,</span>
+<span class="sd">    dkw)`` where *diagnostic* is a human-readable description of the</span>
+<span class="sd">    failure cause matching one of the codes in this class, and *dkw*</span>
+<span class="sd">    is a dictionary with entries for</span>
+<span class="sd">    :attr:`type&lt;Message.messageType&gt;`, :attr:`code&lt;Message.code&gt;` and</span>
+<span class="sd">    :attr:`messageID&lt;Message.messageID&gt;`.</span>
+
+<span class="sd">    Justification for the diagnosis can be found in :coapsect:`3`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">TOKEN_TOO_LONG</span> <span class="o">=</span> <span class="s">&#39;token too long&#39;</span>
+    <span class="sd">&quot;&quot;&quot;*diagnostic* value when the TKL field of the message is greater</span>
+<span class="sd">    than 8.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">ZERO_LENGTH_PAYLOAD</span> <span class="o">=</span> <span class="s">&#39;zero-length payload&#39;</span>
+    <span class="sd">&quot;&quot;&quot;*diagnostic* value when a Payload Marker is present but not</span>
+<span class="sd">    followed by data.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">INVALID_OPTION</span> <span class="o">=</span> <span class="s">&#39;option decode error&#39;</span>
+    <span class="sd">&quot;&quot;&quot;*diagnostic* value when an Option Delta is 15 in a value that</span>
+<span class="sd">    is not a Payload Marker, or an Option Delta is 15 in a value that</span>
+<span class="sd">    is not a Payload Marker.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">EMPTY_MESSAGE_NOT_EMPTY</span> <span class="o">=</span> <span class="s">&#39;excess content in Empty message&#39;</span>
+    <span class="sd">&quot;&quot;&quot;*diagnostic* value when a message with code</span>
+<span class="sd">    :attr:`Empty&lt;Message.Empty&gt;` has bytes after the Message ID</span>
+<span class="sd">    field.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">UNRECOGNIZED_CODE_CLASS</span> <span class="o">=</span> <span class="s">&#39;unrecognized code class&#39;</span>
+    <span class="sd">&quot;&quot;&quot;*diagnostic* when the :attr:`code&lt;Message.code&gt;` has no generic</span>
+<span class="sd">    handler (e.g. the message code class is 1, 6, and 7 which are</span>
+<span class="sd">    currently reserved).</span>
+
+<span class="sd">    Technically this is not a message format error, but CoAP requires</span>
+<span class="sd">    that it be treated the same way wherever the possibility is</span>
+<span class="sd">    explicitly recognized (:coapsect:`4.2` and :coapsect:`4.3`).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+</div>
+<div class="viewcode-block" id="MessageReplyError"><a class="viewcode-back" href="../../coapy_message.html#coapy.message.MessageReplyError">[docs]</a><span class="k">class</span> <span class="nc">MessageReplyError</span> <span class="p">(</span><span class="n">MessageError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Exception raised when :meth:`Message.create_reply` is invoked improperly.</span>
+
+<span class="sd">    The *args* are ``(diagnostic, msg)`` where *diagnostic* is one of</span>
+<span class="sd">    the string values in this class, and *msg* is the message for</span>
+<span class="sd">    which a reply could not be created.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">ACK_FOR_NON</span> <span class="o">=</span> <span class="s">&#39;ACK of NON-confirmable message&#39;</span>
+    <span class="sd">&quot;&quot;&quot;Per :coapsect:`4.3`, a non-confirmable message MUST NOT be</span>
+<span class="sd">    acknowledged.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">INVALID_TYPE</span> <span class="o">=</span> <span class="s">&#39;Reply to unrepliable message&#39;</span>
+    <span class="sd">&quot;&quot;&quot;Attempt to create a reply to an :attr:`ACK&lt;Message.Type_ACK&gt;`</span>
+<span class="sd">    or :attr:`RST&lt;Message.Type_RST&gt;` message.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+</div>
+<div class="viewcode-block" id="Message"><a class="viewcode-back" href="../../coapy_message.html#coapy.message.Message">[docs]</a><span class="k">class</span> <span class="nc">Message</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A CoAP message, per :coapsect:`3`.</span>
+
+<span class="sd">    A message may be created as *confirmable*, an *acknowledgement*,</span>
+<span class="sd">    or a *reset* message.  If none of these is specified, it is</span>
+<span class="sd">    created as a non-confirmable message.</span>
+
+<span class="sd">    *code*, *messageID*, *token*, *options*, and *payload* all</span>
+<span class="sd">    initialize the corresponding attributes of this class and if</span>
+<span class="sd">    provided must be acceptable values for those attributes.</span>
+
+<span class="sd">    .. note::</span>
+<span class="sd">       The default values for *code*, *messageID*, and *token* are not</span>
+<span class="sd">       valid for :attr:`code`, :attr:`messageID`, and :attr:`token`</span>
+<span class="sd">       respectively.  Valid values must be assigned before the message</span>
+<span class="sd">       is used.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">ReadOnlyMeta</span>
+
+    <span class="n">CodeClass</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="sd">&quot;&quot;&quot;Identifier for message class.</span>
+
+<span class="sd">    In subclasses this is a read-only attribute giving the numeric</span>
+<span class="sd">    value of the *class* component of :attr:`code` values for classes.</span>
+<span class="sd">    This serves as a key to identify the appropriate constructor when</span>
+<span class="sd">    creating messages from packed format.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">class</span> <span class="nc">_CodeSupport</span> <span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+        <span class="n">code</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="sd">&quot;&quot;&quot;The CoAP message code to which other attributes apply.</span>
+<span class="sd">        This is the ``(class, detail)`` representation.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">name</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="sd">&quot;&quot;&quot;The text name of the particular code within its class.&quot;&quot;&quot;</span>
+
+        <span class="n">constructor</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="sd">&quot;&quot;&quot;The subclass of :class:`Message` that should be used to</span>
+<span class="sd">        construct messages with :attr:`code`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">code</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">constructor</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">code</span> <span class="o">=</span> <span class="n">code</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">constructor</span> <span class="o">=</span> <span class="n">constructor</span>
+
+    <span class="c"># Registry from code tuples to assorted information about messages</span>
+    <span class="c"># with that code.</span>
+    <span class="n">__CodeRegistry</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="Message.RegisterClassCode"><a class="viewcode-back" href="../../coapy_message.html#coapy.message.Message.RegisterClassCode">[docs]</a>    <span class="k">def</span> <span class="nf">RegisterClassCode</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">clazz</span><span class="p">,</span> <span class="n">constructor</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Register a fallback-constructor for messages in a code</span>
+<span class="sd">        *class*.</span>
+
+<span class="sd">        This is used when no more specific information can be resolved</span>
+<span class="sd">        by using the *details* field of the message code.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">clazz</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span>
+        <span class="n">cls</span><span class="o">.</span><span class="n">__CodeClassRegistry</span><span class="p">[</span><span class="n">clazz</span><span class="p">]</span> <span class="o">=</span> <span class="n">cls</span>
+
+    <span class="c"># Registry from code classes to the primary Python type used for</span>
+    <span class="c"># messages in that class.  This is for fall-backs when the details</span>
+    <span class="c"># is unrecognized but we still have to do class-specific actions</span>
+    <span class="c"># on the message.</span></div>
+    <span class="n">__CodeClassRegistry</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="Message.RegisterCode"><a class="viewcode-back" href="../../coapy_message.html#coapy.message.Message.RegisterCode">[docs]</a>    <span class="k">def</span> <span class="nf">RegisterCode</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">code</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">constructor</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Register some information about messages with a particular code.</span>
+
+<span class="sd">        This allows extensions to add new codes as the IANA registries</span>
+<span class="sd">        are updated.  It also allows the Python version of decoded</span>
+<span class="sd">        messages to be created using the most appropriate subclass of</span>
+<span class="sd">        :class:`Message`.</span>
+
+<span class="sd">        *code* must be a valid code expressed in tuple form.  *name*</span>
+<span class="sd">        is the standardized text name or description from the</span>
+<span class="sd">        corresponding IANA registry.  *constructor* is the callable</span>
+<span class="sd">        that takes the same arguments as :class:`Message` and creates</span>
+<span class="sd">        a new instance of the class best suited for messages with code</span>
+<span class="sd">        *code*.  The constructor defaults to *cls* if not provided.</span>
+
+<span class="sd">        This method should be invoked through the subclass that is</span>
+<span class="sd">        responsible for *code*, e.g. :class:`Request` for</span>
+<span class="sd">        :attr:`Request.GET`.  See examples of use in the</span>
+<span class="sd">        :mod:`coapy.message` source code.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="n">code</span> <span class="o">==</span> <span class="n">cls</span><span class="o">.</span><span class="n">code_as_tuple</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">constructor</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">constructor</span> <span class="o">=</span> <span class="n">cls</span>
+        <span class="k">if</span> <span class="n">code</span> <span class="ow">in</span> <span class="n">cls</span><span class="o">.</span><span class="n">__CodeRegistry</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">cls</span><span class="o">.</span><span class="n">CodeClass</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">code</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">cls</span><span class="o">.</span><span class="n">CodeClass</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">code</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">cls</span><span class="o">.</span><span class="n">__CodeClassRegistry</span><span class="p">:</span>
+                <span class="n">cls</span><span class="o">.</span><span class="n">RegisterClassCode</span><span class="p">(</span><span class="n">cls</span><span class="o">.</span><span class="n">CodeClass</span><span class="p">,</span> <span class="n">cls</span><span class="p">)</span>
+        <span class="n">cls</span><span class="o">.</span><span class="n">__CodeRegistry</span><span class="p">[</span><span class="n">code</span><span class="p">]</span> <span class="o">=</span> <span class="n">cls</span><span class="o">.</span><span class="n">_CodeSupport</span><span class="p">(</span><span class="n">code</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">constructor</span><span class="p">)</span>
+</div>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">_code_support</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">code</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">cls</span><span class="o">.</span><span class="n">__CodeRegistry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">cls</span><span class="o">.</span><span class="n">code_as_tuple</span><span class="p">(</span><span class="n">code</span><span class="p">))</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">_type_for_code</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">code</span><span class="p">):</span>
+        <span class="n">cs</span> <span class="o">=</span> <span class="n">cls</span><span class="o">.</span><span class="n">_code_support</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">cs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">cs</span><span class="o">.</span><span class="n">constructor</span>
+        <span class="k">return</span> <span class="n">cls</span><span class="o">.</span><span class="n">__CodeClassRegistry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">code</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="nf">code_support</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_code_support</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">code</span><span class="p">)</span>
+
+    <span class="n">Empty</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">ClassReadOnly</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+    <span class="sd">&quot;&quot;&quot;Code for a message that is neither a request nor a response.</span>
+<span class="sd">    This is used for message-layer non-piggybacked ACK and for RST.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">Ver</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">ClassReadOnly</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="sd">&quot;&quot;&quot;Version of the CoAP protocol.&quot;&quot;&quot;</span>
+
+    <span class="n">Type_CON</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">ClassReadOnly</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="sd">&quot;&quot;&quot;Type for a :meth:`confirmable (CON)&lt;is_confirmable&gt;` message.&quot;&quot;&quot;</span>
+    <span class="n">Type_NON</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">ClassReadOnly</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="sd">&quot;&quot;&quot;Type for a :meth:`non-confirmable (NON)&lt;is_non_confirmable&gt;` message.&quot;&quot;&quot;</span>
+    <span class="n">Type_ACK</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">ClassReadOnly</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+    <span class="sd">&quot;&quot;&quot;Type for a :meth:`acknowledgement (ACK)&lt;is_acknowledgement&gt;` message.&quot;&quot;&quot;</span>
+    <span class="n">Type_RST</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">ClassReadOnly</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+    <span class="sd">&quot;&quot;&quot;Type for a :meth:`reset (RST)&lt;is_reset&gt;` message.&quot;&quot;&quot;</span>
+
+    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="Message.source_originates_type"><a class="viewcode-back" href="../../coapy_message.html#coapy.message.Message.source_originates_type">[docs]</a>    <span class="k">def</span> <span class="nf">source_originates_type</span><span class="p">(</span><span class="n">mtype</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;True if *mtype* is :attr:`CON&lt;Type_CON&gt;` or :attr:`NON&lt;Type_NON&gt;`.</span>
+
+<span class="sd">        CoAP defines a message layer where messages from a source to a</span>
+<span class="sd">        destination may elicit message-layer replies from the</span>
+<span class="sd">        destination to the source.  This is completely distinct from</span>
+<span class="sd">        the transaction layer requests that elicit transaction-layer</span>
+<span class="sd">        responses.</span>
+
+<span class="sd">        :attr:`CON&lt;Type_CON&gt;` and :attr:`NON&lt;Type_NON&gt;` type messages</span>
+<span class="sd">        are message-layer initial messages.  These messages require</span>
+<span class="sd">        cache entries for the source endpoint at the receiving node.</span>
+<span class="sd">        This function returns ``True`` for these messages.</span>
+
+<span class="sd">        :attr:`ACK&lt;Type_ACK&gt;` and :attr:`RST&lt;Type_RST&gt;` messages are</span>
+<span class="sd">        message-layer responses.  These messages are processed</span>
+<span class="sd">        relative to the destination endpoint at the receiving node.</span>
+<span class="sd">        This function returns ``False`` for these messages.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="mi">0</span> <span class="o">==</span> <span class="p">(</span><span class="mh">0x02</span> <span class="o">&amp;</span> <span class="n">mtype</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Message.source_defines_messageID"><a class="viewcode-back" href="../../coapy_message.html#coapy.message.Message.source_defines_messageID">[docs]</a>    <span class="k">def</span> <span class="nf">source_defines_messageID</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;True if this message is :attr:`CON&lt;Type_CON&gt;` or :attr:`NON&lt;Type_NON&gt;`.</span>
+
+<span class="sd">        :attr:`CON&lt;Type_CON&gt;` and :attr:`NON&lt;Type_NON&gt;` messages are</span>
+<span class="sd">        responsible for selecting a :attr:`messageID` at the</span>
+<span class="sd">        :attr:`source_endpoint`.</span>
+
+<span class="sd">        :attr:`ACK&lt;Type_ACK&gt;` and :attr:`RST&lt;Type_RST&gt;` messages are</span>
+<span class="sd">        message-level responses to a :attr:`messageID` that was</span>
+<span class="sd">        selected by their :attr:`destination_endpoint`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">source_originates_type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__type</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Message.is_confirmable"><a class="viewcode-back" href="../../coapy_message.html#coapy.message.Message.is_confirmable">[docs]</a>    <span class="k">def</span> <span class="nf">is_confirmable</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;True if this message is :coapsect:`confirmable&lt;2.1&gt;`,</span>
+<span class="sd">        i.e. will be :coapsect:`retransmitted&lt;4.2&gt;` for reliability,</span>
+<span class="sd">        and an acknowledgement or reset is expected.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">Type_CON</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">__type</span>
+</div>
+<div class="viewcode-block" id="Message.is_non_confirmable"><a class="viewcode-back" href="../../coapy_message.html#coapy.message.Message.is_non_confirmable">[docs]</a>    <span class="k">def</span> <span class="nf">is_non_confirmable</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;True if this message is :coapsect:`non-confirmable&lt;2.1&gt;`,</span>
+<span class="sd">        meaning the CoAP layer :coapsect:`will not retransmit&lt;4.3&gt;`</span>
+<span class="sd">        it, and an acknowledgement is not expected.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">Type_NON</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">__type</span>
+</div>
+<div class="viewcode-block" id="Message.is_acknowledgement"><a class="viewcode-back" href="../../coapy_message.html#coapy.message.Message.is_acknowledgement">[docs]</a>    <span class="k">def</span> <span class="nf">is_acknowledgement</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;True if this message is an :coapsect:`acknowledgement&lt;1.2&gt;`</span>
+<span class="sd">        that a particular confirmable message with :attr:`messageID`</span>
+<span class="sd">        was received.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">Type_ACK</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">__type</span>
+</div>
+<div class="viewcode-block" id="Message.is_reset"><a class="viewcode-back" href="../../coapy_message.html#coapy.message.Message.is_reset">[docs]</a>    <span class="k">def</span> <span class="nf">is_reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;True if this message is an indication that a particular</span>
+<span class="sd">        message with :attr:`messageID` arrived but that the receiver</span>
+<span class="sd">        could not process it.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">Type_RST</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">__type</span>
+</div>
+<div class="viewcode-block" id="Message._get_type"><a class="viewcode-back" href="../../coapy_message.html#coapy.message.Message._get_type">[docs]</a>    <span class="k">def</span> <span class="nf">_get_type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The type of the message as :attr:`Type_CON`,</span>
+<span class="sd">        :attr:`Type_NON`, :attr:`Type_ACK`, or :attr:`Type_RST`.  This</span>
+<span class="sd">        is a read-only attribute.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__type</span></div>
+    <span class="n">messageType</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_get_type</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Message._get_type_name"><a class="viewcode-back" href="../../coapy_message.html#coapy.message.Message._get_type_name">[docs]</a>    <span class="k">def</span> <span class="nf">_get_type_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The type of the message as a three-letter descriptive name</span>
+<span class="sd">        (:attr:`CON&lt;Type_CON&gt;`, :attr:`NON&lt;Type_NON&gt;`,</span>
+<span class="sd">        :attr:`ACK&lt;Type_ACK&gt;`, :attr:`RST&lt;Type_RST&gt;`).  This is a</span>
+<span class="sd">        read-only attribute.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span><span class="s">&#39;CON&#39;</span><span class="p">,</span> <span class="s">&#39;NON&#39;</span><span class="p">,</span> <span class="s">&#39;ACK&#39;</span><span class="p">,</span> <span class="s">&#39;RST&#39;</span><span class="p">)[</span><span class="bp">self</span><span class="o">.</span><span class="n">__type</span><span class="p">]</span></div>
+    <span class="n">messageTypeName</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_get_type_name</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="Message.code_as_tuple"><a class="viewcode-back" href="../../coapy_message.html#coapy.message.Message.code_as_tuple">[docs]</a>    <span class="k">def</span> <span class="nf">code_as_tuple</span><span class="p">(</span><span class="n">code</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Validate *code* and return it as a ``(class, detail)`` tuple.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">code</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+            <span class="k">if</span> <span class="mi">2</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">code</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
+            <span class="p">(</span><span class="n">clazz</span><span class="p">,</span> <span class="n">detail</span><span class="p">)</span> <span class="o">=</span> <span class="n">code</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">clazz</span> <span class="ow">and</span> <span class="n">clazz</span> <span class="o">&lt;=</span> <span class="mi">7</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">detail</span> <span class="ow">and</span> <span class="n">detail</span> <span class="o">&lt;=</span> <span class="mi">31</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">code</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">if</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&gt;</span> <span class="n">code</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="mi">255</span> <span class="o">&lt;</span> <span class="n">code</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
+            <span class="n">code</span> <span class="o">=</span> <span class="p">(</span><span class="n">code</span> <span class="o">&gt;&gt;</span> <span class="mi">5</span><span class="p">,</span> <span class="n">code</span> <span class="o">&amp;</span> <span class="mh">0x1F</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">code</span>
+</div>
+    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="Message.code_as_integer"><a class="viewcode-back" href="../../coapy_message.html#coapy.message.Message.code_as_integer">[docs]</a>    <span class="k">def</span> <span class="nf">code_as_integer</span><span class="p">(</span><span class="n">code</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Validate *code* and return it as an integer.</span>
+
+<span class="sd">        The packed encoding of ``(class, detail)`` has the 3-bit code</span>
+<span class="sd">        class combined with the 5-bit code detail, as: ``(class &lt;&lt; 5)</span>
+<span class="sd">        | detail``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="p">(</span><span class="n">clazz</span><span class="p">,</span> <span class="n">detail</span><span class="p">)</span> <span class="o">=</span> <span class="n">Message</span><span class="o">.</span><span class="n">code_as_tuple</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">clazz</span> <span class="o">&lt;&lt;</span> <span class="mi">5</span><span class="p">)</span> <span class="o">|</span> <span class="n">detail</span>
+</div>
+<div class="viewcode-block" id="Message._get_code"><a class="viewcode-back" href="../../coapy_message.html#coapy.message.Message._get_code">[docs]</a>    <span class="k">def</span> <span class="nf">_get_code</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The message code, expressed as a tuple ``(class, detail)``</span>
+<span class="sd">        where *class* is an integer value from 0 through 7 and</span>
+<span class="sd">        *detail* is an integer value from 0 through 31.</span>
+
+<span class="sd">        A code of ``None`` is allowed only when a raw :class:`Message`</span>
+<span class="sd">        is created, and a valid code must be assigned before the</span>
+<span class="sd">        message may be transmitted.</span>
+
+<span class="sd">        For convenience, the code may also be set from its packed</span>
+<span class="sd">        format defined by ``(class &lt;&lt; 5) | detail``.  Decimal code</span>
+<span class="sd">        representation such as ``4.03`` is not supported.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__code</span>
+</div>
+    <span class="k">def</span> <span class="nf">_set_code</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">code</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__code</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">code_as_tuple</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
+
+    <span class="n">code</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_get_code</span><span class="p">,</span> <span class="n">_set_code</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Message._get_packed_code"><a class="viewcode-back" href="../../coapy_message.html#coapy.message.Message._get_packed_code">[docs]</a>    <span class="k">def</span> <span class="nf">_get_packed_code</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return :attr:`code` in its packed form as an unsigned 8-bit integer.</span>
+
+<span class="sd">        This will raise</span>
+<span class="sd">        :exc:`ValueError&lt;python:exceptions.ValueError&gt;` if</span>
+<span class="sd">        :attr:`code` has not been assigned.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__code</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="bp">None</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">code_as_integer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__code</span><span class="p">)</span>
+</div>
+    <span class="n">packed_code</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_get_packed_code</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Message._get_messageID"><a class="viewcode-back" href="../../coapy_message.html#coapy.message.Message._get_messageID">[docs]</a>    <span class="k">def</span> <span class="nf">_get_messageID</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;An integer between 0 and 65535, inclusive, uniquely</span>
+<span class="sd">        identifying a confirmable or non-confirmable message among</span>
+<span class="sd">        those recently transmitted by its sender.  This value is used</span>
+<span class="sd">        to correlate confirmable and non-confirmable messages with</span>
+<span class="sd">        acknowledgement and reset messages.  It is not used for</span>
+<span class="sd">        request/response correlation.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__messageID</span>
+</div>
+    <span class="k">def</span> <span class="nf">_set_messageID</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message_id</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">message_id</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">message_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">((</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">message_id</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">message_id</span> <span class="o">&lt;=</span> <span class="mi">65535</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">message_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__messageID</span> <span class="o">=</span> <span class="n">message_id</span>
+
+    <span class="n">messageID</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_get_messageID</span><span class="p">,</span> <span class="n">_set_messageID</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Message._get_token"><a class="viewcode-back" href="../../coapy_message.html#coapy.message.Message._get_token">[docs]</a>    <span class="k">def</span> <span class="nf">_get_token</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The :coapsect:`token&lt;5.3.1&gt;` associated with the message.</span>
+
+<span class="sd">        Tokens are used to :coapsect:`match&lt;5.3.2&gt;` requests with</span>
+<span class="sd">        responses.  The token must be a :class:`bytes` instance with</span>
+<span class="sd">        length between 0 and 8 octets, inclusive.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__token</span>
+</div>
+    <span class="k">def</span> <span class="nf">_set_token</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">token</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">token</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">token</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">8</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__token</span> <span class="o">=</span> <span class="n">token</span>
+
+    <span class="n">token</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_get_token</span><span class="p">,</span> <span class="n">_set_token</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Message._get_options"><a class="viewcode-back" href="../../coapy_message.html#coapy.message.Message._get_options">[docs]</a>    <span class="k">def</span> <span class="nf">_get_options</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The list of :coapsect:`options&lt;5.10&gt;` associated with the</span>
+<span class="sd">        message.</span>
+
+<span class="sd">        Absence of options is represented by an empty list.  Elements</span>
+<span class="sd">        of the list must be :class:`coapy.option.UrOption` (subclass)</span>
+<span class="sd">        instances.  The list object is owned by the message instance.</span>
+<span class="sd">        Assignment to it will replace its contents.  The contents will</span>
+<span class="sd">        be rearranged in a stable sort by option</span>
+<span class="sd">        :attr:`number&lt;coapy.option.UrOption.number&gt;` as needed by</span>
+<span class="sd">        operations performed on the message.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__options</span>
+</div>
+    <span class="k">def</span> <span class="nf">_set_options</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__options</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">option</span><span class="o">.</span><span class="n">sorted_options</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Message._sort_options"><a class="viewcode-back" href="../../coapy_message.html#coapy.message.Message._sort_options">[docs]</a>    <span class="k">def</span> <span class="nf">_sort_options</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sort the :attr:`options` list and return a reference to it.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__options</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">option</span><span class="o">.</span><span class="n">sorted_options</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__options</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__options</span>
+</div>
+    <span class="n">options</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_get_options</span><span class="p">,</span> <span class="n">_set_options</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Message.maxAge"><a class="viewcode-back" href="../../coapy_message.html#coapy.message.Message.maxAge">[docs]</a>    <span class="k">def</span> <span class="nf">maxAge</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the :coapsect:`Max-Age&lt;5.6.1&gt;` value for the message.</span>
+
+<span class="sd">        This is the value of the :meth:`coapy.option.MaxAge` option if</span>
+<span class="sd">        present, or its default value of 60 (seconds) if the option is</span>
+<span class="sd">        missing.  The value ``None`` is returned if the message is</span>
+<span class="sd">        not one in which :meth:`coapy.option.MaxAge` may appear (i.e.,</span>
+<span class="sd">        not a :class:`Response` message).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Response</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">None</span>
+        <span class="n">opt</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">option</span><span class="o">.</span><span class="n">MaxAge</span><span class="o">.</span><span class="n">first_match</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">options</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">opt</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">max_age</span> <span class="o">=</span> <span class="mi">60</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">max_age</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">value</span>
+        <span class="k">return</span> <span class="n">max_age</span>
+</div>
+<div class="viewcode-block" id="Message._get_payload"><a class="viewcode-back" href="../../coapy_message.html#coapy.message.Message._get_payload">[docs]</a>    <span class="k">def</span> <span class="nf">_get_payload</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The payload or content of the message.  This may be</span>
+<span class="sd">        ``None`` if no payload exists; otherwise it must be a</span>
+<span class="sd">        non-empty :class:`bytes` instance.  As a convenience, an empty</span>
+<span class="sd">        :class:`bytes` string is equivalent to setting the payload to</span>
+<span class="sd">        ``None``.</span>
+
+<span class="sd">        The representation of the payload should be conveyed by a</span>
+<span class="sd">        :class:`ContentFormat&lt;coapy.option.ContentFormat&gt;` option.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__payload</span>
+</div>
+    <span class="k">def</span> <span class="nf">_set_payload</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="p">):</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">payload</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">payload</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="mi">0</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">payload</span><span class="p">)):</span>
+            <span class="n">payload</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__payload</span> <span class="o">=</span> <span class="n">payload</span>
+
+    <span class="n">payload</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_get_payload</span><span class="p">,</span> <span class="n">_set_payload</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">confirmable</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">acknowledgement</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">reset</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+                 <span class="n">code</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">messageID</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">token</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">confirmable</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Type_CON</span>
+        <span class="k">elif</span> <span class="n">acknowledgement</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Type_ACK</span>
+        <span class="k">elif</span> <span class="n">reset</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Type_RST</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Type_NON</span>
+        <span class="k">if</span> <span class="n">code</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__code</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">code</span> <span class="o">=</span> <span class="n">code</span>
+        <span class="k">if</span> <span class="n">messageID</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__messageID</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">messageID</span> <span class="o">=</span> <span class="n">messageID</span>
+        <span class="k">if</span> <span class="n">token</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__token</span> <span class="o">=</span> <span class="n">b</span><span class="s">&#39;&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">token</span> <span class="o">=</span> <span class="n">token</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__options</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">options</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">options</span> <span class="o">=</span> <span class="n">options</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">payload</span> <span class="o">=</span> <span class="n">payload</span>
+
+<div class="viewcode-block" id="Message.to_packed"><a class="viewcode-back" href="../../coapy_message.html#coapy.message.Message.to_packed">[docs]</a>    <span class="k">def</span> <span class="nf">to_packed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Generate the packed representation of the message, per :coapsect:`3`.</span>
+
+<span class="sd">        The result is a :class:`bytes` instance.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">vttkl</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">6</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__type</span> <span class="o">&lt;&lt;</span> <span class="mi">4</span><span class="p">)</span>
+        <span class="n">vttkl</span> <span class="o">|=</span> <span class="mh">0x0F</span> <span class="o">&amp;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__token</span><span class="p">)</span>
+        <span class="n">elements</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">elements</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="s">&#39;!BBH&#39;</span><span class="p">),</span> <span class="n">vttkl</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">packed_code</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">messageID</span><span class="p">))</span>
+        <span class="n">elements</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__token</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">options</span><span class="p">:</span>
+            <span class="n">elements</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">coapy</span><span class="o">.</span><span class="n">option</span><span class="o">.</span><span class="n">encode_options</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">options</span><span class="p">))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__payload</span><span class="p">:</span>
+            <span class="n">elements</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">b</span><span class="s">&#39;</span><span class="se">\xFF</span><span class="s">&#39;</span><span class="p">)</span>
+            <span class="n">elements</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__payload</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">b</span><span class="s">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">elements</span><span class="p">)</span>
+</div>
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="Message.from_packed"><a class="viewcode-back" href="../../coapy_message.html#coapy.message.Message.from_packed">[docs]</a>    <span class="k">def</span> <span class="nf">from_packed</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">packed_message</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create a :class:`Message` (or subclass) instance from the</span>
+<span class="sd">        packed representation of a message, per :coapsect:`3`.</span>
+
+<span class="sd">        This will return ``None`` if the first four octets cannot be</span>
+<span class="sd">        successfully decoded; such messages should be silently ignored.</span>
+
+<span class="sd">        It will raise a :exc:`MessageFormatError` when</span>
+<span class="sd">        :attr:`type&lt;messageType&gt;`, :attr:`code` and :attr:`messageID`</span>
+<span class="sd">        information can be extracted but the message as a whole is</span>
+<span class="sd">        malformatted. :coapsect:`4` specifies the receiver MUST</span>
+<span class="sd">        (:attr:`CON&lt;Type_CON&gt;`) or may (:attr:`NON&lt;Type_NON&gt;`) or MUST</span>
+<span class="sd">        NOT (:attr:`ACK&lt;Type_ACK&gt;`, :attr:`RST&lt;Type_RST&gt;`) reply with</span>
+<span class="sd">        a Reset message, and otherwise the message is ignored (from a</span>
+<span class="sd">        protocol perspective; the receiver may use the failure as a</span>
+<span class="sd">        cue to perform some other action; see :coapsect:`5.7.1` for</span>
+<span class="sd">        example).</span>
+
+<span class="sd">        Otherwise it will return an instance of :class:`Message` or a</span>
+<span class="sd">        refined subclass based on the :attr:`code` within the packed</span>
+<span class="sd">        representation.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">packed_message</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">packed_message</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">(</span><span class="n">packed_message</span><span class="p">)</span>
+        <span class="n">vttkl</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">ver</span> <span class="o">=</span> <span class="p">(</span><span class="n">vttkl</span> <span class="o">&gt;&gt;</span> <span class="mi">6</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">ver</span> <span class="o">!=</span> <span class="n">cls</span><span class="o">.</span><span class="n">Ver</span><span class="p">:</span>
+            <span class="c"># 3: Unknown version number: silently ignore</span>
+            <span class="k">return</span> <span class="bp">None</span>
+        <span class="n">message_type</span> <span class="o">=</span> <span class="mh">0x03</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">vttkl</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">)</span>
+        <span class="n">tkl</span> <span class="o">=</span> <span class="mh">0x0F</span> <span class="o">&amp;</span> <span class="n">vttkl</span>
+        <span class="n">code</span> <span class="o">=</span> <span class="n">cls</span><span class="o">.</span><span class="n">code_as_tuple</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+        <span class="n">message_id</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">message_id</span> <span class="o">=</span> <span class="p">(</span><span class="n">message_id</span> <span class="o">&lt;&lt;</span> <span class="mi">8</span><span class="p">)</span> <span class="o">|</span> <span class="n">data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">dkw</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;type&#39;</span><span class="p">:</span> <span class="n">message_type</span><span class="p">,</span>
+               <span class="s">&#39;code&#39;</span><span class="p">:</span> <span class="n">code</span><span class="p">,</span>
+               <span class="s">&#39;messageID&#39;</span><span class="p">:</span> <span class="n">message_id</span><span class="p">}</span>
+        <span class="k">if</span> <span class="mi">9</span> <span class="o">&lt;=</span> <span class="n">tkl</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">MessageFormatError</span><span class="p">(</span><span class="n">MessageFormatError</span><span class="o">.</span><span class="n">TOKEN_TOO_LONG</span><span class="p">,</span> <span class="n">dkw</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">((</span><span class="n">cls</span><span class="o">.</span><span class="n">Empty</span> <span class="o">==</span> <span class="n">code</span><span class="p">)</span> <span class="ow">and</span> <span class="p">((</span><span class="mi">0</span> <span class="o">!=</span> <span class="n">tkl</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)))):</span>
+            <span class="k">raise</span> <span class="n">MessageFormatError</span><span class="p">(</span><span class="n">MessageFormatError</span><span class="o">.</span><span class="n">EMPTY_MESSAGE_NOT_EMPTY</span><span class="p">,</span> <span class="n">dkw</span><span class="p">)</span>
+        <span class="n">token</span> <span class="o">=</span> <span class="nb">bytes</span><span class="p">(</span><span class="n">data</span><span class="p">[:</span><span class="n">tkl</span><span class="p">])</span>
+        <span class="k">if</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="n">tkl</span><span class="p">:</span>
+            <span class="n">data</span><span class="p">[:</span><span class="n">tkl</span><span class="p">]</span> <span class="o">=</span> <span class="n">b</span><span class="s">&#39;&#39;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="p">(</span><span class="n">options</span><span class="p">,</span> <span class="n">remainder</span><span class="p">)</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">option</span><span class="o">.</span><span class="n">decode_options</span><span class="p">(</span><span class="nb">bytes</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+        <span class="k">except</span> <span class="n">coapy</span><span class="o">.</span><span class="n">option</span><span class="o">.</span><span class="n">OptionDecodeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="c"># This can be an invalid delta or length in the first byte,</span>
+            <span class="c"># or a value field that does not conform to the requirements.</span>
+            <span class="c"># @todo@ refine this</span>
+            <span class="k">raise</span> <span class="n">MessageFormatError</span><span class="p">(</span><span class="n">MessageFormatError</span><span class="o">.</span><span class="n">INVALID_OPTION</span><span class="p">,</span> <span class="n">dkw</span><span class="p">)</span>
+        <span class="n">payload</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">if</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">remainder</span><span class="p">):</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">(</span><span class="n">remainder</span><span class="p">)</span>
+            <span class="k">if</span> <span class="mh">0xFF</span> <span class="o">!=</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+                <span class="c"># This should have been interpreted as an option decode error</span>
+                <span class="k">raise</span> <span class="n">MessageFormatError</span><span class="p">(</span><span class="n">MessageFormatError</span><span class="o">.</span><span class="n">INVALID_OPTION</span><span class="p">,</span> <span class="n">dkw</span><span class="p">)</span>
+            <span class="n">payload</span> <span class="o">=</span> <span class="n">remainder</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+            <span class="k">if</span> <span class="mi">0</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">payload</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">MessageFormatError</span><span class="p">(</span><span class="n">MessageFormatError</span><span class="o">.</span><span class="n">ZERO_LENGTH_PAYLOAD</span><span class="p">,</span> <span class="n">dkw</span><span class="p">)</span>
+        <span class="n">kw</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;confirmable&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">cls</span><span class="o">.</span><span class="n">Type_CON</span> <span class="o">==</span> <span class="n">message_type</span><span class="p">),</span>
+              <span class="s">&#39;acknowledgement&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">cls</span><span class="o">.</span><span class="n">Type_ACK</span> <span class="o">==</span> <span class="n">message_type</span><span class="p">),</span>
+              <span class="s">&#39;reset&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">cls</span><span class="o">.</span><span class="n">Type_RST</span> <span class="o">==</span> <span class="n">message_type</span><span class="p">),</span>
+              <span class="s">&#39;code&#39;</span><span class="p">:</span> <span class="n">code</span><span class="p">,</span>
+              <span class="s">&#39;messageID&#39;</span><span class="p">:</span> <span class="n">message_id</span><span class="p">,</span>
+              <span class="s">&#39;token&#39;</span><span class="p">:</span> <span class="n">token</span><span class="p">,</span>
+              <span class="s">&#39;options&#39;</span><span class="p">:</span> <span class="n">options</span><span class="p">,</span>
+              <span class="s">&#39;payload&#39;</span><span class="p">:</span> <span class="n">payload</span>
+              <span class="p">}</span>
+        <span class="n">constructor</span> <span class="o">=</span> <span class="n">cls</span><span class="o">.</span><span class="n">_type_for_code</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">constructor</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">MessageFormatError</span><span class="p">(</span><span class="n">MessageFormatError</span><span class="o">.</span><span class="n">UNRECOGNIZED_CODE_CLASS</span><span class="p">,</span> <span class="n">dkw</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">constructor</span><span class="p">(</span><span class="o">**</span><span class="n">kw</span><span class="p">)</span>
+</div>
+    <span class="n">__source_endpoint</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">_set_source_endpoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ep</span><span class="p">):</span>
+        <span class="kn">import</span> <span class="nn">coapy.endpoint</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">ep</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__source_endpoint</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">):</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ep</span><span class="p">,</span> <span class="n">coapy</span><span class="o">.</span><span class="n">endpoint</span><span class="o">.</span><span class="n">Endpoint</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__source_endpoint</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__source_endpoint</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">ep</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__source_endpoint</span> <span class="o">=</span> <span class="n">ep</span>
+
+<div class="viewcode-block" id="Message._get_source_endpoint"><a class="viewcode-back" href="../../coapy_message.html#coapy.message.Message._get_source_endpoint">[docs]</a>    <span class="k">def</span> <span class="nf">_get_source_endpoint</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the :coapsect:`source endpoint&lt;1.2&gt;` of the message.</span>
+
+<span class="sd">        This is the :class:`coapy.endpoint.Endpoint` instance that</span>
+<span class="sd">        sent (or will send) the message.  It starts as ``None``, and</span>
+<span class="sd">        can be assigned a value once after which it is immutable.</span>
+<span class="sd">        Generally the infrastructure should be responsible for</span>
+<span class="sd">        assigning a source endpoint to a message.</span>
+
+<span class="sd">        See also :attr:`destination_endpoint`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__source_endpoint</span>
+</div>
+    <span class="n">source_endpoint</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_get_source_endpoint</span><span class="p">,</span> <span class="n">_set_source_endpoint</span><span class="p">)</span>
+
+    <span class="n">__destination_endpoint</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">_set_destination_endpoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ep</span><span class="p">):</span>
+        <span class="kn">import</span> <span class="nn">coapy.endpoint</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">ep</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__destination_endpoint</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">):</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ep</span><span class="p">,</span> <span class="n">coapy</span><span class="o">.</span><span class="n">endpoint</span><span class="o">.</span><span class="n">Endpoint</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__destination_endpoint</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__destination_endpoint</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">ep</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__destination_endpoint</span> <span class="o">=</span> <span class="n">ep</span>
+
+<div class="viewcode-block" id="Message._get_destination_endpoint"><a class="viewcode-back" href="../../coapy_message.html#coapy.message.Message._get_destination_endpoint">[docs]</a>    <span class="k">def</span> <span class="nf">_get_destination_endpoint</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the :coapsect:`destination endpoint&lt;1.2&gt;` of the message.</span>
+
+<span class="sd">        This is the :class:`coapy.endpoint.Endpoint` instance to which</span>
+<span class="sd">        the message was (or will be) sent, i.e. the one on which it</span>
+<span class="sd">        was (or should be) received.  It starts as ``None``, and can</span>
+<span class="sd">        be assigned a value once after which it is immutable.</span>
+<span class="sd">        Generally the infrastructure should be responsible for</span>
+<span class="sd">        assigning a destination endpoint to a message.</span>
+
+<span class="sd">        See also :attr:`source_endpoint`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__destination_endpoint</span>
+</div>
+    <span class="n">destination_endpoint</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_get_destination_endpoint</span><span class="p">,</span> <span class="n">_set_destination_endpoint</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Message.validate"><a class="viewcode-back" href="../../coapy_message.html#coapy.message.Message.validate">[docs]</a>    <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Validate a message against generic CoAP requirements.</span>
+
+<span class="sd">        A :exc:`MessageValidationError` exception is raised if the</span>
+<span class="sd">        validation fails.</span>
+
+<span class="sd">        Diagnostics will be emitted for any</span>
+<span class="sd">        :class:`coapy.option.UnrecognizedOption` remaining in the</span>
+<span class="sd">        message after validation.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">code</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">MessageValidationError</span><span class="p">(</span><span class="n">MessageValidationError</span><span class="o">.</span><span class="n">CODE_UNDEFINED</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">Empty</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">code</span><span class="p">:</span>
+            <span class="c"># Empty OK for all message types.</span>
+            <span class="c"># Empty OK for all message subclasses.</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">token</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">options</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">payload</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">MessageValidationError</span><span class="p">(</span><span class="n">MessageValidationError</span><span class="o">.</span><span class="n">EMPTY_MESSAGE_NOT_EMPTY</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># Is code consistent with message (CoAP) type?</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_reset</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="n">MessageValidationError</span><span class="p">(</span><span class="n">MessageValidationError</span><span class="o">.</span><span class="n">CODE_TYPE_CONFLICT</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_acknowledgement</span><span class="p">():</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Response</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="n">MessageValidationError</span><span class="p">(</span><span class="n">MessageValidationError</span><span class="o">.</span><span class="n">CODE_TYPE_CONFLICT</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">(</span><span class="n">Response</span><span class="p">,</span> <span class="n">Request</span><span class="p">)):</span>
+                    <span class="k">raise</span> <span class="n">MessageValidationError</span><span class="p">(</span><span class="n">MessageValidationError</span><span class="o">.</span><span class="n">CODE_TYPE_CONFLICT</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+            <span class="c"># Is code consistent with message (Python) class?</span>
+            <span class="n">ctor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_type_for_code</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">code</span><span class="p">)</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">ctor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctor</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">MessageValidationError</span><span class="p">(</span><span class="n">MessageValidationError</span><span class="o">.</span><span class="n">CODE_INSTANCE_CONFLICT</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">(</span><span class="n">Response</span><span class="p">,</span> <span class="n">Request</span><span class="p">)):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">options</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">option</span><span class="o">.</span><span class="n">replace_unacceptable_options</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">options</span><span class="p">,</span>
+                                                                        <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Request</span><span class="p">))</span>
+        <span class="n">opts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sort_options</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Request</span><span class="p">):</span>
+            <span class="n">opt</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">option</span><span class="o">.</span><span class="n">ProxyUri</span><span class="o">.</span><span class="n">first_match</span><span class="p">(</span><span class="n">opts</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">opt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">bad_opts</span> <span class="o">=</span> <span class="p">[</span><span class="n">_o</span> <span class="k">for</span> <span class="n">_o</span> <span class="ow">in</span> <span class="n">opts</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">_o</span><span class="p">,</span>
+                                                            <span class="p">(</span><span class="n">coapy</span><span class="o">.</span><span class="n">option</span><span class="o">.</span><span class="n">UriHost</span><span class="p">,</span>
+                                                             <span class="n">coapy</span><span class="o">.</span><span class="n">option</span><span class="o">.</span><span class="n">UriPort</span><span class="p">,</span>
+                                                             <span class="n">coapy</span><span class="o">.</span><span class="n">option</span><span class="o">.</span><span class="n">UriPath</span><span class="p">,</span>
+                                                             <span class="n">coapy</span><span class="o">.</span><span class="n">option</span><span class="o">.</span><span class="n">UriQuery</span><span class="p">,</span>
+                                                             <span class="p">))]</span>
+                <span class="k">if</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">bad_opts</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="n">MessageValidationError</span><span class="p">(</span><span class="n">MessageValidationError</span><span class="o">.</span><span class="n">PROXY_URI_CONFLICT</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">opt</span> <span class="ow">in</span> <span class="n">opts</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">coapy</span><span class="o">.</span><span class="n">option</span><span class="o">.</span><span class="n">UnrecognizedOption</span><span class="p">):</span>
+                <span class="n">_log</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s">&#39;Unrecognized option in message: {0!s}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">opt</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="Message.create_reply"><a class="viewcode-back" href="../../coapy_message.html#coapy.message.Message.create_reply">[docs]</a>    <span class="k">def</span> <span class="nf">create_reply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reset</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create a message-layer reply to this message.</span>
+
+<span class="sd">        This method creates an empty message of either type</span>
+<span class="sd">        :attr:`ACK&lt;Type_ACK&gt;` (by default) or :attr:`RST&lt;Type_RST&gt;`</span>
+<span class="sd">        (if *reset* is ``True``) with the same message ID as this</span>
+<span class="sd">        message.  The :attr:`source_endpoint` and</span>
+<span class="sd">        :attr:`destination_endpoint` of the returned message are set</span>
+<span class="sd">        appropriately.</span>
+
+<span class="sd">        :exc:`MessageReplyError` is raised if this message is</span>
+<span class="sd">        :meth:`non-confirmable&lt;is_non_confirmable&gt;` and *reset* is</span>
+<span class="sd">        false, or if *self* is an :attr:`ACK&lt;Type_ACK&gt;` or</span>
+<span class="sd">        :attr:`RST&lt;Type_RST&gt;` message.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">source_originates_type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">messageType</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">MessageReplyError</span><span class="p">(</span><span class="n">MessageReplyError</span><span class="o">.</span><span class="n">INVALID_TYPE</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">reset</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_confirmable</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">MessageReplyError</span><span class="p">(</span><span class="n">MessageReplyError</span><span class="o">.</span><span class="n">ACK_FOR_NON</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="n">rm</span> <span class="o">=</span> <span class="n">Message</span><span class="p">(</span><span class="n">acknowledgement</span><span class="o">=</span><span class="ow">not</span> <span class="n">reset</span><span class="p">,</span>
+                     <span class="n">reset</span><span class="o">=</span><span class="n">reset</span><span class="p">,</span>
+                     <span class="n">code</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">Empty</span><span class="p">,</span>
+                     <span class="n">messageID</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">messageID</span><span class="p">)</span>
+        <span class="n">rm</span><span class="o">.</span><span class="n">source_endpoint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">destination_endpoint</span>
+        <span class="n">rm</span><span class="o">.</span><span class="n">destination_endpoint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">source_endpoint</span>
+        <span class="k">return</span> <span class="n">rm</span>
+</div>
+    <span class="k">def</span> <span class="nf">__unicode__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">elt</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">messageID</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">elt</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;[*INVALID None*]&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">elt</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;[{m.messageID:d}]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">m</span><span class="o">=</span><span class="bp">self</span><span class="p">))</span>
+        <span class="n">elt</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39; {m.messageTypeName}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">m</span><span class="o">=</span><span class="bp">self</span><span class="p">))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">code</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">elt</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39; ?.?? (*INVALID None*)&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">elt</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39; {m.code[0]}.{m.code[1]:02d}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">m</span><span class="o">=</span><span class="bp">self</span><span class="p">))</span>
+            <span class="n">cs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">code_support</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">cs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">elt</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39; ({cs.name})&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">cs</span><span class="o">=</span><span class="n">cs</span><span class="p">))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">source_endpoint</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">elt</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">Source: {m.source_endpoint!s}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">m</span><span class="o">=</span><span class="bp">self</span><span class="p">))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">destination_endpoint</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">elt</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">Destination: {m.destination_endpoint!s}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">m</span><span class="o">=</span><span class="bp">self</span><span class="p">))</span>
+        <span class="k">if</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">token</span><span class="p">):</span>
+            <span class="n">elt</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">Token: {0}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">coapy</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">to_display_text</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">token</span><span class="p">)))</span>
+        <span class="k">for</span> <span class="n">opt</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sort_options</span><span class="p">():</span>
+            <span class="n">elt</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">Option {0!s}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">opt</span><span class="p">))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">payload</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">elt</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">Payload: {0}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">coapy</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">to_display_text</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">payload</span><span class="p">)))</span>
+        <span class="k">return</span> <span class="s">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">elt</span><span class="p">)</span>
+    <span class="n">__str__</span> <span class="o">=</span> <span class="n">__unicode__</span>
+</div>
+<span class="n">Message</span><span class="o">.</span><span class="n">RegisterCode</span><span class="p">(</span><span class="n">Message</span><span class="o">.</span><span class="n">Empty</span><span class="p">,</span> <span class="s">&#39;Empty&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Request"><a class="viewcode-back" href="../../coapy_message.html#coapy.message.Request">[docs]</a><span class="k">class</span> <span class="nc">Request</span> <span class="p">(</span><span class="n">Message</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Subclass for messages that are requests.</span>
+
+<span class="sd">    The following table shows the pre-defined method code values ``(class,</span>
+<span class="sd">    detail)`` as specified in :coapsect:`12.1.1`:</span>
+
+<span class="sd">    =======  ===============  ==================</span>
+<span class="sd">    Code     Name             Documentation</span>
+<span class="sd">    =======  ===============  ==================</span>
+<span class="sd">    (0, 1)   :attr:`GET`      :coapsect:`5.8.1`</span>
+<span class="sd">    (0, 2)   :attr:`POST`     :coapsect:`5.8.2`</span>
+<span class="sd">    (0, 3)   :attr:`PUT`      :coapsect:`5.8.3`</span>
+<span class="sd">    (0, 4)   :attr:`DELETE`   :coapsect:`5.8.4`</span>
+<span class="sd">    =======  ===============  ==================</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">CodeClass</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">ClassReadOnly</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="sd">&quot;&quot;&quot;The :attr:`Message.code` *class* component for :class:`Request`</span>
+<span class="sd">    messages.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">GET</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">ClassReadOnly</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="sd">&quot;&quot;&quot;Retrieve a representation for the requested resource.  See</span>
+<span class="sd">    :coapsect:`5.8.1`.&quot;&quot;&quot;</span>
+
+    <span class="n">POST</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">ClassReadOnly</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="sd">&quot;&quot;&quot;Process the representation enclosed in the requested resource.</span>
+<span class="sd">    See :coapsect:`5.8.2`.&quot;&quot;&quot;</span>
+
+    <span class="n">PUT</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">ClassReadOnly</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+    <span class="sd">&quot;&quot;&quot;Update or create the resource using the enclosed representation.</span>
+<span class="sd">    See :coapsect:`5.8.3`.&quot;&quot;&quot;</span>
+
+    <span class="n">DELETE</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">ClassReadOnly</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+    <span class="sd">&quot;&quot;&quot;Delete the resource identified by the request URI.</span>
+<span class="sd">    See :coapsect:`5.8.4`.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Request.create_response"><a class="viewcode-back" href="../../coapy_message.html#coapy.message.Request.create_response">[docs]</a>    <span class="k">def</span> <span class="nf">create_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rclass</span><span class="p">,</span>
+                        <span class="n">piggy_backed</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                        <span class="n">confirmable</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+                        <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create a response to this request.</span>
+
+<span class="sd">        *rclass* is a subclass of :class:`Response` indicating the</span>
+<span class="sd">        type of the response.  (For non-response replies, see</span>
+<span class="sd">        :meth:`Message.create_reply`.)  If *piggy_backed* is ``True``</span>
+<span class="sd">        the response message will be an :attr:`ACK&lt;Message.Type_ACK&gt;`</span>
+<span class="sd">        to this message; otherwise it will be either a</span>
+<span class="sd">        :attr:`CON&lt;Message.Type_CON&gt;` or :attr:`NON&lt;Message.Type_NON&gt;`</span>
+<span class="sd">        message, depending on *confirmable*, and must be assigned its</span>
+<span class="sd">        own message ID.  In either case, the :attr:`token` value will</span>
+<span class="sd">        be copied from this message.  All other keyword parameters are</span>
+<span class="sd">        passed to the *rclass* constructor.  The</span>
+<span class="sd">        :attr:`source_endpoint` and :attr:`destination_endpoint`</span>
+<span class="sd">        attributes will be set from this message.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">rclass</span><span class="p">,</span> <span class="n">Response</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">rclass</span><span class="p">)</span>
+        <span class="n">kw</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s">&#39;reset&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+        <span class="n">kw</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s">&#39;confirmable&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">piggy_backed</span><span class="p">:</span>
+            <span class="n">kw</span><span class="p">[</span><span class="s">&#39;acknowledgement&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="n">kw</span><span class="p">[</span><span class="s">&#39;messageID&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">messageID</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">kw</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s">&#39;acknowledgement&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+            <span class="n">kw</span><span class="p">[</span><span class="s">&#39;confirmable&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">confirmable</span>
+        <span class="n">kw</span><span class="p">[</span><span class="s">&#39;token&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">token</span>
+        <span class="n">rm</span> <span class="o">=</span> <span class="n">rclass</span><span class="p">(</span><span class="o">**</span><span class="n">kw</span><span class="p">)</span>
+        <span class="n">rm</span><span class="o">.</span><span class="n">source_endpoint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">destination_endpoint</span>
+        <span class="n">rm</span><span class="o">.</span><span class="n">destination_endpoint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">source_endpoint</span>
+        <span class="k">return</span> <span class="n">rm</span>
+
+</div></div>
+<span class="n">Request</span><span class="o">.</span><span class="n">RegisterCode</span><span class="p">(</span><span class="n">Request</span><span class="o">.</span><span class="n">GET</span><span class="p">,</span> <span class="s">&#39;GET&#39;</span><span class="p">)</span>
+<span class="n">Request</span><span class="o">.</span><span class="n">RegisterCode</span><span class="p">(</span><span class="n">Request</span><span class="o">.</span><span class="n">POST</span><span class="p">,</span> <span class="s">&#39;POST&#39;</span><span class="p">)</span>
+<span class="n">Request</span><span class="o">.</span><span class="n">RegisterCode</span><span class="p">(</span><span class="n">Request</span><span class="o">.</span><span class="n">PUT</span><span class="p">,</span> <span class="s">&#39;PUT&#39;</span><span class="p">)</span>
+<span class="n">Request</span><span class="o">.</span><span class="n">RegisterCode</span><span class="p">(</span><span class="n">Request</span><span class="o">.</span><span class="n">DELETE</span><span class="p">,</span> <span class="s">&#39;DELETE&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Response"><a class="viewcode-back" href="../../coapy_message.html#coapy.message.Response">[docs]</a><span class="k">class</span> <span class="nc">Response</span> <span class="p">(</span><span class="n">Message</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Subclass for messages that are responses.</span>
+
+<span class="sd">    Some of the semantics of CoAP depends on distinguishing requests</span>
+<span class="sd">    from responses; use this as an intermediary class for common</span>
+<span class="sd">    handling of :class:`SuccessResponse`,</span>
+<span class="sd">    :class:`ClientErrorResponse`, and :class:`ServerErrorResponse`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+
+</div>
+<div class="viewcode-block" id="SuccessResponse"><a class="viewcode-back" href="../../coapy_message.html#coapy.message.SuccessResponse">[docs]</a><span class="k">class</span> <span class="nc">SuccessResponse</span> <span class="p">(</span><span class="n">Response</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Subclass for messages that are responses that indicate the</span>
+<span class="sd">    request was successfully received, understood, and accepted.</span>
+
+<span class="sd">    The following table shows the pre-defined :coapsect:`success</span>
+<span class="sd">    response&lt;5.9.1&gt;` code values ``(class, detail)`` as specified in</span>
+<span class="sd">    :coapsect:`12.1.2`:</span>
+
+<span class="sd">    =======  ================  ====================</span>
+<span class="sd">    Code     Name              Documentation</span>
+<span class="sd">    =======  ================  ====================</span>
+<span class="sd">    (2, 1)   :attr:`Created`   :coapsect:`5.9.1.1`</span>
+<span class="sd">    (2, 2)   :attr:`Deleted`   :coapsect:`5.9.1.2`</span>
+<span class="sd">    (2, 3)   :attr:`Valid`     :coapsect:`5.9.1.3`</span>
+<span class="sd">    (2, 4)   :attr:`Changed`   :coapsect:`5.9.1.4`</span>
+<span class="sd">    (2, 5)   :attr:`Content`   :coapsect:`5.9.1.4`</span>
+<span class="sd">    =======  ================  ====================</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">CodeClass</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">ClassReadOnly</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+    <span class="sd">&quot;&quot;&quot;The :attr:`Message.code` *class* component for</span>
+<span class="sd">    :class:`SuccessResponse` messages.&quot;&quot;&quot;</span>
+
+    <span class="n">Created</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">ClassReadOnly</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="sd">&quot;&quot;&quot;See :coapsect:`5.9.1.1`.&quot;&quot;&quot;</span>
+
+    <span class="n">Deleted</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">ClassReadOnly</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="sd">&quot;&quot;&quot;See :coapsect:`5.9.1.2`.&quot;&quot;&quot;</span>
+
+    <span class="n">Valid</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">ClassReadOnly</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+    <span class="sd">&quot;&quot;&quot;See :coapsect:`5.9.1.3`.&quot;&quot;&quot;</span>
+
+    <span class="n">Changed</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">ClassReadOnly</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+    <span class="sd">&quot;&quot;&quot;See :coapsect:`5.9.1.4`.&quot;&quot;&quot;</span>
+
+    <span class="n">Content</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">ClassReadOnly</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+    <span class="sd">&quot;&quot;&quot;See :coapsect:`5.9.1.5`.&quot;&quot;&quot;</span></div>
+<span class="n">SuccessResponse</span><span class="o">.</span><span class="n">RegisterCode</span><span class="p">(</span><span class="n">SuccessResponse</span><span class="o">.</span><span class="n">Created</span><span class="p">,</span> <span class="s">&#39;Created&#39;</span><span class="p">)</span>
+<span class="n">SuccessResponse</span><span class="o">.</span><span class="n">RegisterCode</span><span class="p">(</span><span class="n">SuccessResponse</span><span class="o">.</span><span class="n">Deleted</span><span class="p">,</span> <span class="s">&#39;Deleted&#39;</span><span class="p">)</span>
+<span class="n">SuccessResponse</span><span class="o">.</span><span class="n">RegisterCode</span><span class="p">(</span><span class="n">SuccessResponse</span><span class="o">.</span><span class="n">Valid</span><span class="p">,</span> <span class="s">&#39;Valid&#39;</span><span class="p">)</span>
+<span class="n">SuccessResponse</span><span class="o">.</span><span class="n">RegisterCode</span><span class="p">(</span><span class="n">SuccessResponse</span><span class="o">.</span><span class="n">Changed</span><span class="p">,</span> <span class="s">&#39;Changed&#39;</span><span class="p">)</span>
+<span class="n">SuccessResponse</span><span class="o">.</span><span class="n">RegisterCode</span><span class="p">(</span><span class="n">SuccessResponse</span><span class="o">.</span><span class="n">Content</span><span class="p">,</span> <span class="s">&#39;Content&#39;</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">Class3Response</span> <span class="p">(</span><span class="n">Message</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Subclass for messages that are responses but for which no</span>
+<span class="sd">    class-level has been provided.</span>
+
+<span class="sd">    :coapsect:`12.1.2` specifies that class 3 is a response class, but</span>
+<span class="sd">    fails to define any unreserved code in the class.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">CodeClass</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">ClassReadOnly</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+    <span class="sd">&quot;&quot;&quot;The :attr:`Message.code` *class* component for</span>
+<span class="sd">    :class:`Class3Response` messages.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<span class="n">Class3Response</span><span class="o">.</span><span class="n">RegisterClassCode</span><span class="p">(</span><span class="n">Class3Response</span><span class="o">.</span><span class="n">CodeClass</span><span class="p">,</span> <span class="n">Class3Response</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="ClientErrorResponse"><a class="viewcode-back" href="../../coapy_message.html#coapy.message.ClientErrorResponse">[docs]</a><span class="k">class</span> <span class="nc">ClientErrorResponse</span> <span class="p">(</span><span class="n">Response</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Subclass for messages that are responses in cases where the</span>
+<span class="sd">    server detects an error in the client&#39;s request.</span>
+
+<span class="sd">    The following table shows the pre-defined :coapsect:`client error</span>
+<span class="sd">    response&lt;5.9.2&gt;` code values ``(class, detail)`` as specified in</span>
+<span class="sd">    :coapsect:`12.1.2`:</span>
+
+<span class="sd">    ========  =================================  =====================</span>
+<span class="sd">    Code      Name                               Documentation</span>
+<span class="sd">    ========  =================================  =====================</span>
+<span class="sd">    (4, 0)    :attr:`BadRequest`                 :coapsect:`5.9.2.1`</span>
+<span class="sd">    (4, 1)    :attr:`Unauthorized`               :coapsect:`5.9.2.2`</span>
+<span class="sd">    (4, 2)    :attr:`BadOption`                  :coapsect:`5.9.2.3`</span>
+<span class="sd">    (4, 3)    :attr:`Forbidden`                  :coapsect:`5.9.2.4`</span>
+<span class="sd">    (4, 4)    :attr:`NotFound`                   :coapsect:`5.9.2.5`</span>
+<span class="sd">    (4, 5)    :attr:`MethodNotAllowed`           :coapsect:`5.9.2.6`</span>
+<span class="sd">    (4, 6)    :attr:`NotAcceptable`              :coapsect:`5.9.2.7`</span>
+<span class="sd">    (4, 12)   :attr:`PreconditionFailed`         :coapsect:`5.9.2.8`</span>
+<span class="sd">    (4, 13)   :attr:`RequestEntityTooLarge`      :coapsect:`5.9.2.9`</span>
+<span class="sd">    (4, 15)   :attr:`UnsupportedContentFormat`   :coapsect:`5.9.2.10`</span>
+<span class="sd">    ========  =================================  =====================</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">CodeClass</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">ClassReadOnly</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+    <span class="sd">&quot;&quot;&quot;The :attr:`Message.code` *class* component for</span>
+<span class="sd">    :class:`ClientErrorResponse` messages.&quot;&quot;&quot;</span>
+
+    <span class="n">BadRequest</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">ClassReadOnly</span><span class="p">((</span><span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+    <span class="sd">&quot;&quot;&quot;See :coapsect:`5.9.2.1`&quot;&quot;&quot;</span>
+
+    <span class="n">Unauthorized</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">ClassReadOnly</span><span class="p">((</span><span class="mi">4</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="sd">&quot;&quot;&quot;See :coapsect:`5.9.2.2`&quot;&quot;&quot;</span>
+
+    <span class="n">BadOption</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">ClassReadOnly</span><span class="p">((</span><span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="sd">&quot;&quot;&quot;See :coapsect:`5.9.2.3`&quot;&quot;&quot;</span>
+
+    <span class="n">Forbidden</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">ClassReadOnly</span><span class="p">((</span><span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+    <span class="sd">&quot;&quot;&quot;See :coapsect:`5.9.2.4`&quot;&quot;&quot;</span>
+
+    <span class="n">NotFound</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">ClassReadOnly</span><span class="p">((</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+    <span class="sd">&quot;&quot;&quot;See :coapsect:`5.9.2.5`&quot;&quot;&quot;</span>
+
+    <span class="n">MethodNotAllowed</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">ClassReadOnly</span><span class="p">((</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+    <span class="sd">&quot;&quot;&quot;See :coapsect:`5.9.2.6`&quot;&quot;&quot;</span>
+
+    <span class="n">NotAcceptable</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">ClassReadOnly</span><span class="p">((</span><span class="mi">4</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+    <span class="sd">&quot;&quot;&quot;See :coapsect:`5.9.2.7`&quot;&quot;&quot;</span>
+
+    <span class="n">PreconditionFailed</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">ClassReadOnly</span><span class="p">((</span><span class="mi">4</span><span class="p">,</span> <span class="mi">12</span><span class="p">))</span>
+    <span class="sd">&quot;&quot;&quot;See :coapsect:`5.9.2.8`&quot;&quot;&quot;</span>
+
+    <span class="n">RequestEntityTooLarge</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">ClassReadOnly</span><span class="p">((</span><span class="mi">4</span><span class="p">,</span> <span class="mi">13</span><span class="p">))</span>
+    <span class="sd">&quot;&quot;&quot;See :coapsect:`5.9.2.9`&quot;&quot;&quot;</span>
+
+    <span class="n">UnsupportedContentFormat</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">ClassReadOnly</span><span class="p">((</span><span class="mi">4</span><span class="p">,</span> <span class="mi">15</span><span class="p">))</span>
+    <span class="sd">&quot;&quot;&quot;See :coapsect:`5.9.2.10`&quot;&quot;&quot;</span></div>
+<span class="n">ClientErrorResponse</span><span class="o">.</span><span class="n">RegisterCode</span><span class="p">(</span><span class="n">ClientErrorResponse</span><span class="o">.</span><span class="n">BadRequest</span><span class="p">,</span> <span class="s">&#39;Bad Request&#39;</span><span class="p">)</span>
+<span class="n">ClientErrorResponse</span><span class="o">.</span><span class="n">RegisterCode</span><span class="p">(</span><span class="n">ClientErrorResponse</span><span class="o">.</span><span class="n">Unauthorized</span><span class="p">,</span> <span class="s">&#39;Unauthorized&#39;</span><span class="p">)</span>
+<span class="n">ClientErrorResponse</span><span class="o">.</span><span class="n">RegisterCode</span><span class="p">(</span><span class="n">ClientErrorResponse</span><span class="o">.</span><span class="n">BadOption</span><span class="p">,</span> <span class="s">&#39;Bad Option&#39;</span><span class="p">)</span>
+<span class="n">ClientErrorResponse</span><span class="o">.</span><span class="n">RegisterCode</span><span class="p">(</span><span class="n">ClientErrorResponse</span><span class="o">.</span><span class="n">Forbidden</span><span class="p">,</span> <span class="s">&#39;Forbidden&#39;</span><span class="p">)</span>
+<span class="n">ClientErrorResponse</span><span class="o">.</span><span class="n">RegisterCode</span><span class="p">(</span><span class="n">ClientErrorResponse</span><span class="o">.</span><span class="n">NotFound</span><span class="p">,</span> <span class="s">&#39;Not Found&#39;</span><span class="p">)</span>
+<span class="n">ClientErrorResponse</span><span class="o">.</span><span class="n">RegisterCode</span><span class="p">(</span><span class="n">ClientErrorResponse</span><span class="o">.</span><span class="n">MethodNotAllowed</span><span class="p">,</span> <span class="s">&#39;Method Not Allowed&#39;</span><span class="p">)</span>
+<span class="n">ClientErrorResponse</span><span class="o">.</span><span class="n">RegisterCode</span><span class="p">(</span><span class="n">ClientErrorResponse</span><span class="o">.</span><span class="n">NotAcceptable</span><span class="p">,</span> <span class="s">&#39;Not Acceptable&#39;</span><span class="p">)</span>
+<span class="n">ClientErrorResponse</span><span class="o">.</span><span class="n">RegisterCode</span><span class="p">(</span><span class="n">ClientErrorResponse</span><span class="o">.</span><span class="n">PreconditionFailed</span><span class="p">,</span> <span class="s">&#39;Precondition Failed&#39;</span><span class="p">)</span>
+<span class="n">ClientErrorResponse</span><span class="o">.</span><span class="n">RegisterCode</span><span class="p">(</span><span class="n">ClientErrorResponse</span><span class="o">.</span><span class="n">RequestEntityTooLarge</span><span class="p">,</span> <span class="s">&#39;Request Entity Too Large&#39;</span><span class="p">)</span>  <span class="c"># nopep8</span>
+<span class="n">ClientErrorResponse</span><span class="o">.</span><span class="n">RegisterCode</span><span class="p">(</span><span class="n">ClientErrorResponse</span><span class="o">.</span><span class="n">UnsupportedContentFormat</span><span class="p">,</span> <span class="s">&#39;Unsupported Content-Format&#39;</span><span class="p">)</span>  <span class="c"># nopep8</span>
+
+
+<div class="viewcode-block" id="ServerErrorResponse"><a class="viewcode-back" href="../../coapy_message.html#coapy.message.ServerErrorResponse">[docs]</a><span class="k">class</span> <span class="nc">ServerErrorResponse</span> <span class="p">(</span><span class="n">Response</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Subclass for messages that are responses that indicate the</span>
+<span class="sd">    server is incapable of performing the request.</span>
+
+<span class="sd">    The following table shows the pre-defined :coapsect:`server error</span>
+<span class="sd">    response&lt;5.9.3&gt;` code values ``(class, detail)`` as specified in</span>
+<span class="sd">    :coapsect:`12.1.2`:</span>
+
+<span class="sd">    ========  =================================  =====================</span>
+<span class="sd">    Code      Name                               Documentation</span>
+<span class="sd">    ========  =================================  =====================</span>
+<span class="sd">    (5, 0)    :attr:`InternalServerError`        :coapsect:`5.9.3.1`</span>
+<span class="sd">    (5, 1)    :attr:`NotImplemented`             :coapsect:`5.9.3.2`</span>
+<span class="sd">    (5, 2)    :attr:`BadGateway`                 :coapsect:`5.9.3.3`</span>
+<span class="sd">    (5, 3)    :attr:`ServiceUnavailable`         :coapsect:`5.9.3.4`</span>
+<span class="sd">    (5, 4)    :attr:`GatewayTimeout`             :coapsect:`5.9.3.5`</span>
+<span class="sd">    (5, 5)    :attr:`ProxyingNotSupported`       :coapsect:`5.9.3.6`</span>
+<span class="sd">    ========  =================================  =====================</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">CodeClass</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">ClassReadOnly</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+    <span class="sd">&quot;&quot;&quot;The :attr:`Message.code` *class* component for</span>
+<span class="sd">    :class:`ServerErrorResponse` messages.&quot;&quot;&quot;</span>
+
+    <span class="n">InternalServerError</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">ClassReadOnly</span><span class="p">((</span><span class="mi">5</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+    <span class="sd">&quot;&quot;&quot;See :coapsect:`5.9.3.1`&quot;&quot;&quot;</span>
+
+    <span class="bp">NotImplemented</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">ClassReadOnly</span><span class="p">((</span><span class="mi">5</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="sd">&quot;&quot;&quot;See :coapsect:`5.9.3.2`&quot;&quot;&quot;</span>
+
+    <span class="n">BadGateway</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">ClassReadOnly</span><span class="p">((</span><span class="mi">5</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="sd">&quot;&quot;&quot;See :coapsect:`5.9.3.3`&quot;&quot;&quot;</span>
+
+    <span class="n">ServiceUnavailable</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">ClassReadOnly</span><span class="p">((</span><span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+    <span class="sd">&quot;&quot;&quot;See :coapsect:`5.9.3.4`&quot;&quot;&quot;</span>
+
+    <span class="n">GatewayTimeout</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">ClassReadOnly</span><span class="p">((</span><span class="mi">5</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+    <span class="sd">&quot;&quot;&quot;See :coapsect:`5.9.3.5`&quot;&quot;&quot;</span>
+
+    <span class="n">ProxyingNotSupported</span> <span class="o">=</span> <span class="n">coapy</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">ClassReadOnly</span><span class="p">((</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+    <span class="sd">&quot;&quot;&quot;See :coapsect:`5.9.3.6`&quot;&quot;&quot;</span></div>
+<span class="n">ServerErrorResponse</span><span class="o">.</span><span class="n">RegisterCode</span><span class="p">(</span><span class="n">ServerErrorResponse</span><span class="o">.</span><span class="n">InternalServerError</span><span class="p">,</span> <span class="s">&#39;Internal Server Error&#39;</span><span class="p">)</span>
+<span class="n">ServerErrorResponse</span><span class="o">.</span><span class="n">RegisterCode</span><span class="p">(</span><span class="n">ServerErrorResponse</span><span class="o">.</span><span class="n">NotImplemented</span><span class="p">,</span> <span class="s">&#39;Not Implemented&#39;</span><span class="p">)</span>
+<span class="n">ServerErrorResponse</span><span class="o">.</span><span class="n">RegisterCode</span><span class="p">(</span><span class="n">ServerErrorResponse</span><span class="o">.</span><span class="n">BadGateway</span><span class="p">,</span> <span class="s">&#39;Bad Gateway&#39;</span><span class="p">)</span>
+<span class="n">ServerErrorResponse</span><span class="o">.</span><span class="n">RegisterCode</span><span class="p">(</span><span class="n">ServerErrorResponse</span><span class="o">.</span><span class="n">ServiceUnavailable</span><span class="p">,</span> <span class="s">&#39;Service Unavailable&#39;</span><span class="p">)</span>
+<span class="n">ServerErrorResponse</span><span class="o">.</span><span class="n">RegisterCode</span><span class="p">(</span><span class="n">ServerErrorResponse</span><span class="o">.</span><span class="n">GatewayTimeout</span><span class="p">,</span> <span class="s">&#39;Gateway Timeout&#39;</span><span class="p">)</span>
+<span class="n">ServerErrorResponse</span><span class="o">.</span><span class="n">RegisterCode</span><span class="p">(</span><span class="n">ServerErrorResponse</span><span class="o">.</span><span class="n">ProxyingNotSupported</span><span class="p">,</span> <span class="s">&#39;Proxying Not Supported&#39;</span><span class="p">)</span>  <span class="c"># nopep8</span>
+
+
+<div class="viewcode-block" id="TransmissionParameters"><a class="viewcode-back" href="../../coapy_message.html#coapy.message.TransmissionParameters">[docs]</a><span class="k">class</span> <span class="nc">TransmissionParameters</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The :coapsect:`transmission parameters&lt;4.8&gt;` that support</span>
+<span class="sd">    message transmission behavior including :coapsect:`congestion</span>
+<span class="sd">    control&lt;4.7&gt;` in CoAP.</span>
+
+<span class="sd">    Some of these parameters are primitive, and some are derived.</span>
+<span class="sd">    Consult :coapsect:`4.8.1` for information related to changing</span>
+<span class="sd">    these parameters.  After changing the primitive parameters in an</span>
+<span class="sd">    instance, invoke :func:`recalculate_derived` to update the derived</span>
+<span class="sd">    parameters.</span>
+
+<span class="sd">    ==========================  ==============  ==================  ==========</span>
+<span class="sd">    Parameter                   Units           Documentation       Class</span>
+<span class="sd">    ==========================  ==============  ==================  ==========</span>
+<span class="sd">    :attr:`ACK_TIMEOUT`         seconds         :coapsect:`4.8`     Primitive</span>
+<span class="sd">    :attr:`ACK_RANDOM_FACTOR`   seconds         :coapsect:`4.8`     Primitive</span>
+<span class="sd">    :attr:`MAX_RETRANSMIT`      transmissions   :coapsect:`4.8`     Primitive</span>
+<span class="sd">    :attr:`NSTART`              messages        :coapsect:`4.7`     Primitive</span>
+<span class="sd">    :attr:`DEFAULT_LEISURE`     seconds         :coapsect:`8.2`     Primitive</span>
+<span class="sd">    :attr:`PROBING_RATE`        bytes/second    :coapsect:`4.7`     Primitive</span>
+<span class="sd">    :attr:`MAX_LATENCY`         seconds         :coapsect:`4.8.2`   Primitive</span>
+<span class="sd">    :attr:`PROCESSING_DELAY`    seconds         :coapsect:`4.8.2`   Primitive</span>
+<span class="sd">    :attr:`MAX_TRANSMIT_SPAN`   seconds         :coapsect:`4.8.2`   Derived</span>
+<span class="sd">    :attr:`MAX_TRANSMIT_WAIT`   seconds         :coapsect:`4.8.2`   Derived</span>
+<span class="sd">    :attr:`MAX_RTT`             seconds         :coapsect:`4.8.2`   Derived</span>
+<span class="sd">    :attr:`EXCHANGE_LIFETIME`   seconds         :coapsect:`4.8.2`   Derived</span>
+<span class="sd">    :attr:`NON_LIFETIME`        seconds         :coapsect:`4.8.2`   Derived</span>
+<span class="sd">    ==========================  ==============  ==================  ==========</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">ACK_TIMEOUT</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="sd">&quot;&quot;&quot;The initial timeout waiting for an acknowledgement, in seconds.&quot;&quot;&quot;</span>
+
+    <span class="n">ACK_RANDOM_FACTOR</span> <span class="o">=</span> <span class="mf">1.5</span>
+    <span class="sd">&quot;&quot;&quot;A randomization factor to avoid synchronization, in seconds.&quot;&quot;&quot;</span>
+
+    <span class="n">MAX_RETRANSMIT</span> <span class="o">=</span> <span class="mi">4</span>
+    <span class="sd">&quot;&quot;&quot;The maximum number of retransmissions of a confirmable message.</span>
+<span class="sd">    A value of 4 produces a maximum of 5 transmissions when the first</span>
+<span class="sd">    transmission is included.&quot;&quot;&quot;</span>
+
+    <span class="n">NSTART</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="sd">&quot;&quot;&quot;The maximum number of messages permitted to be outstanding for</span>
+<span class="sd">    an endpoint.&quot;&quot;&quot;</span>
+
+    <span class="n">DEFAULT_LEISURE</span> <span class="o">=</span> <span class="mi">5</span>
+    <span class="sd">&quot;&quot;&quot;A duration, in seconds, that a server may delay before</span>
+<span class="sd">    responding to a multicast message.&quot;&quot;&quot;</span>
+
+    <span class="n">PROBING_RATE</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="sd">&quot;&quot;&quot;The target maximum average data rate, in bytes per second, for</span>
+<span class="sd">    transmissions to an endpoint that does not respond.&quot;&quot;&quot;</span>
+
+    <span class="n">MAX_LATENCY</span> <span class="o">=</span> <span class="mi">100</span>
+    <span class="sd">&quot;&quot;&quot;The maximum time, in seconds, expected from the start of</span>
+<span class="sd">    datagram transmission to completion of its reception.  This</span>
+<span class="sd">    includes endpoint transport-, link-, and physical-layer</span>
+<span class="sd">    processing, propagation delay through the communications medium,</span>
+<span class="sd">    and intermediate routing overhead.&quot;&quot;&quot;</span>
+
+    <span class="n">PROCESSING_DELAY</span> <span class="o">=</span> <span class="n">ACK_TIMEOUT</span>
+    <span class="sd">&quot;&quot;&quot;The maximum time, in seconds, that node requires to generate an</span>
+<span class="sd">    acknowledgement to a confirmable message.&quot;&quot;&quot;</span>
+
+    <span class="n">MAX_TRANSMIT_SPAN</span> <span class="o">=</span> <span class="mi">45</span>
+    <span class="sd">&quot;&quot;&quot;Maximum time, in seconds, from first transmission of a</span>
+<span class="sd">    confirmable message to its last retransmission..&quot;&quot;&quot;</span>
+
+    <span class="n">MAX_TRANSMIT_WAIT</span> <span class="o">=</span> <span class="mi">93</span>
+    <span class="sd">&quot;&quot;&quot;Maximum time, in seconds, from first transmission of a</span>
+<span class="sd">    confirmable message to when the sender may give up on receiving</span>
+<span class="sd">    acknowledgement or reset.&quot;&quot;&quot;</span>
+
+    <span class="n">MAX_RTT</span> <span class="o">=</span> <span class="mi">202</span>
+    <span class="sd">&quot;&quot;&quot;Maximum round-trip-time, in seconds, considering</span>
+<span class="sd">    :attr:`MAX_LATENCY` and :attr:`PROCESSING_DELAY`.&quot;&quot;&quot;</span>
+
+    <span class="n">EXCHANGE_LIFETIME</span> <span class="o">=</span> <span class="mi">247</span>
+    <span class="sd">&quot;&quot;&quot;Time, in seconds, from first transmission of a confirmable</span>
+<span class="sd">    message to when an acknowledgement is no longer expected.&quot;&quot;&quot;</span>
+
+    <span class="n">NON_LIFETIME</span> <span class="o">=</span> <span class="mi">145</span>
+    <span class="sd">&quot;&quot;&quot;Time, in seconds, from transmission of a non-confirmable</span>
+<span class="sd">    message to when its Message-ID may be safely re-used.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="TransmissionParameters.recalculate_derived"><a class="viewcode-back" href="../../coapy_message.html#coapy.message.TransmissionParameters.recalculate_derived">[docs]</a>    <span class="k">def</span> <span class="nf">recalculate_derived</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Calculate values for parameters that may be derived.</span>
+
+<span class="sd">        This uses the calculations in :coapsect:`4.8.2` to calculate</span>
+<span class="sd">        :attr:`MAX_TRANSMIT_SPAN`, :attr:`MAX_TRANSMIT_WAIT`,</span>
+<span class="sd">        :attr:`MAX_RTT`, :attr:`EXCHANGE_LIFETIME`, and</span>
+<span class="sd">        :attr:`NON_LIFETIME` from other parameters in the instance.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">MAX_TRANSMIT_SPAN</span> <span class="o">=</span> \
+            <span class="bp">self</span><span class="o">.</span><span class="n">ACK_TIMEOUT</span> \
+            <span class="o">*</span> <span class="p">((</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">MAX_RETRANSMIT</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> \
+            <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ACK_RANDOM_FACTOR</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">MAX_TRANSMIT_WAIT</span> <span class="o">=</span> \
+            <span class="bp">self</span><span class="o">.</span><span class="n">ACK_TIMEOUT</span> \
+            <span class="o">*</span> <span class="p">((</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">MAX_RETRANSMIT</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> \
+            <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ACK_RANDOM_FACTOR</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">MAX_RTT</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">MAX_LATENCY</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">PROCESSING_DELAY</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">EXCHANGE_LIFETIME</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">MAX_TRANSMIT_SPAN</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">MAX_RTT</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">NON_LIFETIME</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">MAX_TRANSMIT_SPAN</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">MAX_LATENCY</span>
+</div>
+<div class="viewcode-block" id="TransmissionParameters.make_bebo"><a class="viewcode-back" href="../../coapy_message.html#coapy.message.TransmissionParameters.make_bebo">[docs]</a>    <span class="k">def</span> <span class="nf">make_bebo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_timeout</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">max_retransmissions</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create a :class:`RetransmissionState` for binary</span>
+<span class="sd">        exponential back off (BEBO) transmission.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">RetransmissionState</span><span class="p">(</span><span class="n">initial_timeout</span><span class="o">=</span><span class="n">initial_timeout</span><span class="p">,</span>
+                                   <span class="n">max_retransmissions</span><span class="o">=</span><span class="n">max_retransmissions</span><span class="p">,</span>
+                                   <span class="n">transmission_parameters</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+
+
+<span class="c"># Back-fill default transmission parameters</span></div></div>
+<span class="n">coapy</span><span class="o">.</span><span class="n">transmissionParameters</span> <span class="o">=</span> <span class="n">TransmissionParameters</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="RetransmissionState"><a class="viewcode-back" href="../../coapy_message.html#coapy.message.RetransmissionState">[docs]</a><span class="k">class</span> <span class="nc">RetransmissionState</span> <span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;An iterable that provides the time to the next retransmission.</span>
+
+<span class="sd">    *initial_timeout* is the time, in seconds, to the first</span>
+<span class="sd">    retransmission; a default is calculated from</span>
+<span class="sd">    *transmission_parameters* if provided.</span>
+
+<span class="sd">    *max_retransmissions* is the maximum number of re-transmissions; a</span>
+<span class="sd">    default is obtained from *transmission_parameters* if provided.</span>
+
+<span class="sd">    Thus::</span>
+
+<span class="sd">      list(RetransmissionState(3,4))</span>
+
+<span class="sd">    will produce::</span>
+
+<span class="sd">      [3, 6, 12, 24]</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_timeout</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">max_retransmissions</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">transmission_parameters</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">transmission_parameters</span><span class="p">,</span> <span class="n">TransmissionParameters</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="p">((</span><span class="n">initial_timeout</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">)</span>
+                 <span class="ow">or</span> <span class="p">(</span><span class="n">max_retransmissions</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">))):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span>
+        <span class="k">if</span> <span class="n">initial_timeout</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">initial_timeout</span> <span class="o">=</span> \
+                <span class="n">transmission_parameters</span><span class="o">.</span><span class="n">ACK_TIMEOUT</span> \
+                <span class="o">+</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">*</span> <span class="p">(</span><span class="n">transmission_parameters</span><span class="o">.</span><span class="n">ACK_RANDOM_FACTOR</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">max_retransmissions</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">max_retransmissions</span> <span class="o">=</span> <span class="n">transmission_parameters</span><span class="o">.</span><span class="n">MAX_RETRANSMIT</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timeout</span> <span class="o">=</span> <span class="n">initial_timeout</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_retransmissions</span> <span class="o">=</span> <span class="n">max_retransmissions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">counter</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+<div class="viewcode-block" id="RetransmissionState._get_remaining"><a class="viewcode-back" href="../../coapy_message.html#coapy.message.RetransmissionState._get_remaining">[docs]</a>    <span class="k">def</span> <span class="nf">_get_remaining</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The number of retransmissions remaining in the iterator.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_retransmissions</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">counter</span></div>
+    <span class="n">retransmissions_remaining</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">_get_remaining</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">next</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">counter</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_retransmissions</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">StopIteration</span>
+        <span class="n">rv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">timeout</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">counter</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timeout</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">timeout</span>
+        <span class="k">return</span> <span class="n">rv</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">CoAPy 0.0.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../coapy.html" >coapy</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Peter A. Bigot.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>
