@@ -151,3 +151,15 @@ doctest:
 	$(SPHINXBUILD) -b doctest $(ALLSPHINXOPTS) $(BUILDDIR)/doctest
 	@echo "Testing of doctests in the sources finished, look at the " \
 	      "results in $(BUILDDIR)/doctest/output.txt."
+
+gh-pages: html
+	@if git diff-index --quiet HEAD ; then \
+          rev=$$(git rev-parse HEAD) ; \
+          ( cd $(BUILDDIR)/html \
+            && git add --all \
+            && git commit -m "update to $${rev}" \
+            && git push r.opt +gh-pages ) ; \
+        else \
+	  echo 1>&2 "ERROR: Uncommitted changes" ; \
+	  git status --short --branch --untracked-files=normal ; \
+	fi
