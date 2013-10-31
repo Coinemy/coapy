@@ -327,6 +327,24 @@ Operations
 
   .. note::
 
+     The only mention of cancellation from outside the message layer
+     is in :coapsect:`4.2` in the context of stopping retransmission
+     of a request to which the client no longer needs a response, or
+     when there is "some other indication that the CON message did
+     arrive".  The effect of cancellation is not defined by CoAP.
+
+     The description here specifies cancellation for all messages
+     regardless of type and does not attempt to restrict the situations
+     where it may be appropriate.  The decision that a cancelled
+     confirmable message does not circumvent the message being
+     `outstanding` is based on the fact that past transmissions are
+     congestion-related actions and the decision to not to use
+     BEBO-authorized transmissions should not circumvent
+     congestion-based restrictions on when a new message may be
+     transmitted.  That cancellation does not immediately resolve the
+     transmission to "failed" follows from the possibility a reply may
+     yet arrive before the normal expiration of the transmission.
+
      Message cancellation is an action performed by the sender.  The
      receiver may not be able to determine that the transmission was
      cancelled.
@@ -423,20 +441,21 @@ Operations
      as successful from external signals (e.g., the proposed case of
      receiving a `response message` signalling the success of a
      confirmable request message transmission).  Contrariwise it uses
-     "reset" rather than then admitting the possibility of an external
-     signal indicating failure (such as transport-layer rejection).
+     "reset" rather than then entertaining the possibility of an
+     external signal indicative of failure (such as transport-layer
+     rejection).
 
-     Text in this section related to the need to retaining transmitted
-     acknowledgement replies for received requests even after a
-     successful confirmable response message might be read to suggest
-     that the intent is that such external evidence does not eliminate
-     the need to receive a reply message.  This is unconvincing, given
-     the specific authorization to stop retransmission if there is "some
+     Text in this section related to the need to keep for deduplication
+     the transmitted acknowledgement replies for received requests even
+     after a successful confirmable response message should not be read
+     to suggest that the intent is that such external evidence does not
+     eliminate the need to receive a reply message.  Instead note the
+     specific authorization to stop retransmission if there is "some
      other indication that the CON message did arrive".  However the
-     potential inconsistency is reflected in the above use of "may
-     succeed", indicating that whether an acknowledgement (or failure)
-     is inferred from any given external signal is left to the
-     implementation of other layers.
+     ambiguity is reflected in the above use of "may succeed",
+     indicating that whether an acknowledgement (or failure) is inferred
+     from any given external signal is left to the implementation of
+     other layers.
 
 * A :dfn:`duplicate` message is a confirmable (non-confirmable) message
   received from the same source endpoint within ``EXCHANGE_LIFETIME``
