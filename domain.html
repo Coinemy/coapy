@@ -89,15 +89,17 @@ Whether this is visibly distinct from its use form <cite>concept</cite> depends
 on the style used when formatting this document.</p>
 <p class="last">To avoid duplication, where a description supports multiple cases
 with slight variations, parentheses denote the alternatives.  Thus a
-sentence &#8220;A confirmable (non-confirmable) message lives for
-<tt class="docutils literal"><span class="pre">EXCHANGE_LIFETIME</span></tt> (<tt class="docutils literal"><span class="pre">NON_LIFETIME</span></tt>) seconds&#8221; provides a general
-concept and the details of how its specifics change based on message
-type.</p>
+sentence &#8220;A confirmable (non-confirmable) message transmission
+expires after <tt class="docutils literal"><span class="pre">EXCHANGE_LIFETIME</span></tt> (<tt class="docutils literal"><span class="pre">NON_LIFETIME</span></tt>) seconds&#8221;
+identifies a general concept (that message transmissions have time
+limit on their relevance) and its specific characteristics (that the
+duration is <tt class="docutils literal"><span class="pre">EXCHANGE_LIFETIME</span></tt> for confirmable messages and
+<tt class="docutils literal"><span class="pre">NON_LIFETIME</span></tt> for non-confirmable messages).</p>
 </div>
 <div class="section" id="overview-of-concepts">
 <h2>Overview of Concepts<a class="headerlink" href="#overview-of-concepts" title="Permalink to this headline">¶</a></h2>
 <p>This section provides a brief introduction to the basic domain concepts.
-They are described more complete in their own sections.</p>
+They are described more completely in other sections.</p>
 <div class="section" id="layers">
 <h3>Layers<a class="headerlink" href="#layers" title="Permalink to this headline">¶</a></h3>
 <p>CoAP envisions a two-layer protocol: a message layer and a
@@ -310,9 +312,14 @@ transport layer a block of data that is to be conveyed to a
 destination endpoint.  Messages of type NON, ACK, and RST normally
 have exactly one transport layer transmission (an exception occurs for
 reply messages under deduplication rules).  Messages of type CON may
-involve up to <tt class="docutils literal"><span class="pre">1+MAX_RETRANSMIT</span></tt> transport layer transmissions,
-terminating when the timeout of the last transmission completes or
-when the message transmission has been <cite>resolved</cite>.</p>
+be transmitted up to <tt class="docutils literal"><span class="pre">1+MAX_RETRANSMIT</span></tt> transport layer
+transmissions per BEBO state rules while the message transmision
+remains <cite>unresolved</cite>.</p>
+</li>
+<li><p class="first">To reduce unnecessary retransmissions, a received confirmable message
+should be acknowledged within <tt class="docutils literal"><span class="pre">ACK_TIMEOUT</span></tt> seconds, where the
+acknowledgement message is <cite>empty</cite> unless a response message is
+permitted and available.</p>
 </li>
 <li><p class="first">A message transmission may be <em class="dfn">cancelled</em> by the sender.</p>
 <ul class="simple">
@@ -328,7 +335,7 @@ transmission is considered to have <cite>succeeded</cite> or <cite>failed</cite>
 transmission <cite>expires</cite>, or (consequently) whether the message is
 still <cite>outstanding</cite>.</li>
 <li>A message transmission cannot be cancelled after it has been
-resolved or the last permitted retransmission has occurred.</li>
+resolved or the last permitted transmission has occurred.</li>
 </ul>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
@@ -338,7 +345,7 @@ cancelled.</p>
 </div>
 </li>
 <li><p class="first">A message transmission <em class="dfn">expires</em> at a specific time to provide a
-deadline by which it is <cite>resolved</cite>:</p>
+deadline by which it will be <cite>resolved</cite>:</p>
 <ul class="simple">
 <li>A confirmable request message transmission <cite>expires</cite> at
 <tt class="docutils literal"><span class="pre">EXCHANGE_LIFETIME</span></tt> seconds after the first transport-layer
@@ -391,15 +398,15 @@ sender may not be able to determine whether rejection has occurred.</p>
 <li><p class="first">From the perspective of a message sender, the disposition of a
 transmission is <em class="dfn">success</em> or <em class="dfn">failure</em>.  Success or failure
 of an message transmission is determined by a sender based on time,
-reply message type, and transport-layer information.</p>
+received reply message type, and information provided by other layers:</p>
 <ul class="simple">
 <li>If the received <cite>reply message</cite> has type RST, the transmission has
 failed.</li>
 <li>If the received <cite>reply message</cite> has type ACK, the transmission has
 succeeded.</li>
 <li>Success and failure may be communicated through transport-layer
-notifications (e.g., a message may fail if it is rejected by
-transport security checks).</li>
+notifications (e.g., a message transmission may fail if it is
+rejected by transport security checks).</li>
 <li>Success and failure may be communicated through exchange-layer
 notifications (e.g., a request message transmission may succeed if a
 response message is received).</li>
@@ -413,6 +420,28 @@ notifications.</li>
 <cite>expires</cite> has failed (succeeded) if it is confirmable
 (non-confirmable).</li>
 </ul>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p><a class="reference external" href="http://tools.ietf.org/html/draft-ietf-core-coap-18#section-4.2">CoAP Section 4.2</a> uses the uncapitalized term &#8220;acknowledgement&#8221; in a
+way that may variously be either an <cite>acknowledgement message</cite> or an
+external indication that the message transmission can be resolved
+as successful from external signals (e.g., the proposed case of
+receiving a <cite>response message</cite> signalling the success of a
+confirmable request message transmission).  Contrariwise it uses
+&#8220;reset&#8221; rather than then admitting the possibility of an external
+signal indicating failure (such as transport-layer rejection).</p>
+<p class="last">Text in this section related to the need to retaining transmitted
+acknowledgement replies for received requests even after a
+successful confirmable response message might be read to suggest
+that the intent is that such external evidence does not eliminate
+the need to receive a reply message.  This is unconvincing, given
+the specific authorization to stop retransmission if there is &#8220;some
+other indication that the CON message did arrive&#8221;.  However the
+potential inconsistency is reflected in the above use of &#8220;may
+succeed&#8221;, indicating that whether an acknowledgement (or failure)
+is inferred from any given external signal is left to the
+implementation of other layers.</p>
+</div>
 </li>
 <li><p class="first">A <em class="dfn">duplicate</em> message is a confirmable (non-confirmable) message
 received from the same source endpoint within <tt class="docutils literal"><span class="pre">EXCHANGE_LIFETIME</span></tt>
@@ -447,9 +476,13 @@ application)</li>
 </ul>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">Responsiveness of an endpoint impacts whether congestion rules
-apply to transmissions targeting the endpoint, but is not otherwise
-defined in CoAP.</p>
+<p class="last">Responsiveness of an endpoint affects whether congestion rules
+apply to transmissions destined for that endpoint, but is not
+explicitly defined in CoAP.  The text here creates a definition
+consistent with the common use of the term &#8220;responsive&#8221;.  On the
+theory that a transport layer might accept a message without
+properly conveying it to the CoAP server, confirmation from the
+transport layer is not a sign of responsiveness.</p>
 </div>
 </li>
 </ul>
@@ -541,7 +574,7 @@ additional transport layer transmissions may be allowed.  The
 <p>The BEBO span shall not exceed <tt class="docutils literal"><span class="pre">MAX_TRANSMIT_WAIT</span></tt>.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">At this timne it is unclear whether the <cite>BEBO span</cite> is a necessary
+<p class="last">At this time it is unclear whether the <cite>BEBO span</cite> is a necessary
 domain concept.</p>
 </div>
 </li>

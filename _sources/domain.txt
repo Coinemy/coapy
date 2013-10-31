@@ -53,17 +53,19 @@ concepts rather than being defined independently.
 
    To avoid duplication, where a description supports multiple cases
    with slight variations, parentheses denote the alternatives.  Thus a
-   sentence "A confirmable (non-confirmable) message lives for
-   ``EXCHANGE_LIFETIME`` (``NON_LIFETIME``) seconds" provides a general
-   concept and the details of how its specifics change based on message
-   type.
+   sentence "A confirmable (non-confirmable) message transmission
+   expires after ``EXCHANGE_LIFETIME`` (``NON_LIFETIME``) seconds"
+   identifies a general concept (that message transmissions have time
+   limit on their relevance) and its specific characteristics (that the
+   duration is ``EXCHANGE_LIFETIME`` for confirmable messages and
+   ``NON_LIFETIME`` for non-confirmable messages).
 
 
 Overview of Concepts
 ====================
 
 This section provides a brief introduction to the basic domain concepts.
-They are described more complete in their own sections.
+They are described more completely in other sections.
 
 Layers
 ------
@@ -296,9 +298,14 @@ Operations
   destination endpoint.  Messages of type NON, ACK, and RST normally
   have exactly one transport layer transmission (an exception occurs for
   reply messages under deduplication rules).  Messages of type CON may
-  involve up to ``1+MAX_RETRANSMIT`` transport layer transmissions,
-  terminating when the timeout of the last transmission completes or
-  when the message transmission has been `resolved`.
+  be transmitted up to ``1+MAX_RETRANSMIT`` transport layer
+  transmissions per BEBO state rules while the message transmision
+  remains `unresolved`.
+
+* To reduce unnecessary retransmissions, a received confirmable message
+  should be acknowledged within ``ACK_TIMEOUT`` seconds, where the
+  acknowledgement message is `empty` unless a response message is
+  permitted and available.
 
 * A message transmission may be :dfn:`cancelled` by the sender.
 
@@ -316,7 +323,7 @@ Operations
     still `outstanding`.
 
   + A message transmission cannot be cancelled after it has been
-    resolved or the last permitted retransmission has occurred.
+    resolved or the last permitted transmission has occurred.
 
   .. note::
 
@@ -325,7 +332,7 @@ Operations
      cancelled.
 
 * A message transmission :dfn:`expires` at a specific time to provide a
-  deadline by which it is `resolved`:
+  deadline by which it will be `resolved`:
 
   + A confirmable request message transmission `expires` at
     ``EXCHANGE_LIFETIME`` seconds after the first transport-layer
@@ -380,7 +387,7 @@ Operations
 * From the perspective of a message sender, the disposition of a
   transmission is :dfn:`success` or :dfn:`failure`.  Success or failure
   of an message transmission is determined by a sender based on time,
-  reply message type, and transport-layer information.
+  received reply message type, and information provided by other layers:
 
   + If the received `reply message` has type RST, the transmission has
     failed.
@@ -389,8 +396,8 @@ Operations
     succeeded.
 
   + Success and failure may be communicated through transport-layer
-    notifications (e.g., a message may fail if it is rejected by
-    transport security checks).
+    notifications (e.g., a message transmission may fail if it is
+    rejected by transport security checks).
 
   + Success and failure may be communicated through exchange-layer
     notifications (e.g., a request message transmission may succeed if a
@@ -407,6 +414,29 @@ Operations
   + A message transmission that has not been resolved by the time it
     `expires` has failed (succeeded) if it is confirmable
     (non-confirmable).
+
+  .. note::
+
+     :coapsect:`4.2` uses the uncapitalized term "acknowledgement" in a
+     way that may variously be either an `acknowledgement message` or an
+     external indication that the message transmission can be resolved
+     as successful from external signals (e.g., the proposed case of
+     receiving a `response message` signalling the success of a
+     confirmable request message transmission).  Contrariwise it uses
+     "reset" rather than then admitting the possibility of an external
+     signal indicating failure (such as transport-layer rejection).
+
+     Text in this section related to the need to retaining transmitted
+     acknowledgement replies for received requests even after a
+     successful confirmable response message might be read to suggest
+     that the intent is that such external evidence does not eliminate
+     the need to receive a reply message.  This is unconvincing, given
+     the specific authorization to stop retransmission if there is "some
+     other indication that the CON message did arrive".  However the
+     potential inconsistency is reflected in the above use of "may
+     succeed", indicating that whether an acknowledgement (or failure)
+     is inferred from any given external signal is left to the
+     implementation of other layers.
 
 * A :dfn:`duplicate` message is a confirmable (non-confirmable) message
   received from the same source endpoint within ``EXCHANGE_LIFETIME``
@@ -442,9 +472,13 @@ Operations
 
   .. note::
 
-     Responsiveness of an endpoint impacts whether congestion rules
-     apply to transmissions targeting the endpoint, but is not otherwise
-     defined in CoAP.
+     Responsiveness of an endpoint affects whether congestion rules
+     apply to transmissions destined for that endpoint, but is not
+     explicitly defined in CoAP.  The text here creates a definition
+     consistent with the common use of the term "responsive".  On the
+     theory that a transport layer might accept a message without
+     properly conveying it to the CoAP server, confirmation from the
+     transport layer is not a sign of responsiveness.
 
 Exchange Layer
 ==============
@@ -533,5 +567,5 @@ Commentary:
 
   .. note::
 
-     At this timne it is unclear whether the `BEBO span` is a necessary
+     At this time it is unclear whether the `BEBO span` is a necessary
      domain concept.
